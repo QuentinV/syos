@@ -22,7 +22,7 @@ export interface GameTurn {
 }
 
 export type GameTurnStatus =
-    | 'stSeeCards'
+    | 'stPicksCards'
     | 'stWriteStory'
     | 'pSeeCards'
     | 'pPicksCards';

@@ -67,7 +67,7 @@ export const Storyteller: React.FC = () => {
 
     const renderContent = () => {
         switch (turn.status) {
-            case 'stSeeCards':
+            case 'stPicksCards':
                 return (
                     playerTurn.displayedCards?.length && (
                         <div>
