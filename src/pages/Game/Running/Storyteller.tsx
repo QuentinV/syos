@@ -4,6 +4,7 @@ import {
     $gameTurnStatus,
     selectCard,
     setDisplayedCards,
+    writeStory,
 } from '../../../state/game';
 import cardsMapping from '../../../cards_mapping.json';
 import { GameCards } from '../../../components/GameCards';
@@ -33,6 +34,7 @@ export const Storyteller: React.FC = () => {
     const turn = useTurn();
     const playerTurn = usePlayerTurn();
     const previousStory = usePreviousStory();
+    const [storyValue, setStoryValue] = useState<string>('');
 
     useEffect(() => {
         if (!playerTurn?.displayedCards?.length) {
@@ -60,7 +62,8 @@ export const Storyteller: React.FC = () => {
         selectCard({ cardIndex: index, playerId: player!.id });
     };
 
-    const onStoryWritten = () => {};
+    const onStoryWritten = () =>
+        writeStory({ playerId: player.id, story: storyValue });
 
     const renderContent = () => {
         switch (turn.status) {
@@ -105,7 +108,15 @@ export const Storyteller: React.FC = () => {
                                 </div>
                                 <div className="flex-1">
                                     <FloatLabel>
-                                        <InputTextarea id="stWriteStoryInput" />
+                                        <InputTextarea
+                                            id="stWriteStoryInput"
+                                            value={storyValue}
+                                            onChange={(event) =>
+                                                setStoryValue(
+                                                    event.target.value
+                                                )
+                                            }
+                                        />
                                         <label htmlFor="stWriteStoryInput">
                                             Write your own short story
                                         </label>

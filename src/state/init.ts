@@ -79,7 +79,7 @@ sample({
     source: { $game, $player },
     filter: ({ $game, $player }) => {
         const turn = $game?.turns?.[$game?.turns?.length - 1];
-        if (turn?.status !== 'stSeeCards') return false;
+        if (turn?.status !== 'stPicksCards') return false;
         const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
         return (
             playerTurn.role === 'storyteller' &&
@@ -96,6 +96,29 @@ sample({
         }) => {
             if (!$game || !$player) return;
             setGameTurnStatus('stWriteStory');
+        }
+    ),
+});
+
+// storyteller wrote story, moving to next stage
+sample({
+    source: { $game, $player },
+    filter: ({ $game, $player }) => {
+        const turn = $game?.turns?.[$game?.turns?.length - 1];
+        if (turn?.status !== 'stWriteStory') return false;
+        const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
+        return playerTurn.role === 'storyteller' && !!playerTurn.story;
+    },
+    target: createEffect(
+        ({
+            $game,
+            $player,
+        }: {
+            $game: Game | null;
+            $player: Player | null;
+        }) => {
+            if (!$game || !$player) return;
+            setGameTurnStatus('pSeeCards');
         }
     ),
 });

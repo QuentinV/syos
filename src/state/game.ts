@@ -69,7 +69,10 @@ $game
         game
             ? {
                   ...game,
-                  turns: [...game.turns, { status: 'stSeeCards', players: {} }],
+                  turns: [
+                      ...game.turns,
+                      { status: 'stPicksCards', players: {} },
+                  ],
               }
             : null
     )
