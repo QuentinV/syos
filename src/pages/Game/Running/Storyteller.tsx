@@ -60,6 +60,7 @@ export const Storyteller: React.FC = () => {
                         visible={cardsVisible}
                         onSelect={onSelectCard}
                         selected={playerTurn.selectedCards}
+                        limit={3}
                     />
                 </div>
             )}

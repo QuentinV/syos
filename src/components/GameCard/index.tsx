@@ -17,15 +17,11 @@ export const GameCard: React.FC<GameCardProps> = ({
 }) => {
     return (
         <div
-            className={`gamecard ${!visible && !selected ? 'backcard' : ''} ${selected ? 'selected' : ''}`}
+            className={`gamecard ${!visible ? 'backcard' : ''} ${onSelect && !selected ? 'selectable' : ''}`}
             onClick={() => !visible && onSelect?.(index)}
         >
             <Image
-                src={
-                    visible || selected
-                        ? `images/${index}.png`
-                        : 'cards_backs/3.png'
-                }
+                src={visible ? `images/${index}.png` : 'cards_backs/3.png'}
                 width="120"
                 height="160"
             />

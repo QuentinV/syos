@@ -6,7 +6,7 @@
     padding: 5px;
 }
 
-.gamecard.backcard:hover {
+.gamecard.selectable:hover {
     border-style: solid;
     cursor: pointer;
     border-color: var(--primary-color);
@@ -16,6 +16,6 @@
     border-style: solid;
 }
 
-.gamecard:not(.backcard) {
+.gamecard:not(.selectable) {
     pointer-events: none;
 }
