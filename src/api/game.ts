@@ -17,14 +17,22 @@ export interface Player {
 }
 
 export interface GameTurn {
+    status: GameTurnStatus;
     players: { [playerId: string]: PlayerTurn };
 }
+
+export type GameTurnStatus =
+    | 'stSeeCards'
+    | 'stPickCards'
+    | 'stWriteStory'
+    | 'pSeeCards'
+    | 'pPicksCards';
 
 export interface PlayerTurn {
     playerId: string;
     role: 'storyteller' | 'gremlin';
-    story: string;
-    selectedCards: string[];
+    story?: string;
+    selectedCards?: number[];
     score: number;
 }
 
