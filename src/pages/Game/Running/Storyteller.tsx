@@ -16,6 +16,7 @@ import {
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
 import { FloatLabel } from 'primereact/floatlabel';
+import { Countdown } from '../../../components/Countdown';
 
 const getRandomCards = (cards: number[], limit: number) => {
     const result = [];
@@ -81,25 +82,37 @@ export const Storyteller: React.FC = () => {
                 );
             case 'stWriteStory':
                 return (
-                    <div>
-                        <GameCards
-                            indexes={playerTurn.selectedCards ?? []}
-                            selected={playerTurn.selectedCards}
-                            visible
-                        />
-                        {!!previousStory && (
-                            <div className="mt-2">{previousStory}</div>
-                        )}
-                        <div className="mt-6">
-                            <FloatLabel>
-                                <InputTextarea id="stWriteStoryInput" />
-                                <label htmlFor="stWriteStoryInput">
-                                    Write your own short story
-                                </label>
-                            </FloatLabel>
-                        </div>
-                        <div className="text-right mt-2">
-                            <Button size="small">Continue</Button>
+                    <div className="flex">
+                        <div>
+                            <GameCards
+                                indexes={playerTurn.selectedCards ?? []}
+                                selected={playerTurn.selectedCards}
+                                visible
+                            />
+                            {!!previousStory && (
+                                <div className="mt-2">{previousStory}</div>
+                            )}
+                            <div className="flex mt-6 align-items-center gap-3">
+                                <div>
+                                    <Countdown
+                                        limit={10}
+                                        onComplete={() =>
+                                            console.log('completed')
+                                        }
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <FloatLabel>
+                                        <InputTextarea id="stWriteStoryInput" />
+                                        <label htmlFor="stWriteStoryInput">
+                                            Write your own short story
+                                        </label>
+                                    </FloatLabel>
+                                </div>
+                            </div>
+                            <div className="text-right mt-2">
+                                <Button size="small">Continue</Button>
+                            </div>
                         </div>
                     </div>
                 );
