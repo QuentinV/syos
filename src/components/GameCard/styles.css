@@ -1,0 +1,13 @@
+.gamecard {
+    width: 134px;
+    height: 174px;
+    border: 2px var(--surface-200) dotted;
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.gamecard:hover {
+    border-style: solid;
+    cursor: pointer;
+    border-color: var(--primary-color);
+}

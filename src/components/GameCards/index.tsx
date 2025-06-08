@@ -4,9 +4,10 @@ import './styles.css';
 
 interface GameCardsProps {
     indexes: number[];
+    visible?: boolean;
 }
 
-export const GameCards: React.FC<GameCardsProps> = ({ indexes }) => {
+export const GameCards: React.FC<GameCardsProps> = ({ indexes, visible }) => {
     return (
         <div className="gamecards">
             {indexes.map((i) => (
