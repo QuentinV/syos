@@ -4,6 +4,8 @@ import { useParams } from 'react-router';
 import { $game, initGame } from '../../state/game';
 import { useUnit } from 'effector-react';
 import { Lobby } from './Lobby';
+import { End } from './End';
+import { Running } from './Running';
 
 export const GamePage = () => {
     const { id } = useParams();
@@ -19,6 +21,10 @@ export const GamePage = () => {
         switch (game.status) {
             case 'lobby':
                 return <Lobby />;
+            case 'running':
+                return <Running />;
+            case 'finished':
+                return <End />;
         }
     };
 
