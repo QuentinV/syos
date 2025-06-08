@@ -63,7 +63,12 @@ export const Storyteller: React.FC = () => {
     };
 
     const onStoryWritten = () =>
-        writeStory({ playerId: player.id, story: storyValue });
+        writeStory({
+            playerId: player.id,
+            story:
+                storyValue ||
+                'A wild sleepy player appeared but too lazy to write a story they ran away.',
+        });
 
     const renderContent = () => {
         switch (turn.status) {
@@ -101,9 +106,7 @@ export const Storyteller: React.FC = () => {
                                 <div>
                                     <Countdown
                                         limit={60}
-                                        onComplete={() =>
-                                            console.log('completed')
-                                        }
+                                        onComplete={() => onStoryWritten()}
                                     />
                                 </div>
                                 <div className="flex-1">
