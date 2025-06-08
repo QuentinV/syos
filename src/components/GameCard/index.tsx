@@ -4,16 +4,28 @@ import { Image } from 'primereact/image';
 
 interface GameCardProps {
     index: number;
-    key?: string;
     visible?: boolean;
+    onSelect?: (index: number) => void;
+    selected?: boolean;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({ index, key, visible }) => {
+export const GameCard: React.FC<GameCardProps> = ({
+    index,
+    visible,
+    onSelect,
+    selected,
+}) => {
     return (
-        <div className="gamecard">
+        <div
+            className={`gamecard ${!visible && !selected ? 'backcard' : ''} ${selected ? 'selected' : ''}`}
+            onClick={() => !visible && onSelect?.(index)}
+        >
             <Image
-                src={visible ? `images/${index}.png` : 'cards_backs/3.png'}
-                key={key}
+                src={
+                    visible || selected
+                        ? `images/${index}.png`
+                        : 'cards_backs/3.png'
+                }
                 width="120"
                 height="160"
             />

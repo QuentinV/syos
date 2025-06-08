@@ -1,12 +1,5 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
-import {
-    Game,
-    GameTurn,
-    GameTurnStatus,
-    getGame,
-    Player,
-    saveGame,
-} from '../api/game';
+import { Game, GameTurnStatus, getGame, Player, saveGame } from '../api/game';
 
 export const $game = createStore<Game | null>(null);
 export const $gameTurnStatus = createStore<GameTurnStatus | null>(null);
@@ -18,6 +11,14 @@ export const togglePlayerReady = createEvent<string>();
 export const startGame = createEvent<void>();
 export const newTurn = createEvent<void>();
 export const newPlayerTurn = createEvent<Player>();
+export const setDisplayedCards = createEvent<{
+    playerId: string;
+    cardIndexes: number[];
+}>();
+export const selectCard = createEvent<{
+    playerId: string;
+    cardIndex: number;
+}>();
 
 export const loadGameFromStorageFx = createEffect(
     async ({ id }: { id: string }) => {
@@ -59,11 +60,29 @@ $game
             score: 0,
         };
         return { ...game };
+    })
+    .on(setDisplayedCards, (game, state) => {
+        if (!game) return null;
+        const playerTurn =
+            game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
+        if (!playerTurn) return game;
+        playerTurn.displayedCards = state.cardIndexes;
+        return { ...game };
+    })
+    .on(selectCard, (game, state) => {
+        if (!game) return null;
+        const playerTurn =
+            game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
+        if (!playerTurn) return game;
+        playerTurn.selectedCards = [
+            ...new Set([...(playerTurn.selectedCards ?? []), state.cardIndex]),
+        ];
+        return { ...game };
     });
 
 $gameTurnStatus.on(
     $game.updates,
-    (_, game) => game?.turns?.[game?.turns.length - 1].status ?? null
+    (_, game) => game?.turns?.[game?.turns?.length - 1]?.status ?? null
 );
 
 sample({

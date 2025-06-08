@@ -6,8 +6,16 @@
     padding: 5px;
 }
 
-.gamecard:hover {
+.gamecard.backcard:hover {
     border-style: solid;
     cursor: pointer;
     border-color: var(--primary-color);
+}
+
+.gamecard.selected {
+    border-style: solid;
+}
+
+.gamecard:not(.backcard) {
+    pointer-events: none;
 }

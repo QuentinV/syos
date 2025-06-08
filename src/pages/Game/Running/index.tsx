@@ -9,13 +9,13 @@ import {
 import { $player } from '../../../state/player';
 import { Storyteller } from './Storyteller';
 import { Gremlin } from './Gremlin';
+import { usePlayerTurn } from '../../../state/gameHooks';
 
 export const Running: React.FC = () => {
     const game = useUnit($game);
     const player = useUnit($player);
     const gameTurnStatus = useUnit($gameTurnStatus);
-    const turn = game?.turns?.[game?.turns?.length - 1];
-    const playerTurn = turn?.players?.[player?.id ?? ''];
+    const playerTurn = usePlayerTurn();
 
     useEffect(() => {
         if (!game?.turns.length) {

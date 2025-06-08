@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useUnit } from 'effector-react';
-import { $gameTurnStatus } from '../../../state/game';
+import {
+    $gameTurnStatus,
+    selectCard,
+    setDisplayedCards,
+} from '../../../state/game';
 import cardsMapping from '../../../cards_mapping.json';
 import { GameCards } from '../../../components/GameCards';
+import { $player } from '../../../state/player';
+import { usePlayerTurn } from '../../../state/gameHooks';
 
 const getRandomCards = (cards: number[], limit: number) => {
     const result = [];
@@ -14,25 +20,47 @@ const getRandomCards = (cards: number[], limit: number) => {
 
 export const Storyteller: React.FC = () => {
     const gameTurnStatus = useUnit($gameTurnStatus);
-    const [displayedCards, setDisplayedCards] = useState<number[]>([]);
+    const [cardsVisible, setCardsVisible] = useState<boolean>(true);
+    const player = useUnit($player);
+    const playerTurn = usePlayerTurn();
 
     useEffect(() => {
-        if (!displayedCards.length) {
+        if (!playerTurn?.displayedCards?.length) {
             const r = [
                 ...getRandomCards(cardsMapping.activity, 3),
                 ...getRandomCards(cardsMapping.landscape, 3),
                 ...getRandomCards(cardsMapping.animals, 3),
             ];
-            setDisplayedCards(r);
+            setDisplayedCards({ playerId: player!.id, cardIndexes: r });
         }
-    }, [displayedCards]);
+    }, [playerTurn?.displayedCards]);
+
+    useEffect(() => {
+        if (playerTurn?.displayedCards?.length) {
+            setTimeout(() => {
+                setCardsVisible(false);
+            }, 2000);
+        }
+    }, [playerTurn?.displayedCards]);
+
+    const onSelectCard = (index: number) => {
+        console.log('select card', index);
+        selectCard({ cardIndex: index, playerId: player!.id });
+    };
+
+    if (!player) return null;
 
     return (
         <>
             <div>STATUS: {gameTurnStatus}</div>
-            {displayedCards.length && (
+            {playerTurn?.displayedCards?.length && (
                 <div>
-                    <GameCards indexes={displayedCards} />
+                    <GameCards
+                        indexes={playerTurn.displayedCards}
+                        visible={cardsVisible}
+                        onSelect={onSelectCard}
+                        selected={playerTurn.selectedCards}
+                    />
                 </div>
             )}
         </>

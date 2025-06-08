@@ -33,6 +33,7 @@ export interface PlayerTurn {
     role: 'storyteller' | 'gremlin';
     story?: string;
     selectedCards?: number[];
+    displayedCards?: number[];
     score: number;
 }
 

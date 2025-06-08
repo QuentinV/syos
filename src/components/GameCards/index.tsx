@@ -5,13 +5,26 @@ import './styles.css';
 interface GameCardsProps {
     indexes: number[];
     visible?: boolean;
+    onSelect?: (index: number) => void;
+    selected?: number[];
 }
 
-export const GameCards: React.FC<GameCardsProps> = ({ indexes, visible }) => {
+export const GameCards: React.FC<GameCardsProps> = ({
+    indexes,
+    visible,
+    onSelect,
+    selected,
+}) => {
     return (
         <div className="gamecards">
-            {indexes.map((i) => (
-                <GameCard index={i} key={String(i)} />
+            {indexes.map((k, i) => (
+                <GameCard
+                    index={k}
+                    key={String(i)}
+                    visible={visible}
+                    onSelect={onSelect}
+                    selected={selected?.includes(k)}
+                />
             ))}
         </div>
     );
