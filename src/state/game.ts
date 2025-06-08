@@ -5,7 +5,14 @@ import {
     createStore,
     sample,
 } from 'effector';
-import { Game, GameTurnStatus, getGame, Player, saveGame } from '../api/game';
+import {
+    Game,
+    GameTurnStatus,
+    getGame,
+    Player,
+    PlayerTurn,
+    saveGame,
+} from '../api/game';
 
 export const $game = createStore<Game | null>(null);
 export const $gameTurnStatus = createStore<GameTurnStatus | null>(null);
@@ -26,6 +33,7 @@ export const selectCard = createEvent<{
     cardIndex: number;
 }>();
 export const setGameTurnStatus = createEvent<GameTurnStatus>();
+export const writeStory = createEvent<{ playerId: string; story: string }>();
 
 export const loadGameFromStorageFx = createEffect(
     async ({ id }: { id: string }) => {
@@ -33,6 +41,19 @@ export const loadGameFromStorageFx = createEffect(
         return game ?? null;
     }
 );
+
+const updatePlayerTurn = (
+    game: Game | null,
+    playerId: string,
+    update: (turn: PlayerTurn) => void
+) => {
+    if (!game) return null;
+    const playerTurn =
+        game?.turns?.[game?.turns?.length - 1]?.players?.[playerId];
+    if (!playerTurn) return game;
+    update(playerTurn);
+    return { ...game };
+};
 
 $game
     .on(loadGameFromStorageFx.doneData, (_, state) => state)
@@ -68,31 +89,33 @@ $game
         };
         return { ...game };
     })
-    .on(setDisplayedCards, (game, state) => {
-        if (!game) return null;
-        const playerTurn =
-            game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
-        if (!playerTurn) return game;
-        playerTurn.displayedCards = state.cardIndexes;
-        return { ...game };
-    })
-    .on(selectCard, (game, state) => {
-        if (!game) return null;
-        const playerTurn =
-            game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
-        if (!playerTurn) return game;
-        playerTurn.selectedCards = [
-            ...new Set([...(playerTurn.selectedCards ?? []), state.cardIndex]),
-        ];
-        return { ...game };
-    })
+    .on(setDisplayedCards, (game, state) =>
+        updatePlayerTurn(game, state.playerId, (playerTurn) => {
+            playerTurn.displayedCards = state.cardIndexes;
+        })
+    )
+    .on(selectCard, (game, state) =>
+        updatePlayerTurn(game, state.playerId, (playerTurn) => {
+            playerTurn.selectedCards = [
+                ...new Set([
+                    ...(playerTurn.selectedCards ?? []),
+                    state.cardIndex,
+                ]),
+            ];
+        })
+    )
     .on(setGameTurnStatus, (game, status) => {
         if (!game) return null;
         const turn = game?.turns?.[game?.turns?.length - 1];
         if (!turn) return game;
         turn.status = status;
         return { ...game };
-    });
+    })
+    .on(writeStory, (game, state) =>
+        updatePlayerTurn(game, state.playerId, (playerTurn) => {
+            playerTurn.story = state.story;
+        })
+    );
 
 $gameTurnStatus.on(
     $game.updates,

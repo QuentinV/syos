@@ -60,6 +60,8 @@ export const Storyteller: React.FC = () => {
         selectCard({ cardIndex: index, playerId: player!.id });
     };
 
+    const onStoryWritten = () => {};
+
     const renderContent = () => {
         switch (turn.status) {
             case 'stSeeCards':
@@ -95,7 +97,7 @@ export const Storyteller: React.FC = () => {
                             <div className="flex mt-6 align-items-center gap-3">
                                 <div>
                                     <Countdown
-                                        limit={10}
+                                        limit={60}
                                         onComplete={() =>
                                             console.log('completed')
                                         }
@@ -111,7 +113,9 @@ export const Storyteller: React.FC = () => {
                                 </div>
                             </div>
                             <div className="text-right mt-2">
-                                <Button size="small">Continue</Button>
+                                <Button size="small" onClick={onStoryWritten}>
+                                    Continue
+                                </Button>
                             </div>
                         </div>
                     </div>
