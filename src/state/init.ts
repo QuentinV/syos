@@ -1,7 +1,6 @@
 import { createEffect, sample, attach } from 'effector';
 import { initGame, loadGameFromStorageFx, setPeerId } from './game';
 import { connectToPeer, initPeerConnection, sendMessage } from '../api/rtc';
-import { v4 as uuid } from 'uuid';
 import { $player } from './player';
 import { newGame, Player } from '../api/game';
 

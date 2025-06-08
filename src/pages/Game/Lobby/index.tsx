@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { $game } from '../../../state/game';
+import { $game, startGame, togglePlayerReady } from '../../../state/game';
 import { $player } from '../../../state/player';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from 'primereact/button';
@@ -42,10 +42,23 @@ export const Lobby: React.FC = () => {
                 <div className="w-4">
                     <div>Players</div>
                 </div>
-                <div>
-                    <Button label="Ready" size="small" />{' '}
-                    <Button label="Start Game" size="small" />
-                </div>
+                {player && (
+                    <div>
+                        <Button
+                            label="Ready"
+                            size="small"
+                            onClick={() => togglePlayerReady(player.id)}
+                        />{' '}
+                        <Button
+                            label="Start Game"
+                            size="small"
+                            disabled={Object.keys(game.players).some(
+                                (pk) => !game.players[pk].ready
+                            )}
+                            onClick={() => startGame()}
+                        />
+                    </div>
+                )}
             </div>
             <div className="flex flex-column align-items-center">
                 {Object.keys(game.players).map((key) => {

@@ -1,5 +1,5 @@
 import { $game } from '../state/game';
-import { Game, Player, updateGame } from './game';
+import { Game, Player, saveGame } from './game';
 
 export const rtcActions: any = {
     joinGame: (mess: { player: Player; playerId: string }) => {
@@ -9,11 +9,11 @@ export const rtcActions: any = {
             return;
         }
         game.players[mess.playerId] = mess.player;
-        updateGame(game);
+        saveGame(game);
         return $game.getState();
     },
     joinGame_answer: async (game: Game) => {
-        await updateGame(game);
+        await saveGame(game);
         location.href = `http://localhost:3000/syos#/game/${game.id}`;
     },
 };

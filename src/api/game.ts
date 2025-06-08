@@ -48,7 +48,8 @@ export const newGame = async ({ player }: { player: Player }) => {
 export const getGame = (id: string): Promise<Game> =>
     get({ storeName: 'games', id });
 
-export const updateGame = async (game: Game) => {
+export const saveGame = async (game: Game | null) => {
+    if (!game) return;
     await put({
         storeName: 'games',
         data: {
