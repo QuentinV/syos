@@ -18,10 +18,15 @@ html {
     height: 100%;
     overflow: hidden;
     position: relative;
+    background: radial-gradient(
+        circle,
+        rgba(17, 24, 39, 0.5) 35%,
+        rgba(255, 255, 255, 0.1) 100%
+    );
 }
 
 html {
-    line-height: 1;
+    line-height: normal;
     font-style: normal;
     font-optical-sizing: auto;
 }

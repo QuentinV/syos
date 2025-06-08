@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from 'primereact/button';
 import { useNavigate } from 'react-router-dom';
+import { newGameFx } from '../../state/init';
 
 export const InboxPage = () => {
+    const navigate = useNavigate();
     return (
         <>
             <div className="flex align-items-center gap-4 justify-content-center w-full h-full flex-wrap">
@@ -19,6 +21,10 @@ export const InboxPage = () => {
                                 label="New Game"
                                 size="small"
                                 severity="secondary"
+                                onClick={async () => {
+                                    const id = await newGameFx();
+                                    navigate(`/game/${id}`);
+                                }}
                             />
                         </div>
                     </div>
