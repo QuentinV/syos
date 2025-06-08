@@ -1,4 +1,10 @@
-import { createEffect, createEvent, createStore, sample } from 'effector';
+import {
+    attach,
+    createEffect,
+    createEvent,
+    createStore,
+    sample,
+} from 'effector';
 import { Game, GameTurnStatus, getGame, Player, saveGame } from '../api/game';
 
 export const $game = createStore<Game | null>(null);
@@ -19,6 +25,7 @@ export const selectCard = createEvent<{
     playerId: string;
     cardIndex: number;
 }>();
+export const setGameTurnStatus = createEvent<GameTurnStatus>();
 
 export const loadGameFromStorageFx = createEffect(
     async ({ id }: { id: string }) => {
@@ -77,6 +84,13 @@ $game
         playerTurn.selectedCards = [
             ...new Set([...(playerTurn.selectedCards ?? []), state.cardIndex]),
         ];
+        return { ...game };
+    })
+    .on(setGameTurnStatus, (game, status) => {
+        if (!game) return null;
+        const turn = game?.turns?.[game?.turns?.length - 1];
+        if (!turn) return game;
+        turn.status = status;
         return { ...game };
     });
 

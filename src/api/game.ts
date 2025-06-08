@@ -23,7 +23,6 @@ export interface GameTurn {
 
 export type GameTurnStatus =
     | 'stSeeCards'
-    | 'stPickCards'
     | 'stWriteStory'
     | 'pSeeCards'
     | 'pPicksCards';

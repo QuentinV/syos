@@ -1,8 +1,14 @@
 import { createEffect, sample, attach } from 'effector';
-import { initGame, loadGameFromStorageFx, setPeerId } from './game';
+import {
+    $game,
+    initGame,
+    loadGameFromStorageFx,
+    setGameTurnStatus,
+    setPeerId,
+} from './game';
 import { connectToPeer, initPeerConnection, sendMessage } from '../api/rtc';
 import { $player } from './player';
-import { newGame, Player } from '../api/game';
+import { Game, newGame, Player, PlayerTurn } from '../api/game';
 
 sample({
     clock: initGame,
@@ -64,6 +70,32 @@ export const joinGameFx = attach({
             });
 
             console.log('message sent ');
+        }
+    ),
+});
+
+// storyteller selected all necessary cards, moving to next stage
+sample({
+    source: { $game, $player },
+    filter: ({ $game, $player }) => {
+        const turn = $game?.turns?.[$game?.turns?.length - 1];
+        if (turn?.status !== 'stSeeCards') return false;
+        const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
+        return (
+            playerTurn.role === 'storyteller' &&
+            playerTurn?.selectedCards?.length === 3
+        );
+    },
+    target: createEffect(
+        ({
+            $game,
+            $player,
+        }: {
+            $game: Game | null;
+            $player: Player | null;
+        }) => {
+            if (!$game || !$player) return;
+            setGameTurnStatus('stWriteStory');
         }
     ),
 });

@@ -18,7 +18,12 @@ export const GameCards: React.FC<GameCardsProps> = ({
     limit,
 }) => {
     return (
-        <div className="gamecards">
+        <div
+            className="gamecards"
+            style={{
+                gridTemplateRows: `repeat(${Math.ceil(indexes.length / 3)}, 1fr)`,
+            }}
+        >
             {indexes.map((k, i) => (
                 <GameCard
                     index={k}

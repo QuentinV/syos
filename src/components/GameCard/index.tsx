@@ -17,7 +17,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 }) => {
     return (
         <div
-            className={`gamecard ${!visible ? 'backcard' : ''} ${onSelect && !selected ? 'selectable' : ''}`}
+            className={`gamecard${!visible ? ' backcard' : ''}${onSelect && !selected ? ' selectable' : ''}${selected ? ' selected' : ''}`}
             onClick={() => !visible && onSelect?.(index)}
         >
             <Image
