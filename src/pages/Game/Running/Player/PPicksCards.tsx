@@ -1,5 +1,5 @@
 import React from 'react';
 
-export const Gremlin: React.FC = () => {
+export const PPicksCards: React.FC = () => {
     return <></>;
 };

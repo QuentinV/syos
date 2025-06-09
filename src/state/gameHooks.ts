@@ -1,12 +1,23 @@
 import { useUnit } from 'effector-react';
 import { $game } from './game';
 import { $player } from './player';
-import { GameTurn, PlayerTurn } from '../api/game';
+import { GameTurn, Player, PlayerTurn } from '../api/game';
 
 export const usePlayerTurn = (): PlayerTurn | undefined => {
     const turn = useTurn();
     const player = useUnit($player);
     return turn?.players?.[player?.id ?? ''];
+};
+
+export const useStorytellerTurn = (): PlayerTurn | undefined => {
+    const turn = useTurn();
+    return turn?.players
+        ? turn.players[
+              Object.keys(turn.players).find(
+                  (key) => turn.players[key].role === 'storyteller'
+              ) ?? ''
+          ]
+        : undefined;
 };
 
 export const useTurn = (): GameTurn | undefined => {
@@ -21,5 +32,25 @@ export const usePreviousTurn = (): GameTurn | undefined => {
 
 export const usePreviousStory = (): string | undefined => {
     const turn = usePreviousTurn();
-    return '';
+    if (!turn) return;
+    return turn.players[
+        Object.keys(turn.players).find(
+            (k) => turn.players[k].role === 'storyteller'
+        ) ?? ''
+    ].story;
+};
+
+export interface ExtendedPlayerTurn extends PlayerTurn {
+    player?: Player;
+}
+
+export const usePlayersTurn = (): ExtendedPlayerTurn[] => {
+    const game = useUnit($game);
+    const turn = useTurn();
+    return !turn
+        ? []
+        : Object.keys(turn.players).map((k) => ({
+              ...turn.players[k],
+              player: game?.players?.[turn.players[k]?.playerId],
+          }));
 };

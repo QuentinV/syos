@@ -1,22 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useUnit } from 'effector-react';
-import { $gameTurnStatus, setDisplayedCards } from '../../../../state/game';
+import { setDisplayedCards } from '../../../../state/game';
 import cardsMapping from '../../../../cards_mapping.json';
 import { $player } from '../../../../state/player';
 import { usePlayerTurn, useTurn } from '../../../../state/gameHooks';
 import { StPicksCards } from './StPicksCards';
 import { StWriteStory } from './StWriteStory';
-
-const getRandomCards = (cards: number[], limit: number) => {
-    const result = [];
-    for (let i = 0; i < limit; ++i) {
-        result.push(cards[Math.floor(Math.random() * cards.length)]);
-    }
-    return result;
-};
+import { PlayersStatus } from './PlayersStatus';
+import { getRandomCards } from '../../../../utils/getRandomCards';
 
 export const Storyteller: React.FC = () => {
-    const gameTurnStatus = useUnit($gameTurnStatus);
     const player = useUnit($player);
     const turn = useTurn();
     const playerTurn = usePlayerTurn();
@@ -40,13 +33,10 @@ export const Storyteller: React.FC = () => {
                 return <StPicksCards />;
             case 'stWriteStory':
                 return <StWriteStory />;
+            case 'pSeeCards':
+                return <PlayersStatus />;
         }
     };
 
-    return (
-        <>
-            <div>STATUS: {gameTurnStatus}</div>
-            {renderContent()}
-        </>
-    );
+    return <>{renderContent()}</>;
 };

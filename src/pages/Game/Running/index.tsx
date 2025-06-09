@@ -8,7 +8,7 @@ import {
 } from '../../../state/game';
 import { $player } from '../../../state/player';
 import { Storyteller } from './Storyteller';
-import { Gremlin } from './Gremlin';
+import { Player } from './Player';
 import { usePlayerTurn } from '../../../state/gameHooks';
 
 export const Running: React.FC = () => {
@@ -32,11 +32,7 @@ export const Running: React.FC = () => {
     if (!game || !player || !playerTurn) return null;
 
     const renderGameMode = () => {
-        return playerTurn.role === 'storyteller' ? (
-            <Storyteller />
-        ) : (
-            <Gremlin />
-        );
+        return playerTurn.role === 'storyteller' ? <Storyteller /> : <Player />;
     };
 
     return (
