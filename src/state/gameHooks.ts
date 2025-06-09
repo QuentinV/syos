@@ -2,6 +2,7 @@ import { useUnit } from 'effector-react';
 import { $game } from './game';
 import { $player } from './player';
 import { GameTurn, Player, PlayerTurn } from '../api/game';
+import { ExtendedPlayerTurn } from './types';
 
 export const usePlayerTurn = (): PlayerTurn | undefined => {
     const turn = useTurn();

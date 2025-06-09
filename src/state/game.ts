@@ -32,6 +32,7 @@ export const selectCard = createEvent<{
     playerId: string;
     cardIndex: number;
 }>();
+export const resetSelectedCardsTime = createEvent<{ playerId: string }>();
 export const setGameTurnStatus = createEvent<GameTurnStatus>();
 export const writeStory = createEvent<{ playerId: string; story: string }>();
 
@@ -95,6 +96,7 @@ $game
     .on(setDisplayedCards, (game, state) =>
         updatePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.displayedCards = state.cardIndexes;
+            playerTurn.displayedCardsTime = new Date();
         })
     )
     .on(selectCard, (game, state) =>
@@ -117,6 +119,11 @@ $game
     .on(writeStory, (game, state) =>
         updatePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.story = state.story;
+        })
+    )
+    .on(resetSelectedCardsTime, (game, state) =>
+        updatePlayerTurn(game, state.playerId, (playerTurn) => {
+            playerTurn.selectedCardsTime = new Date();
         })
     );
 

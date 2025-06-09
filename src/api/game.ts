@@ -24,8 +24,9 @@ export interface GameTurn {
 export type GameTurnStatus =
     | 'stPicksCards'
     | 'stWriteStory'
-    | 'pSeeCards'
-    | 'pPicksCards';
+    | 'pEstimate'
+    | 'pPicksCards'
+    | 'turnEnded';
 
 export interface PlayerTurn {
     playerId: string;
@@ -34,6 +35,8 @@ export interface PlayerTurn {
     selectedCards?: number[];
     displayedCards?: number[];
     score: number;
+    displayedCardsTime?: Date;
+    selectedCardsTime?: Date;
 }
 
 export const listGames = () => getAll({ storeName: 'games' });

@@ -48,7 +48,7 @@ export const Player: React.FC = () => {
             case 'stPicksCards':
             case 'stWriteStory':
                 return <div>Waiting for storyteller to write their story</div>;
-            case 'pSeeCards':
+            case 'pPicksCards':
                 return <PPicksCards />;
         }
     };
