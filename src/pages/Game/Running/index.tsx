@@ -10,6 +10,7 @@ import { $player } from '../../../state/player';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
 import { usePlayerTurn } from '../../../state/gameHooks';
+import { PlayersBoard } from '../../../components/PlayersBoard';
 
 export const Running: React.FC = () => {
     const game = useUnit($game);
@@ -40,12 +41,13 @@ export const Running: React.FC = () => {
             <h2 className="text-center">Shape your own stories</h2>
             <div>Game turn status: {gameTurnStatus ?? 'no status'}</div>
             <div className="flex col-12">
-                <div className="col-3"></div>
-                <div className="col-6">Turns: {game.turns.length} / 10</div>
-                <div className="col-3"></div>
-            </div>
-            <div className="flex flex-column align-items-center">
-                {renderGameMode()}
+                <div className="col-2"></div>
+                <div className="col-2">
+                    <div className="mb-3">Turns: {game.turns.length} / 10</div>
+                    <PlayersBoard />
+                </div>
+                <div className="col-6">{renderGameMode()}</div>
+                <div className="col-2"></div>
             </div>
         </>
     );
