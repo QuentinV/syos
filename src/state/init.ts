@@ -3,9 +3,10 @@ import {
     $game,
     initGame,
     loadGameFromStorageFx,
-    resetSelectedCardsTime,
     setGameTurnStatus,
     setPeerId,
+    TIMEOUT_SELECT_CARDS,
+    updatePlayerTurn,
 } from './game';
 import { connectToPeer, initPeerConnection, sendMessage } from '../api/rtc';
 import { $player } from './player';
@@ -116,7 +117,27 @@ const workflows: FlowTransition[] = [
         filter: ({ playerTurn }) =>
             playerTurn?.role === 'gremlin' &&
             playerTurn?.selectedCards?.length === 3,
-        logic: ({ player }) => resetSelectedCardsTime({ playerId: player.id }),
+        logic: ({ game, player }) => {
+            const previousScore =
+                game.turns[game.turns.length - 2]?.players?.[player.id]
+                    ?.score ?? 0;
+            const gameTurn = game.turns[game.turns.length - 1];
+            const playerTurn = gameTurn.players[player.id];
+            const selectedCardsTime = new Date();
+            const speed =
+                1 -
+                selectedCardsTime.getTime() /
+                    ((playerTurn.displayedCardsTime?.getTime() ?? 0) +
+                        (gameTurn.timeoutPlayerSelectCards ?? 0));
+            updatePlayerTurn({
+                playerId: player.id,
+                selectedCardsTime,
+                score:
+                    previousScore +
+                    (playerTurn.selectedCards?.length === 3 ? 50 : 0) +
+                    speed * 50,
+            });
+        },
         next: 'turnEnded',
     },
 ];

@@ -19,6 +19,7 @@ export interface Player {
 export interface GameTurn {
     status: GameTurnStatus;
     players: { [playerId: string]: PlayerTurn };
+    timeoutPlayerSelectCards?: number;
 }
 
 export type GameTurnStatus =
@@ -30,11 +31,11 @@ export type GameTurnStatus =
 
 export interface PlayerTurn {
     playerId: string;
-    role: 'storyteller' | 'gremlin';
+    role?: 'storyteller' | 'gremlin';
     story?: string;
     selectedCards?: number[];
     displayedCards?: number[];
-    score: number;
+    score?: number;
     displayedCardsTime?: Date;
     selectedCardsTime?: Date;
 }

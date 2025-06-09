@@ -32,9 +32,8 @@ export const selectCard = createEvent<{
     playerId: string;
     cardIndex: number;
 }>();
-export const resetSelectedCardsTime = createEvent<{ playerId: string }>();
 export const setGameTurnStatus = createEvent<GameTurnStatus>();
-export const writeStory = createEvent<{ playerId: string; story: string }>();
+export const updatePlayerTurn = createEvent<PlayerTurn>();
 
 export const loadGameFromStorageFx = createEffect(
     async ({ id }: { id: string }) => {
@@ -43,7 +42,7 @@ export const loadGameFromStorageFx = createEffect(
     }
 );
 
-const updatePlayerTurn = (
+const changePlayerTurn = (
     game: Game | null,
     playerId: string,
     update: (turn: PlayerTurn) => void
@@ -72,7 +71,11 @@ $game
                   ...game,
                   turns: [
                       ...game.turns,
-                      { status: 'stPicksCards', players: {} },
+                      {
+                          status: 'stPicksCards',
+                          players: {},
+                          timeoutPlayerSelectCards: 10000,
+                      },
                   ],
               }
             : null
@@ -94,13 +97,13 @@ $game
         return { ...game };
     })
     .on(setDisplayedCards, (game, state) =>
-        updatePlayerTurn(game, state.playerId, (playerTurn) => {
+        changePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.displayedCards = state.cardIndexes;
             playerTurn.displayedCardsTime = new Date();
         })
     )
     .on(selectCard, (game, state) =>
-        updatePlayerTurn(game, state.playerId, (playerTurn) => {
+        changePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.selectedCards = [
                 ...new Set([
                     ...(playerTurn.selectedCards ?? []),
@@ -116,16 +119,17 @@ $game
         turn.status = status;
         return { ...game };
     })
-    .on(writeStory, (game, state) =>
-        updatePlayerTurn(game, state.playerId, (playerTurn) => {
-            playerTurn.story = state.story;
-        })
-    )
-    .on(resetSelectedCardsTime, (game, state) =>
-        updatePlayerTurn(game, state.playerId, (playerTurn) => {
-            playerTurn.selectedCardsTime = new Date();
-        })
-    );
+    .on(updatePlayerTurn, (game, state) => {
+        if (!game) return null;
+        const playerTurn =
+            game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
+        if (!playerTurn) return game;
+        game.turns[game.turns.length - 1].players[state.playerId] = {
+            ...playerTurn,
+            ...state,
+        };
+        return { ...game };
+    });
 
 $gameTurnStatus.on(
     $game.updates,

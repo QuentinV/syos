@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { usePlayerTurn, usePreviousStory } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
 import { Countdown } from '../../../../components/Countdown';
-import { writeStory } from '../../../../state/game';
+import { updatePlayerTurn } from '../../../../state/game';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../../state/player';
 import { FloatLabel } from 'primereact/floatlabel';
@@ -18,7 +18,7 @@ export const StWriteStory: React.FC = () => {
     if (!player || !playerTurn) return null;
 
     const onStoryWritten = () =>
-        writeStory({
+        updatePlayerTurn({
             playerId: player.id,
             story:
                 storyValue ||
