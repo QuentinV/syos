@@ -1,9 +1,8 @@
 import React from 'react';
-import { useUnit } from 'effector-react';
-import { $game } from '../../../state/game';
+import { useGame } from '../../../state/game';
 
 export const End: React.FC = () => {
-    const game = useUnit($game);
+    const game = useGame();
 
     if (!game) return null;
 

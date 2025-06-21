@@ -1,6 +1,11 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { $game, startGame, togglePlayerReady } from '../../../state/game';
+import {
+    startGame,
+    togglePlayerReady,
+    useGame,
+    usePeerId,
+} from '../../../state/game';
 import { $player } from '../../../state/player';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from 'primereact/button';
@@ -9,10 +14,11 @@ const getJoinUrl = (gameId: string, peerId: string) =>
     `http://localhost:3000/syos#/game/${gameId}/join/${peerId}`;
 
 export const Lobby: React.FC = () => {
-    const game = useUnit($game);
+    const game = useGame();
     const player = useUnit($player);
+    const peerId = usePeerId();
 
-    if (!game) return null;
+    if (!game || !peerId) return null;
 
     return (
         <>
@@ -20,21 +26,22 @@ export const Lobby: React.FC = () => {
             <div className="text-center">
                 You are {player?.name} with id : {player?.id}
             </div>
-            {game?.peerId && (
+            {peerId && (
                 <div className="text-center m-5">
                     <div>Players can join with QRCode or url</div>
                     <div className="m-2">
                         <QRCodeSVG
-                            value={getJoinUrl(game.id, game.peerId)}
+                            value={getJoinUrl(game.id, peerId)}
                             bgColor="var(--surface-ground)"
                             fgColor="var(--primary-color)"
                             title="Connect to game QRCode"
+                            className="cursor-pointer"
+                            onClick={() =>
+                                navigator.clipboard.writeText(
+                                    getJoinUrl(game.id, peerId)
+                                )
+                            }
                         />
-                    </div>
-                    <div>
-                        <a href={getJoinUrl(game.id, game.peerId)}>
-                            {getJoinUrl(game.id, game.peerId)}
-                        </a>
                     </div>
                 </div>
             )}

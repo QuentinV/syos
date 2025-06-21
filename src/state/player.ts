@@ -1,5 +1,5 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
-import { Player } from '../api/game';
+import { Player } from './types';
 import { v4 as uuid } from 'uuid';
 
 export const $player = createStore<Player | null>(null);

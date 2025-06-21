@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { usePlayerTurn, useStorytellerTurn } from '../../../../state/gameHooks';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../../state/player';
-import { selectCard } from '../../../../state/game';
+import { selectCard, updatePlayerTurn } from '../../../../state/game';
 import { GameCards } from '../../../../components/GameCards';
 
 export const PPicksCards: React.FC = () => {
@@ -24,6 +24,12 @@ export const PPicksCards: React.FC = () => {
     const onSelectCard = (index: number) => {
         console.log('select card', index);
         selectCard({ cardIndex: index, playerId: player!.id });
+        if (playerTurn.selectedCards?.length === 3) {
+            updatePlayerTurn({
+                playerId: player!.id,
+                selectedCardsTime: new Date(),
+            });
+        }
     };
 
     return (

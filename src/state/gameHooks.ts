@@ -1,8 +1,12 @@
 import { useUnit } from 'effector-react';
-import { $game } from './game';
+import { $game, useGame } from './game';
 import { $player } from './player';
-import { GameTurn, Player, PlayerTurn } from '../api/game';
-import { ExtendedPlayerTurn } from './types';
+import { GameTurn, Player, PlayerTurn } from './types';
+
+export const useGameTurnStatus = () => {
+    const game = useGame();
+    return game?.turns?.[game?.turns?.length - 1]?.status ?? null;
+};
 
 export const usePlayerTurn = (): PlayerTurn | undefined => {
     const turn = useTurn();

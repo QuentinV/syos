@@ -22,8 +22,8 @@ export const InboxPage = () => {
                                 size="small"
                                 severity="secondary"
                                 onClick={async () => {
-                                    const id = await newGameFx();
-                                    navigate(`/game/${id}`);
+                                    const game = await newGameFx();
+                                    navigate(`/game/${game.id}`);
                                 }}
                             />
                         </div>

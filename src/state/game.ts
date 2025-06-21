@@ -1,25 +1,21 @@
-import {
-    attach,
-    createEffect,
-    createEvent,
-    createStore,
-    sample,
-} from 'effector';
-import {
-    Game,
-    GameTurnStatus,
-    getGame,
-    Player,
-    PlayerTurn,
-    saveGame,
-} from '../api/game';
+import { createEvent } from 'effector';
+import { Game, GameTurnStatus, Player, PlayerTurn } from './types';
+import { createDSApi } from '../utils/dsApi';
 
-export const $game = createStore<Game | null>(null);
-export const $gameTurnStatus = createStore<GameTurnStatus | null>(null);
+export const {
+    store: gameDS,
+    joinFx,
+    $store: $game,
+    events: gameEvents,
+    useStore: useGame,
+    init: initGame,
+    usePeerId,
+} = createDSApi<Game | null>({
+    dbStoreName: 'games',
+    defaultValue: null,
+});
 
-export const initGame = createEvent<string>();
 export const updateGame = createEvent<Game>();
-export const setPeerId = createEvent<string>();
 export const togglePlayerReady = createEvent<string>();
 export const startGame = createEvent<void>();
 export const newTurn = createEvent<void>();
@@ -35,13 +31,6 @@ export const selectCard = createEvent<{
 export const setGameTurnStatus = createEvent<GameTurnStatus>();
 export const updatePlayerTurn = createEvent<PlayerTurn>();
 
-export const loadGameFromStorageFx = createEffect(
-    async ({ id }: { id: string }) => {
-        const game = await getGame(id);
-        return game ?? null;
-    }
-);
-
 const changePlayerTurn = (
     game: Game | null,
     playerId: string,
@@ -55,17 +44,17 @@ const changePlayerTurn = (
     return { ...game };
 };
 
-$game
-    .on(loadGameFromStorageFx.doneData, (_, state) => state)
-    .on(updateGame, (_, state) => ({ ...state }))
-    .on(setPeerId, (game, peerId) => (game ? { ...game, peerId } : null))
-    .on(togglePlayerReady, (game, playerId) => {
+gameDS
+    .on('updateGame', updateGame, (_, state) => ({ ...state }))
+    .on('togglePlayerReady', togglePlayerReady, (game, playerId) => {
         if (!game) return null;
         game.players[playerId].ready = !game.players[playerId].ready;
         return { ...game };
     })
-    .on(startGame, (game) => (game ? { ...game, status: 'running' } : null))
-    .on(newTurn, (game) =>
+    .on('startGame', startGame, (game) =>
+        game ? { ...game, status: 'running' } : null
+    )
+    .on('newTurn', newTurn, (game) =>
         game
             ? {
                   ...game,
@@ -80,7 +69,7 @@ $game
               }
             : null
     )
-    .on(newPlayerTurn, (game, player) => {
+    .on('newPlayerTurn', newPlayerTurn, (game, player) => {
         if (!game) return null;
         if (game.turns[game.turns.length - 1]?.players?.[player.id])
             return game;
@@ -96,13 +85,13 @@ $game
         };
         return { ...game };
     })
-    .on(setDisplayedCards, (game, state) =>
+    .on('setDisplayedCards', setDisplayedCards, (game, state) =>
         changePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.displayedCards = state.cardIndexes;
             playerTurn.displayedCardsTime = new Date();
         })
     )
-    .on(selectCard, (game, state) =>
+    .on('selectCard', selectCard, (game, state) =>
         changePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.selectedCards = [
                 ...new Set([
@@ -112,14 +101,14 @@ $game
             ];
         })
     )
-    .on(setGameTurnStatus, (game, status) => {
+    .on('setGameTurnStatus', setGameTurnStatus, (game, status) => {
         if (!game) return null;
         const turn = game?.turns?.[game?.turns?.length - 1];
         if (!turn) return game;
         turn.status = status;
         return { ...game };
     })
-    .on(updatePlayerTurn, (game, state) => {
+    .on('updatePlayerTurn', updatePlayerTurn, (game, state) => {
         if (!game) return null;
         const playerTurn =
             game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
@@ -130,13 +119,3 @@ $game
         };
         return { ...game };
     });
-
-$gameTurnStatus.on(
-    $game.updates,
-    (_, game) => game?.turns?.[game?.turns?.length - 1]?.status ?? null
-);
-
-sample({
-    source: $game,
-    target: createEffect(saveGame),
-});

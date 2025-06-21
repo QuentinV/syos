@@ -2,7 +2,7 @@ import { useUnit } from 'effector-react';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
 import { $player } from '../../state/player';
-import { joinGameFx } from '../../state/init';
+import { joinFx } from '../../state/game';
 
 export const JoinPage: React.FC = () => {
     const { gameId, peerId } = useParams();
@@ -12,7 +12,7 @@ export const JoinPage: React.FC = () => {
         if (!peerId || !gameId) {
             return;
         }
-        joinGameFx({ gameId, peerId });
+        joinFx({ objectId: gameId, peerId });
     }, [gameId, peerId]);
 
     return (

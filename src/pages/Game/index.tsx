@@ -1,15 +1,14 @@
 import '../../state/init';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
-import { $game, initGame } from '../../state/game';
-import { useUnit } from 'effector-react';
+import { initGame, useGame } from '../../state/game';
 import { Lobby } from './Lobby';
 import { End } from './End';
 import { Running } from './Running';
 
 export const GamePage = () => {
     const { id } = useParams();
-    const game = useUnit($game);
+    const game = useGame();
 
     useEffect(() => {
         initGame(id ?? '');

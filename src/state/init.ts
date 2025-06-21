@@ -1,84 +1,59 @@
-import { createEffect, sample, attach } from 'effector';
+import { createEffect, sample, attach, createEvent } from 'effector';
 import {
     $game,
-    initGame,
-    loadGameFromStorageFx,
+    gameDS,
+    joinFx,
     setGameTurnStatus,
-    setPeerId,
-    TIMEOUT_SELECT_CARDS,
+    updateGame,
     updatePlayerTurn,
 } from './game';
-import { connectToPeer, initPeerConnection, sendMessage } from '../api/rtc';
 import { $player } from './player';
-import {
-    Game,
-    GameTurn,
-    GameTurnStatus,
-    newGame,
-    Player,
-    PlayerTurn,
-} from '../api/game';
-
-sample({
-    clock: initGame,
-    fn: (id) => ({ id }),
-    target: createEffect(async ({ id }: { id: string }) => {
-        const game = await loadGameFromStorageFx({ id });
-
-        const peerGameData = await initPeerConnection({ gameId: id });
-        setPeerId(peerGameData.peerId);
-
-        console.log('game initialized');
-    }),
-});
+import { v4 as uuid } from 'uuid';
+import { Game, GameTurn, GameTurnStatus, Player, PlayerTurn } from './types';
 
 export const newGameFx = attach({
     source: { $player },
     effect: createEffect(({ $player }: { $player: Player | null }) => {
-        if (!$player) return;
-        return newGame({ player: $player });
+        const id = uuid();
+        const game: Game = {
+            id,
+            createdAt: new Date(),
+            status: 'lobby',
+            players: {},
+            turns: [],
+        };
+        if ($player) {
+            game.players = { [$player.id]: $player };
+        }
+        return game;
     }),
 });
 
-export const joinGameFx = attach({
-    source: { $player },
-    mapParams: (params: { gameId: string; peerId: string }, source) => ({
-        ...params,
-        ...source,
-    }),
-    effect: createEffect(
-        async ({
-            gameId,
-            peerId,
-            $player,
-        }: {
-            gameId: string;
-            peerId: string;
-            $player: Player | null;
-        }) => {
-            const game = await loadGameFromStorageFx({ id: gameId });
-            if (game) {
-                console.log('GAME ALREADY EXISTING');
-                return;
-            }
+sample({
+    source: newGameFx.doneData,
+    target: updateGame,
+});
 
-            console.log('joining game of peer ', gameId, peerId);
-            const peerGameData = await initPeerConnection({ gameId });
+const joined = createEvent<Player | null>();
+gameDS.on('joined', joined, (game, player: Player | null) => {
+    console.log('JOINED EVENT');
+    if (!game || !player) {
+        console.log('ERROR GAME NOT FOUND');
+        return;
+    }
+    game.players[player.id] = player;
+    return { ...game };
+});
 
-            const peerInfo = await connectToPeer(peerGameData, peerId);
-
-            await sendMessage({
-                gameId,
-                peerId,
-                message: {
-                    type: 'joinGame',
-                    data: {
-                        player: $player,
-                    },
-                },
-            });
-
-            console.log('message sent ');
+sample({
+    source: $player,
+    clock: joinFx.doneData,
+    fn: (player, gameId) => ({ gameId: gameId!, player }),
+    target: createEffect(
+        ({ gameId, player }: { gameId: string; player: Player | null }) => {
+            joined(player);
+            console.log('redirect to game');
+            location.href = `http://localhost:3000/syos#/game/${gameId}`;
         }
     ),
 });
@@ -92,7 +67,7 @@ interface FlowTransition {
         player: Player;
     }) => boolean;
     logic?: (context: { game: Game; player: Player }) => void;
-    next: GameTurnStatus;
+    next?: GameTurnStatus;
 }
 
 const workflows: FlowTransition[] = [
@@ -115,30 +90,28 @@ const workflows: FlowTransition[] = [
         // end of turn
         from: 'pPicksCards',
         filter: ({ playerTurn }) =>
-            playerTurn?.role === 'gremlin' &&
-            playerTurn?.selectedCards?.length === 3,
+            playerTurn?.role === 'gremlin' && !!playerTurn?.selectedCardsTime,
         logic: ({ game, player }) => {
             const previousScore =
                 game.turns[game.turns.length - 2]?.players?.[player.id]
                     ?.score ?? 0;
             const gameTurn = game.turns[game.turns.length - 1];
             const playerTurn = gameTurn.players[player.id];
-            const selectedCardsTime = new Date();
             const speed =
                 1 -
-                selectedCardsTime.getTime() /
+                (playerTurn.selectedCardsTime?.getTime() ?? 0) /
                     ((playerTurn.displayedCardsTime?.getTime() ?? 0) +
                         (gameTurn.timeoutPlayerSelectCards ?? 0));
             updatePlayerTurn({
                 playerId: player.id,
-                selectedCardsTime,
                 score:
                     previousScore +
                     (playerTurn.selectedCards?.length === 3 ? 50 : 0) +
                     speed * 50,
             });
         },
-        next: 'turnEnded',
+
+        // TODO allocate points to storyteller based on how many people found correctly and fast ?
     },
 ];
 
@@ -169,7 +142,7 @@ workflows.forEach((w) => {
             }) => {
                 if (!$game || !$player) return;
                 w.logic?.({ game: $game, player: $player });
-                setGameTurnStatus(w.next);
+                if (w.next) setGameTurnStatus(w.next);
             }
         ),
     });
