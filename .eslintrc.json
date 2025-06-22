@@ -4,9 +4,10 @@
         "es2021": true
     },
     "extends": [
-        "eslint:recommended", 
+        "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
-        "plugin:react/recommended"
+        "plugin:react/recommended",
+        "plugin:storybook/recommended"
     ],
     "parserOptions": {
         "ecmaVersion": "latest",
@@ -21,5 +22,9 @@
     },
     "root": true,
     "parser": "@typescript-eslint/parser",
-    "ignorePatterns": ["*.svg", "*.css", "*.js"]
+    "ignorePatterns": [
+        "*.svg",
+        "*.css",
+        "*.js"
+    ]
 }
