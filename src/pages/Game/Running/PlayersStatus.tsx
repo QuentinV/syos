@@ -33,7 +33,10 @@ export const PlayersStatus: React.FC = () => {
             <div>
                 {players.map((p, i) =>
                     p.playerId !== player.id ? (
-                        <div key={i} className="flex align-items-center gap-5">
+                        <div
+                            key={i}
+                            className="flex align-items-center gap-5 mt-3"
+                        >
                             <div className="flex align-items-center gap-2">
                                 <Avatar
                                     icon="pi pi-user"

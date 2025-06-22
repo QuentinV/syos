@@ -44,7 +44,10 @@ export const StWriteStory: React.FC = () => {
                 {!!previousStory && <div className="mt-2">{previousStory}</div>}
                 <div className="flex mt-6 align-items-center gap-3">
                     {playerTurn.story ? (
-                        playerTurn.story
+                        <>
+                            <i className="pi pi-pen-to-square bg-primary text-2xl p-1 border-round-xl" />{' '}
+                            {playerTurn.story}
+                        </>
                     ) : (
                         <>
                             <div>
