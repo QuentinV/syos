@@ -180,6 +180,7 @@ export const StorytellerPlayerPickCards: Story = {
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: 'this is my story',
         score: 10300,
+        speeds: { 456: 0.4 },
     },
 };
 
