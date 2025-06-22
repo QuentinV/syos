@@ -157,6 +157,19 @@ export const StorytellerWriteStory: Story = {
     },
 };
 
+export const PlayerEstimate: Story = {
+    args: {
+        id: '123',
+        status: 'running',
+        turnStatus: 'stWriteStory',
+        playerRole: PlayerRole.gremlin,
+        selectedCards: [7, 12, 13],
+        displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
+        story: '',
+        score: 10300,
+    },
+};
+
 export const StorytellerPlayerPickCards: Story = {
     args: {
         id: '123',
