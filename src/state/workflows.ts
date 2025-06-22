@@ -70,6 +70,7 @@ const workflows: FlowTransition[] = [
                     previousScore +
                     (playerTurn.selectedCards?.length === 3 ? 50 : 0) +
                     speed * 50,
+                speed,
             });
         },
         next: 'waitForPlayers',
@@ -97,6 +98,7 @@ const workflows: FlowTransition[] = [
             updatePlayerTurn({
                 playerId: player.id,
                 score: previousScore + 50 + speed * 50,
+                speed,
             });
         },
         next: 'turnEnded',

@@ -6,7 +6,7 @@ import { $player } from '../../../../state/player';
 import { usePlayerTurn, useTurn } from '../../../../state/gameHooks';
 import { StPicksCards } from './StPicksCards';
 import { StWriteStory } from './StWriteStory';
-import { PlayersStatus } from './PlayersStatus';
+import { PlayersStatus } from '../PlayersStatus';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 
 export const Storyteller: React.FC = () => {
@@ -32,12 +32,10 @@ export const Storyteller: React.FC = () => {
             case 'stPicksCards':
                 return <StPicksCards />;
             case 'stWriteStory':
-                return <StWriteStory />;
             case 'pEstimate':
-                return <>Players are estimating</>;
             case 'pPicksCards':
             case 'waitForPlayers':
-                return <PlayersStatus />;
+                return <StWriteStory />;
             case 'turnEnded':
                 return <>Turn ended, continue?</>;
         }

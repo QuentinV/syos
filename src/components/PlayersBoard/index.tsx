@@ -18,7 +18,7 @@ export const PlayersBoard: React.FC = () => {
                     </div>
                     <div>{p.score}</div>
                     {p.role === PlayerRole.storyteller && (
-                        <i className="pi pi-pen-to-square" />
+                        <i className="pi pi-circle-fill text-primary" />
                     )}
                 </div>
             ))}

@@ -19,6 +19,7 @@ interface GamePageWrapperProps extends GamePageProps {
     estimateSelectTime?: Date;
     displayedCardsTime?: Date;
     selectedCardsTime?: Date;
+    speeds?: { [key: string]: number };
 }
 
 const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
@@ -33,6 +34,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
     estimateSelectTime,
     displayedCardsTime,
     selectedCardsTime,
+    speeds,
 }) => {
     const scope = fork({
         values: [
@@ -53,6 +55,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                                     story,
                                     displayedCardsTime,
                                     selectedCardsTime,
+                                    speed: speeds?.['123'],
                                 },
                                 '456': {
                                     playerId: '456',
@@ -63,6 +66,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                                     score: 789,
                                     estimateSelectTime,
                                     displayedCards,
+                                    speed: speeds?.['456'],
                                 },
                             },
                         },
@@ -146,9 +150,9 @@ export const StorytellerWriteStory: Story = {
     args: {
         id: '123',
         status: 'running',
-        turnStatus: 'stPicksCards',
+        turnStatus: 'stWriteStory',
         playerRole: PlayerRole.storyteller,
-        selectedCards: [],
+        selectedCards: [7, 12, 13],
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: '',
         score: 10300,
@@ -162,15 +166,16 @@ export const PlayerPickCards: Story = {
     args: {
         id: '123',
         status: 'running',
-        turnStatus: 'stPicksCards',
+        turnStatus: 'pPicksCards',
         playerRole: PlayerRole.storyteller,
-        selectedCards: [],
+        selectedCards: [7, 12, 13],
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-        story: '',
+        story: 'this is my story',
         score: 10300,
         estimateSelectTime: undefined,
         displayedCardsTime: undefined,
         selectedCardsTime: undefined,
+        speeds: { 456: 0.6 },
     },
 };
 
@@ -178,9 +183,9 @@ export const waitForPlayers: Story = {
     args: {
         id: '123',
         status: 'running',
-        turnStatus: 'stPicksCards',
+        turnStatus: 'waitForPlayers',
         playerRole: PlayerRole.storyteller,
-        selectedCards: [],
+        selectedCards: [7, 12, 13],
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: '',
         score: 10300,
@@ -194,7 +199,7 @@ export const TurnEnded: Story = {
     args: {
         id: '123',
         status: 'running',
-        turnStatus: 'stPicksCards',
+        turnStatus: 'turnEnded',
         playerRole: PlayerRole.storyteller,
         selectedCards: [],
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],

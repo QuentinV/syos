@@ -46,4 +46,5 @@ export interface PlayerTurn {
     estimateVisibleCards?: number;
     displayedCardsTime?: Date;
     selectedCardsTime?: Date;
+    speed?: number;
 }
