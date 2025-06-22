@@ -38,6 +38,10 @@ export const selectCard = createEvent<{
 }>();
 export const setGameTurnStatus = createEvent<GameTurnStatus>();
 export const updatePlayerTurn = createEvent<PlayerTurn>();
+export const setTimeEstimate = createEvent<{
+    playerId: string;
+    estimate: number;
+}>();
 
 const changePlayerTurn = (
     game: Game | null,
@@ -100,6 +104,11 @@ gameDS
                     state.cardIndex,
                 ]),
             ];
+        })
+    )
+    .on('setTimeEstimate', setTimeEstimate, (game, state) =>
+        changePlayerTurn(game, state.playerId, (playerTurn) => {
+            playerTurn.estimateVisibleCards = state.estimate;
         })
     )
     .on('setGameTurnStatus', setGameTurnStatus, (game, status) => {

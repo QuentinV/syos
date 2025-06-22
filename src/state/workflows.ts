@@ -43,7 +43,7 @@ const workflows: FlowTransition[] = [
         filter: ({ playerTurn, turn }) =>
             playerTurn?.role === PlayerRole.storyteller &&
             Object.keys(turn?.players ?? {}).every(
-                (pk) => !!turn?.players?.[pk]?.estimateSelectTime
+                (pk) => !!turn?.players?.[pk]?.estimateVisibleCards
             ),
         next: 'pPicksCards',
     },

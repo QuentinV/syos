@@ -10,6 +10,8 @@ import { $player } from '../../../../state/player';
 import { PPicksCards } from './PPicksCards';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 import { setDisplayedCards } from '../../../../state/game';
+import { GameCard } from '../../../../components/GameCard';
+import { PEstimate } from './PEstimate';
 
 export const Player: React.FC = () => {
     const player = useUnit($player);
@@ -47,9 +49,8 @@ export const Player: React.FC = () => {
         switch (turn.status) {
             case 'stPicksCards':
             case 'stWriteStory':
-                return <div>Waiting for storyteller to write their story</div>;
             case 'pEstimate':
-                return <>You need to estimate</>;
+                return <PEstimate />;
             case 'pPicksCards':
                 return <PPicksCards />;
             case 'waitForPlayers':

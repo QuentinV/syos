@@ -158,22 +158,6 @@ export const StorytellerWriteStory: Story = {
     },
 };
 
-export const PlayerEstimate: Story = {
-    args: {
-        id: '123',
-        status: 'running',
-        turnStatus: 'stPicksCards',
-        playerRole: PlayerRole.storyteller,
-        selectedCards: [],
-        displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-        story: '',
-        score: 10300,
-        estimateSelectTime: undefined,
-        displayedCardsTime: undefined,
-        selectedCardsTime: undefined,
-    },
-};
-
 export const PlayerPickCards: Story = {
     args: {
         id: '123',

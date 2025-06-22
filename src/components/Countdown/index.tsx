@@ -14,11 +14,13 @@ export const Countdown: React.FC<CountdownProps> = ({
     onComplete,
 }) => {
     const [value, setValue] = useState<number>(limit);
+    const [complete, setComplete] = useState<boolean>(false);
 
     useEffect(() => {
         if (value > 0) {
             setTimeout(() => setValue(value - 1), 1000);
-        } else {
+        } else if (!complete) {
+            setComplete(true);
             onComplete?.();
         }
     }, [value]);

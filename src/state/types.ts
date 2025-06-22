@@ -43,7 +43,7 @@ export interface PlayerTurn {
     selectedCards?: number[];
     displayedCards?: number[];
     score?: number;
-    estimateSelectTime?: Date;
+    estimateVisibleCards?: number;
     displayedCardsTime?: Date;
     selectedCardsTime?: Date;
 }
