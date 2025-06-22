@@ -9,6 +9,7 @@ interface GameCardsProps {
     selected?: number[];
     limit?: number;
     size?: 'sm' | 'md';
+    valids?: number[];
 }
 
 export const GameCards: React.FC<GameCardsProps> = ({
@@ -18,6 +19,7 @@ export const GameCards: React.FC<GameCardsProps> = ({
     selected,
     limit,
     size = 'md',
+    valids,
 }) => {
     return (
         <div
@@ -38,6 +40,7 @@ export const GameCards: React.FC<GameCardsProps> = ({
                             : undefined
                     }
                     selected={selected?.includes(k)}
+                    valid={valids?.includes(k)}
                 />
             ))}
         </div>

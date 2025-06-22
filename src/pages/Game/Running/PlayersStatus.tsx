@@ -1,5 +1,5 @@
 import React from 'react';
-import { usePlayersTurn, useTurn } from '../../../state/gameHooks';
+import { usePlayersTurn, useValidCards } from '../../../state/gameHooks';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../state/player';
 import { Avatar } from 'primereact/avatar';
@@ -8,6 +8,7 @@ import { GameCards } from '../../../components/GameCards';
 export const PlayersStatus: React.FC = () => {
     const players = usePlayersTurn();
     const player = useUnit($player);
+    const validCards = useValidCards();
 
     if (!player || !players?.length) return null;
 
@@ -53,6 +54,7 @@ export const PlayersStatus: React.FC = () => {
                                     indexes={p.selectedCards ?? []}
                                     size="sm"
                                     visible
+                                    valids={validCards}
                                 />
                             </div>
                             <div>{renderSpeed(p.speed)}</div>

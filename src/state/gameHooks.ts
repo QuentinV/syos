@@ -1,7 +1,7 @@
 import { useUnit } from 'effector-react';
 import { $game, useGame } from './game';
 import { $player } from './player';
-import { GameTurn, Player, PlayerTurn } from './types';
+import { GameTurn, Player, PlayerRole, PlayerTurn } from './types';
 
 export const useGameTurnStatus = () => {
     const game = useGame();
@@ -58,4 +58,10 @@ export const usePlayersTurn = (): ExtendedPlayerTurn[] => {
               ...turn.players[k],
               player: game?.players?.[turn.players[k]?.playerId],
           }));
+};
+
+export const useValidCards = (): number[] => {
+    const players = usePlayersTurn();
+    const storyteller = players.find((p) => p.role === PlayerRole.storyteller);
+    return storyteller?.selectedCards ?? [];
 };

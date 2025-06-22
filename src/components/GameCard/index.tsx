@@ -8,6 +8,7 @@ interface GameCardProps {
     onSelect?: (index: number) => void;
     selected?: boolean;
     size?: 'sm' | 'md';
+    valid?: boolean;
 }
 
 export const GameCard: React.FC<GameCardProps> = ({
@@ -16,13 +17,14 @@ export const GameCard: React.FC<GameCardProps> = ({
     onSelect,
     selected,
     size = 'md',
+    valid,
 }) => {
     const width = size === 'md' ? 120 : 60;
     const height = size === 'md' ? 160 : 80;
 
     return (
         <div
-            className={`gamecard${!visible ? ' backcard' : ''}${onSelect && !selected ? ' selectable' : ''}${selected ? ' selected' : ''} ${size}`}
+            className={`gamecard${!visible ? ' backcard' : ''}${onSelect && !selected ? ' selectable' : ''}${selected ? ` selected ${valid === true ? 'valid' : valid === false ? 'invalid' : ''}` : ''} ${size}`}
             onClick={() => !visible && onSelect?.(index)}
         >
             <Image

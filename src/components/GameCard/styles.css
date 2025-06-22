@@ -15,6 +15,14 @@
     padding: 3px;
 }
 
+.gamecard.invalid {
+    border-color: red;
+}
+
+.gamecard.valid {
+    border-color: green;
+}
+
 .gamecard.selectable:hover {
     border-style: solid;
     cursor: pointer;
