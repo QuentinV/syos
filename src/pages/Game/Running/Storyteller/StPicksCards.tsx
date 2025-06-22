@@ -4,24 +4,16 @@ import { GameCards } from '../../../../components/GameCards';
 import { selectCard } from '../../../../state/game';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../../state/player';
+import { Countdown } from '../../../../components/Countdown';
 
 export const StPicksCards: React.FC = () => {
     const playerTurn = usePlayerTurn();
     const [cardsVisible, setCardsVisible] = useState<boolean>(true);
     const player = useUnit($player);
 
-    useEffect(() => {
-        if (playerTurn?.displayedCards?.length) {
-            setTimeout(() => {
-                setCardsVisible(false);
-            }, 2000);
-        }
-    }, [playerTurn?.displayedCards]);
-
     if (!player || !playerTurn) return null;
 
     const onSelectCard = (index: number) => {
-        console.log('select card', index);
         selectCard({ cardIndex: index, playerId: player!.id });
     };
 
@@ -29,9 +21,25 @@ export const StPicksCards: React.FC = () => {
         <>
             {playerTurn.displayedCards?.length && (
                 <div>
-                    <div>
-                        Selected: {playerTurn?.selectedCards?.length ?? 0} / 3
+                    <div className="flex align-items-center gap-5 mb-3">
+                        <div>
+                            Selected: {playerTurn?.selectedCards?.length ?? 0} /
+                            3
+                        </div>
+                        {cardsVisible ? (
+                            <>
+                                <div>Memorize cards before count is down</div>
+                                <Countdown
+                                    limit={10}
+                                    onComplete={() => setCardsVisible(false)}
+                                    style="bar"
+                                />
+                            </>
+                        ) : (
+                            <div>Pick 3 cards!</div>
+                        )}
                     </div>
+
                     <GameCards
                         indexes={playerTurn.displayedCards}
                         visible={cardsVisible}

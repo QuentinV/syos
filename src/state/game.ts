@@ -1,10 +1,10 @@
 import { createEvent, sample } from 'effector';
 import {
     Game,
-    GamePlayersTurn,
     GameTurn,
     GameTurnStatus,
     Player,
+    PlayerRole,
     PlayerTurn,
 } from './types';
 import { createDSApi } from '../utils/dsApi';
@@ -12,6 +12,7 @@ import { createDSApi } from '../utils/dsApi';
 export const {
     store: gameDS,
     joinFx,
+    $peerId,
     $store: $game,
     events: gameEvents,
     useStore: useGame,
@@ -77,10 +78,10 @@ gameDS
         turn.players[player.id] = {
             playerId: player.id,
             role: Object.keys(turn.players).some(
-                (k) => turn.players[k].role === 'storyteller'
+                (k) => turn.players[k].role === PlayerRole.storyteller
             )
-                ? 'gremlin'
-                : 'storyteller', //FIXME
+                ? PlayerRole.gremlin
+                : PlayerRole.storyteller,
             score: 0,
         };
         return { ...game };

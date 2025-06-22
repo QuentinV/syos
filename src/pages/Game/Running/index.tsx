@@ -10,7 +10,6 @@ import { PlayersBoard } from '../../../components/PlayersBoard';
 export const Running: React.FC = () => {
     const game = useGame();
     const player = useUnit($player);
-    const gameTurnStatus = useGameTurnStatus();
     const playerTurn = usePlayerTurn();
 
     if (!game || !player || !playerTurn) return null;
@@ -22,7 +21,6 @@ export const Running: React.FC = () => {
     return (
         <>
             <h2 className="text-center">Shape your own stories</h2>
-            <div>Game turn status: {gameTurnStatus ?? 'no status'}</div>
             <div className="flex col-12">
                 <div className="col-2"></div>
                 <div className="col-2">

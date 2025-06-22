@@ -13,9 +13,18 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
+export const Knob: Story = {
     args: {
         limit: 10,
+        style: 'knob',
+        onComplete: () => console.log('complete'),
+    },
+};
+
+export const Bar: Story = {
+    args: {
+        limit: 10,
+        style: 'bar',
         onComplete: () => console.log('complete'),
     },
 };

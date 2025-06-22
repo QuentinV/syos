@@ -1,6 +1,13 @@
 import { createEffect, sample } from 'effector';
 import { setGameTurnStatus, updatePlayerTurn, $game } from './game';
-import { Game, GameTurn, GameTurnStatus, Player, PlayerTurn } from './types';
+import {
+    Game,
+    GameTurn,
+    GameTurnStatus,
+    Player,
+    PlayerRole,
+    PlayerTurn,
+} from './types';
 import { $player } from './player';
 
 interface FlowTransition {
@@ -20,7 +27,7 @@ const workflows: FlowTransition[] = [
         // storyteller selected all necessary cards, moving to next stage
         from: 'stPicksCards',
         filter: ({ playerTurn }) =>
-            playerTurn?.role === 'storyteller' &&
+            playerTurn?.role === PlayerRole.storyteller &&
             playerTurn?.selectedCards?.length === 3,
         next: 'stWriteStory',
     },
@@ -28,13 +35,13 @@ const workflows: FlowTransition[] = [
         // storyteller wrote story, moving to next stage
         from: 'stWriteStory',
         filter: ({ playerTurn }) =>
-            playerTurn?.role === 'storyteller' && !!playerTurn?.story,
+            playerTurn?.role === PlayerRole.storyteller && !!playerTurn?.story,
         next: 'pEstimate',
     },
     {
         from: 'pEstimate',
         filter: ({ playerTurn, turn }) =>
-            playerTurn?.role === 'storyteller' &&
+            playerTurn?.role === PlayerRole.storyteller &&
             Object.keys(turn?.players ?? {}).every(
                 (pk) => !!turn?.players?.[pk]?.estimateSelectTime
             ),
@@ -44,7 +51,8 @@ const workflows: FlowTransition[] = [
         // end of turn
         from: 'pPicksCards',
         filter: ({ playerTurn }) =>
-            playerTurn?.role === 'gremlin' && !!playerTurn?.selectedCardsTime,
+            playerTurn?.role === PlayerRole.gremlin &&
+            !!playerTurn?.selectedCardsTime,
         logic: ({ game, player }) => {
             const previousScore =
                 game.turns[game.turns.length - 2]?.players?.[player.id]

@@ -6,13 +6,21 @@ import { Lobby } from './Lobby';
 import { End } from './End';
 import { Running } from './Running';
 
-export const GamePage = () => {
-    const { id } = useParams();
+export interface GamePageProps {
+    id?: string;
+    init?: boolean;
+}
+
+export const GamePage: React.FC<GamePageProps> = ({ id, init = true }) => {
+    const { id: idParams } = useParams();
+    const i = id ?? idParams;
     const game = useGame();
 
     useEffect(() => {
-        initGame(id ?? '');
-    }, [id]);
+        if (init) {
+            initGame(i ?? '');
+        }
+    }, [i, init]);
 
     if (!game) return null;
 

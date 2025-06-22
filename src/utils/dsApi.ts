@@ -418,6 +418,7 @@ export function createDSApi<State extends StateWithId>({
         store: dsStore,
         init: initObject,
         $store,
+        $peerId,
         useStore: () => useUnit($store),
         usePeerId: () => useUnit($peerId),
         joinFx,

@@ -3,7 +3,7 @@ import './workflows';
 import { $game, gameDS, joinFx, newTurn, startGame, updateGame } from './game';
 import { $player } from './player';
 import { v4 as uuid } from 'uuid';
-import { Game, GamePlayersTurn, GameTurn, Player } from './types';
+import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
 export const newGameFx = attach({
     source: { $player },
@@ -42,7 +42,10 @@ export const newTurnFx = attach({
                     prev[pkey] = {
                         playerId: pkey,
                         score: 0,
-                        role: randomIndex === i ? 'storyteller' : 'gremlin',
+                        role:
+                            randomIndex === i
+                                ? PlayerRole.storyteller
+                                : PlayerRole.gremlin,
                     };
                     return prev;
                 }, {} as GamePlayersTurn),

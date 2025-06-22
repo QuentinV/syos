@@ -12,6 +12,7 @@
     "build-storybook": "storybook build"
   },
   "devDependencies": {
+    "@storybook/addon-docs": "^9.0.12",
     "@storybook/react-vite": "9.0.12",
     "@types/node": "^22.14.1",
     "@types/react": "^19.1.2",

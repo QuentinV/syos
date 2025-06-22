@@ -4,7 +4,7 @@ export interface Game {
     turns: GameTurn[];
     createdAt: Date;
     peerId?: string;
-    status: 'lobby' | 'running' | 'finished';
+    status: GameStatus;
 }
 
 export interface Player {
@@ -21,6 +21,8 @@ export interface GameTurn {
 
 export type GamePlayersTurn = { [playerId: string]: PlayerTurn };
 
+export type GameStatus = 'lobby' | 'running' | 'finished';
+
 export type GameTurnStatus =
     | 'stPicksCards'
     | 'stWriteStory'
@@ -29,9 +31,14 @@ export type GameTurnStatus =
     | 'waitForPlayers'
     | 'turnEnded';
 
+export enum PlayerRole {
+    storyteller = 'storyteller',
+    gremlin = 'gremlin',
+}
+
 export interface PlayerTurn {
     playerId: string;
-    role?: 'storyteller' | 'gremlin';
+    role?: PlayerRole;
     story?: string;
     selectedCards?: number[];
     displayedCards?: number[];
