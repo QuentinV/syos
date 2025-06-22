@@ -26,6 +26,7 @@ export type GameTurnStatus =
     | 'stWriteStory'
     | 'pEstimate'
     | 'pPicksCards'
+    | 'waitForPlayers'
     | 'turnEnded';
 
 export interface PlayerTurn {
@@ -35,6 +36,7 @@ export interface PlayerTurn {
     selectedCards?: number[];
     displayedCards?: number[];
     score?: number;
+    estimateSelectTime?: Date;
     displayedCardsTime?: Date;
     selectedCardsTime?: Date;
 }

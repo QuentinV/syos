@@ -33,8 +33,13 @@ export const Storyteller: React.FC = () => {
                 return <StPicksCards />;
             case 'stWriteStory':
                 return <StWriteStory />;
+            case 'pEstimate':
+                return <>Players are estimating</>;
             case 'pPicksCards':
+            case 'waitForPlayers':
                 return <PlayersStatus />;
+            case 'turnEnded':
+                return <>Turn ended, continue?</>;
         }
     };
 

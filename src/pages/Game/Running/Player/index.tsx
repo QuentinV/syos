@@ -48,8 +48,14 @@ export const Player: React.FC = () => {
             case 'stPicksCards':
             case 'stWriteStory':
                 return <div>Waiting for storyteller to write their story</div>;
+            case 'pEstimate':
+                return <>You need to estimate</>;
             case 'pPicksCards':
                 return <PPicksCards />;
+            case 'waitForPlayers':
+                return <>Waiting or everyone to finish</>;
+            case 'turnEnded':
+                return <>Wup wup turn has ended, here is the result</>;
         }
     };
 
