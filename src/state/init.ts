@@ -3,13 +3,22 @@ import {
     $game,
     gameDS,
     joinFx,
+    newTurn,
     setGameTurnStatus,
+    startGame,
     updateGame,
     updatePlayerTurn,
 } from './game';
 import { $player } from './player';
 import { v4 as uuid } from 'uuid';
-import { Game, GameTurn, GameTurnStatus, Player, PlayerTurn } from './types';
+import {
+    Game,
+    GamePlayersTurn,
+    GameTurn,
+    GameTurnStatus,
+    Player,
+    PlayerTurn,
+} from './types';
 
 export const newGameFx = attach({
     source: { $player },
@@ -29,9 +38,50 @@ export const newGameFx = attach({
     }),
 });
 
+export const newTurnFx = attach({
+    source: { player: $player, game: $game },
+    effect: createEffect(
+        ({
+            player,
+            game,
+        }: {
+            player: Player | null;
+            game: Game | null;
+        }): GameTurn | undefined => {
+            if (!player || !game) return;
+            const pkeys = Object.keys(game.players);
+            const randomIndex = Math.floor(Math.random() * pkeys.length);
+            const turn: GameTurn = {
+                status: 'stPicksCards',
+                players: Object.keys(game.players).reduce((prev, pkey, i) => {
+                    prev[pkey] = {
+                        playerId: pkey,
+                        score: 0,
+                        role: randomIndex === i ? 'storyteller' : 'gremlin',
+                    };
+                    return prev;
+                }, {} as GamePlayersTurn),
+                timeoutPlayerSelectCards: 10000,
+            };
+            console.log('New turn', turn);
+            return turn;
+        }
+    ),
+});
+
 sample({
     source: newGameFx.doneData,
     target: updateGame,
+});
+
+sample({
+    source: newTurnFx.doneData,
+    target: newTurn,
+});
+
+sample({
+    source: startGame,
+    target: newTurnFx,
 });
 
 const joined = createEvent<Player | null>();

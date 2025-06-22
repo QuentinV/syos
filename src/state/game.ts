@@ -1,5 +1,12 @@
-import { createEvent } from 'effector';
-import { Game, GameTurnStatus, Player, PlayerTurn } from './types';
+import { createEvent, sample } from 'effector';
+import {
+    Game,
+    GamePlayersTurn,
+    GameTurn,
+    GameTurnStatus,
+    Player,
+    PlayerTurn,
+} from './types';
 import { createDSApi } from '../utils/dsApi';
 
 export const {
@@ -18,7 +25,7 @@ export const {
 export const updateGame = createEvent<Game>();
 export const togglePlayerReady = createEvent<string>();
 export const startGame = createEvent<void>();
-export const newTurn = createEvent<void>();
+export const newTurn = createEvent<GameTurn | undefined>();
 export const newPlayerTurn = createEvent<Player>();
 export const setDisplayedCards = createEvent<{
     playerId: string;
@@ -54,20 +61,13 @@ gameDS
     .on('startGame', startGame, (game) =>
         game ? { ...game, status: 'running' } : null
     )
-    .on('newTurn', newTurn, (game) =>
-        game
+    .on('newTurn', newTurn, (game, turn) =>
+        game && turn
             ? {
                   ...game,
-                  turns: [
-                      ...game.turns,
-                      {
-                          status: 'stPicksCards',
-                          players: {},
-                          timeoutPlayerSelectCards: 10000,
-                      },
-                  ],
+                  turns: [...game.turns, turn],
               }
-            : null
+            : game
     )
     .on('newPlayerTurn', newPlayerTurn, (game, player) => {
         if (!game) return null;
@@ -80,7 +80,7 @@ gameDS
                 (k) => turn.players[k].role === 'storyteller'
             )
                 ? 'gremlin'
-                : 'storyteller',
+                : 'storyteller', //FIXME
             score: 0,
         };
         return { ...game };

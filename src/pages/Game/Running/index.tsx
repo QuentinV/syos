@@ -13,18 +13,6 @@ export const Running: React.FC = () => {
     const gameTurnStatus = useGameTurnStatus();
     const playerTurn = usePlayerTurn();
 
-    useEffect(() => {
-        if (!game?.turns.length) {
-            newTurn();
-        }
-    }, [game]);
-
-    useEffect(() => {
-        if (player && !playerTurn) {
-            newPlayerTurn(player);
-        }
-    }, [player, playerTurn]);
-
     if (!game || !player || !playerTurn) return null;
 
     const renderGameMode = () => {

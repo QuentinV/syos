@@ -15,9 +15,11 @@ export interface Player {
 
 export interface GameTurn {
     status: GameTurnStatus;
-    players: { [playerId: string]: PlayerTurn };
+    players: GamePlayersTurn;
     timeoutPlayerSelectCards?: number;
 }
+
+export type GamePlayersTurn = { [playerId: string]: PlayerTurn };
 
 export type GameTurnStatus =
     | 'stPicksCards'
