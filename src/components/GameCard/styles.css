@@ -1,9 +1,18 @@
 .gamecard {
-    width: 134px;
-    height: 174px;
     border: 2px var(--surface-200) dotted;
     border-radius: 10px;
+}
+
+.gamecard.md {
+    width: 134px;
+    height: 174px;
     padding: 5px;
+}
+
+.gamecard.sm {
+    width: 70px;
+    height: 90px;
+    padding: 3px;
 }
 
 .gamecard.selectable:hover {

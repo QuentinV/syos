@@ -8,6 +8,7 @@ interface GameCardsProps {
     onSelect?: (index: number) => void;
     selected?: number[];
     limit?: number;
+    size?: 'sm' | 'md';
 }
 
 export const GameCards: React.FC<GameCardsProps> = ({
@@ -16,6 +17,7 @@ export const GameCards: React.FC<GameCardsProps> = ({
     onSelect,
     selected,
     limit,
+    size = 'md',
 }) => {
     return (
         <div
@@ -28,6 +30,7 @@ export const GameCards: React.FC<GameCardsProps> = ({
                 <GameCard
                     index={k}
                     key={String(i)}
+                    size={size}
                     visible={visible || selected?.includes(k)}
                     onSelect={
                         !visible && (!limit || (selected?.length ?? 0) < limit)

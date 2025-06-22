@@ -21,7 +21,23 @@ export const Default: Story = {
 
 export const Selected: Story = {
     args: {
-        indexes: [1, 2, 3, 4],
+        indexes: [1, 2, 3],
+        selected: [1, 2, 3],
+    },
+};
+
+export const SelectedMoreRows: Story = {
+    args: {
+        indexes: [1, 2, 3, 4, 10],
         selected: [2, 4],
+        visible: true,
+    },
+};
+
+export const SelectedSmallSize: Story = {
+    args: {
+        indexes: [1, 2, 3],
+        selected: [1, 2, 3],
+        size: 'sm',
     },
 };

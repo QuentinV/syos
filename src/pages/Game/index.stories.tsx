@@ -65,6 +65,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                                             : PlayerRole.storyteller,
                                     score: 789,
                                     estimateSelectTime,
+                                    selectedCards,
                                     displayedCards,
                                     speed: speeds?.['456'],
                                 },

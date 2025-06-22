@@ -3,6 +3,7 @@ import { usePlayersTurn, useTurn } from '../../../state/gameHooks';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../state/player';
 import { Avatar } from 'primereact/avatar';
+import { GameCards } from '../../../components/GameCards';
 
 export const PlayersStatus: React.FC = () => {
     const players = usePlayersTurn();
@@ -46,8 +47,14 @@ export const PlayersStatus: React.FC = () => {
                                 />
                                 {p.player?.name ?? 'Anonymous'}
                             </div>
-                            <div>{p.displayedCards?.join(', ')}</div>
-                            <div>{p.selectedCards?.join(', ')}</div>
+                            <div>
+                                <GameCards
+                                    selected={p.selectedCards}
+                                    indexes={p.selectedCards ?? []}
+                                    size="sm"
+                                    visible
+                                />
+                            </div>
                             <div>{renderSpeed(p.speed)}</div>
                         </div>
                     ) : null
