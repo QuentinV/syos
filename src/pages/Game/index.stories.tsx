@@ -141,9 +141,6 @@ export const StorytellerPickCards: Story = {
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: '',
         score: 10300,
-        estimateSelectTime: undefined,
-        displayedCardsTime: undefined,
-        selectedCardsTime: undefined,
     },
 };
 
@@ -157,13 +154,10 @@ export const StorytellerWriteStory: Story = {
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: '',
         score: 10300,
-        estimateSelectTime: undefined,
-        displayedCardsTime: undefined,
-        selectedCardsTime: undefined,
     },
 };
 
-export const PlayerPickCards: Story = {
+export const StorytellerPlayerPickCards: Story = {
     args: {
         id: '123',
         status: 'running',
@@ -173,9 +167,31 @@ export const PlayerPickCards: Story = {
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: 'this is my story',
         score: 10300,
-        estimateSelectTime: undefined,
-        displayedCardsTime: undefined,
-        selectedCardsTime: undefined,
+    },
+};
+
+export const PlayerPickCards: Story = {
+    args: {
+        id: '123',
+        status: 'running',
+        turnStatus: 'pPicksCards',
+        playerRole: PlayerRole.gremlin,
+        displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
+        story: 'this is my story',
+        score: 10300,
+    },
+};
+
+export const PlayerCardsPicked: Story = {
+    args: {
+        id: '123',
+        status: 'running',
+        turnStatus: 'pPicksCards',
+        playerRole: PlayerRole.storyteller,
+        selectedCards: [7, 12, 13],
+        displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
+        story: 'this is my story',
+        score: 10300,
         speeds: { 456: 0.6 },
     },
 };
@@ -188,11 +204,9 @@ export const waitForPlayers: Story = {
         playerRole: PlayerRole.storyteller,
         selectedCards: [7, 12, 13],
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-        story: '',
+        story: 'this is my story',
         score: 10300,
-        estimateSelectTime: undefined,
-        displayedCardsTime: undefined,
-        selectedCardsTime: undefined,
+        speeds: { 456: 0.6 },
     },
 };
 
@@ -206,8 +220,5 @@ export const TurnEnded: Story = {
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
         story: '',
         score: 10300,
-        estimateSelectTime: undefined,
-        displayedCardsTime: undefined,
-        selectedCardsTime: undefined,
     },
 };
