@@ -1,6 +1,7 @@
 import React from 'react';
 import { usePlayersTurn } from '../../state/gameHooks';
 import './styles.css';
+import { PlayerRole } from '../../state/types';
 
 export const PlayersBoard: React.FC = () => {
     const playersTurns = usePlayersTurn();
@@ -16,6 +17,9 @@ export const PlayersBoard: React.FC = () => {
                         </div>
                     </div>
                     <div>{p.score}</div>
+                    {p.role === PlayerRole.storyteller && (
+                        <i className="pi pi-pen-to-square" />
+                    )}
                 </div>
             ))}
         </div>
