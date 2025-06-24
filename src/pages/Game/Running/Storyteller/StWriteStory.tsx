@@ -6,13 +6,13 @@ import {
 } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
 import { Countdown } from '../../../../components/Countdown';
-import { updatePlayerTurn } from '../../../../state/game';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../../state/player';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
 import { PlayersStatus } from '../PlayersStatus';
+import { updatePlayersTurn } from '../../../../state/game';
 
 export const StWriteStory: React.FC = () => {
     const player = useUnit($player);
@@ -26,11 +26,13 @@ export const StWriteStory: React.FC = () => {
     if (!player || !playerTurn) return null;
 
     const onStoryWritten = () =>
-        updatePlayerTurn({
-            playerId: player.id,
-            story:
-                storyValue ||
-                'A wild sleepy player appeared but too lazy to write a story they ran away.',
+        updatePlayersTurn({
+            [player.id]: {
+                playerId: player.id,
+                story:
+                    storyValue ||
+                    'A wild sleepy player appeared but too lazy to write a story they ran away.',
+            },
         });
 
     return (

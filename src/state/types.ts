@@ -2,7 +2,7 @@ export interface Game {
     id: string;
     players: { [playerId: string]: Player };
     turns: GameTurn[];
-    createdAt: Date;
+    createdAt: number;
     peerId?: string;
     status: GameStatus;
 }
@@ -44,7 +44,7 @@ export interface PlayerTurn {
     displayedCards?: number[];
     score?: number;
     estimateVisibleCards?: number;
-    displayedCardsTime?: Date;
-    selectedCardsTime?: Date;
+    displayedCardsTime?: number;
+    selectedCardsTime?: number;
     speed?: number;
 }

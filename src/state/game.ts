@@ -1,6 +1,7 @@
-import { createEvent, sample } from 'effector';
+import { createEvent } from 'effector';
 import {
     Game,
+    GamePlayersTurn,
     GameTurn,
     GameTurnStatus,
     Player,
@@ -37,7 +38,7 @@ export const selectCard = createEvent<{
     cardIndex: number;
 }>();
 export const setGameTurnStatus = createEvent<GameTurnStatus>();
-export const updatePlayerTurn = createEvent<PlayerTurn>();
+export const updatePlayersTurn = createEvent<GamePlayersTurn>();
 export const setTimeEstimate = createEvent<{
     playerId: string;
     estimate: number;
@@ -93,7 +94,7 @@ gameDS
     .on('setDisplayedCards', setDisplayedCards, (game, state) =>
         changePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.displayedCards = state.cardIndexes;
-            playerTurn.displayedCardsTime = new Date();
+            playerTurn.displayedCardsTime = new Date().getTime();
         })
     )
     .on('selectCard', selectCard, (game, state) =>
@@ -118,14 +119,18 @@ gameDS
         turn.status = status;
         return { ...game };
     })
-    .on('updatePlayerTurn', updatePlayerTurn, (game, state) => {
+    .on('updatePlayersTurn', updatePlayersTurn, (game, playersTurn) => {
         if (!game) return null;
-        const playerTurn =
-            game?.turns?.[game?.turns?.length - 1]?.players?.[state.playerId];
-        if (!playerTurn) return game;
-        game.turns[game.turns.length - 1].players[state.playerId] = {
-            ...playerTurn,
-            ...state,
-        };
+
+        Object.keys(playersTurn).forEach((pk) => {
+            const playerTurn =
+                game?.turns?.[game?.turns?.length - 1]?.players?.[pk];
+            if (!playerTurn) return;
+            game.turns[game.turns.length - 1].players[pk] = {
+                ...playerTurn,
+                ...playersTurn[pk],
+            };
+        });
+
         return { ...game };
     });

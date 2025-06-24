@@ -8,6 +8,7 @@ import { StPicksCards } from './StPicksCards';
 import { StWriteStory } from './StWriteStory';
 import { PlayersStatus } from '../PlayersStatus';
 import { getRandomCards } from '../../../../utils/getRandomCards';
+import { TurnEnded } from '../TurnEnded';
 
 export const Storyteller: React.FC = () => {
     const player = useUnit($player);
@@ -37,7 +38,7 @@ export const Storyteller: React.FC = () => {
             case 'waitForPlayers':
                 return <StWriteStory />;
             case 'turnEnded':
-                return <>Turn ended, continue?</>;
+                return <TurnEnded />;
         }
     };
 

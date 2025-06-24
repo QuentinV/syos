@@ -16,7 +16,7 @@ interface GamePageWrapperProps extends GamePageProps {
     displayedCards?: number[];
     story?: string;
     score?: number;
-    estimateSelectTime?: Date;
+    estimateSelectTime?: number;
     displayedCardsTime?: Date;
     selectedCardsTime?: Date;
     speeds?: { [key: string]: number };
@@ -53,8 +53,10 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                                     selectedCards,
                                     displayedCards,
                                     story,
-                                    displayedCardsTime,
-                                    selectedCardsTime,
+                                    displayedCardsTime:
+                                        displayedCardsTime?.getTime(),
+                                    selectedCardsTime:
+                                        selectedCardsTime?.getTime(),
                                     speed: speeds?.['123'],
                                 },
                                 '456': {

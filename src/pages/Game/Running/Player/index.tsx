@@ -12,6 +12,7 @@ import { getRandomCards } from '../../../../utils/getRandomCards';
 import { setDisplayedCards } from '../../../../state/game';
 import { GameCard } from '../../../../components/GameCard';
 import { PEstimate } from './PEstimate';
+import { TurnEnded } from '../TurnEnded';
 
 export const Player: React.FC = () => {
     const player = useUnit($player);
@@ -56,7 +57,7 @@ export const Player: React.FC = () => {
             case 'waitForPlayers':
                 return <>Waiting or everyone to finish</>;
             case 'turnEnded':
-                return <>Wup wup turn has ended, here is the result</>;
+                return <TurnEnded />;
         }
     };
 

@@ -1,7 +1,8 @@
 import { createEffect, sample } from 'effector';
-import { setGameTurnStatus, updatePlayerTurn, $game } from './game';
+import { setGameTurnStatus, $game, updatePlayersTurn } from './game';
 import {
     Game,
+    GamePlayersTurn,
     GameTurn,
     GameTurnStatus,
     Player,
@@ -9,6 +10,7 @@ import {
     PlayerTurn,
 } from './types';
 import { $player } from './player';
+import { A } from 'react-router/dist/development/route-data-B9_30zbP';
 
 interface FlowTransition {
     from: GameTurnStatus;
@@ -18,7 +20,7 @@ interface FlowTransition {
         playerTurn?: PlayerTurn;
         player: Player;
     }) => boolean;
-    logic?: (context: { game: Game; player: Player }) => void;
+    logic?: (context: { game: Game; player: Player }) => () => any;
     next?: GameTurnStatus;
 }
 
@@ -26,80 +28,67 @@ const workflows: FlowTransition[] = [
     {
         // storyteller selected all necessary cards, moving to next stage
         from: 'stPicksCards',
-        filter: ({ playerTurn }) =>
-            playerTurn?.role === PlayerRole.storyteller &&
-            playerTurn?.selectedCards?.length === 3,
+        filter: ({ playerTurn }) => playerTurn?.selectedCards?.length === 3,
         next: 'stWriteStory',
     },
     {
         // storyteller wrote story, moving to next stage
         from: 'stWriteStory',
-        filter: ({ playerTurn }) =>
-            playerTurn?.role === PlayerRole.storyteller && !!playerTurn?.story,
+        filter: ({ playerTurn }) => !!playerTurn?.story,
         next: 'pEstimate',
     },
     {
         from: 'pEstimate',
-        filter: ({ playerTurn, turn }) =>
-            playerTurn?.role === PlayerRole.storyteller &&
+        filter: ({ turn }) =>
             Object.keys(turn?.players ?? {}).every(
-                (pk) => !!turn?.players?.[pk]?.estimateVisibleCards
+                (pk) =>
+                    turn?.players?.[pk].role === PlayerRole.storyteller ||
+                    !!turn?.players?.[pk]?.estimateVisibleCards
             ),
         next: 'pPicksCards',
     },
     {
-        // end of turn
         from: 'pPicksCards',
-        filter: ({ playerTurn }) =>
-            playerTurn?.role === PlayerRole.gremlin &&
-            !!playerTurn?.selectedCardsTime,
-        logic: ({ game, player }) => {
-            const previousScore =
-                game.turns[game.turns.length - 2]?.players?.[player.id]
-                    ?.score ?? 0;
-            const gameTurn = game.turns[game.turns.length - 1];
-            const playerTurn = gameTurn.players[player.id];
-            const speed =
-                1 -
-                (playerTurn.selectedCardsTime?.getTime() ?? 0) /
-                    ((playerTurn.displayedCardsTime?.getTime() ?? 0) +
-                        (gameTurn.timeoutPlayerSelectCards ?? 0));
-            updatePlayerTurn({
-                playerId: player.id,
-                score:
-                    previousScore +
-                    (playerTurn.selectedCards?.length === 3 ? 50 : 0) +
-                    speed * 50,
-                speed,
-            });
-        },
-        next: 'waitForPlayers',
-    },
-    {
-        from: 'waitForPlayers',
-        filter: ({ playerTurn, turn }) =>
-            playerTurn?.role === 'storyteller' &&
+        filter: ({ turn }) =>
             Object.keys(turn?.players ?? {}).every(
-                (pk) => !!turn?.players?.[pk]?.selectedCardsTime
+                (pk) =>
+                    turn?.players?.[pk].role === PlayerRole.storyteller ||
+                    !!turn?.players?.[pk]?.selectedCardsTime
             ),
-        logic: ({ game, player }) => {
-            const previousScore =
-                game.turns[game.turns.length - 2]?.players?.[player.id]
-                    ?.score ?? 0;
+        logic: ({ game }) => {
             const gameTurn = game.turns[game.turns.length - 1];
-            const playerTurn = gameTurn.players[player.id];
+            const players = gameTurn.players;
 
-            const speed =
-                1 -
-                (playerTurn.selectedCardsTime?.getTime() ?? 0) /
-                    ((playerTurn.displayedCardsTime?.getTime() ?? 0) +
-                        (gameTurn.timeoutPlayerSelectCards ?? 0));
+            const update = Object.keys(players).reduce((prev, pk) => {
+                const player = players[pk];
+                const previousScore =
+                    game.turns[game.turns.length - 2]?.players?.[
+                        player.playerId
+                    ]?.score ?? 0;
+                const playerTurn = gameTurn.players[player.playerId];
+                const speed =
+                    1 -
+                    (playerTurn.selectedCardsTime ?? 0) /
+                        ((playerTurn.displayedCardsTime ?? 1) +
+                            (gameTurn.timeoutPlayerSelectCards ?? 0));
 
-            updatePlayerTurn({
-                playerId: player.id,
-                score: previousScore + 50 + speed * 50,
-                speed,
-            });
+                const scorePlus =
+                    player.role === PlayerRole.gremlin
+                        ? playerTurn.selectedCards?.length === 3
+                            ? 50
+                            : 0
+                        : 50;
+
+                prev[pk] = {
+                    playerId: player.playerId,
+                    score: previousScore + scorePlus + speed * 50,
+                    speed,
+                };
+
+                return prev;
+            }, {} as GamePlayersTurn);
+
+            return () => updatePlayersTurn(update);
         },
         next: 'turnEnded',
     },
@@ -113,6 +102,7 @@ workflows.forEach((w) => {
             const turn = $game?.turns?.[$game?.turns?.length - 1];
             if (turn?.status !== w.from) return false;
             const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
+            if (playerTurn?.role !== PlayerRole.storyteller) return false;
             return w.filter({
                 game: $game,
                 player: $player,
@@ -129,8 +119,9 @@ workflows.forEach((w) => {
                 $player: Player | null;
             }) => {
                 if (!$game || !$player) return;
-                w.logic?.({ game: $game, player: $player });
+                const res = w.logic?.({ game: $game, player: $player });
                 if (w.next) setGameTurnStatus(w.next);
+                res?.();
             }
         ),
     });

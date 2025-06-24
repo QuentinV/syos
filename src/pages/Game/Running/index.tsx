@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useUnit } from 'effector-react';
-import { newPlayerTurn, newTurn, useGame } from '../../../state/game';
+import { useGame } from '../../../state/game';
 import { $player } from '../../../state/player';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
-import { useGameTurnStatus, usePlayerTurn } from '../../../state/gameHooks';
+import { usePlayerTurn } from '../../../state/gameHooks';
 import { PlayersBoard } from '../../../components/PlayersBoard';
 
 export const Running: React.FC = () => {

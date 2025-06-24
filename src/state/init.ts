@@ -11,7 +11,7 @@ export const newGameFx = attach({
         const id = uuid();
         const game: Game = {
             id,
-            createdAt: new Date(),
+            createdAt: new Date().getTime(),
             status: 'lobby',
             players: {},
             turns: [],
@@ -24,37 +24,29 @@ export const newGameFx = attach({
 });
 
 export const newTurnFx = attach({
-    source: { player: $player, game: $game },
-    effect: createEffect(
-        ({
-            player,
-            game,
-        }: {
-            player: Player | null;
-            game: Game | null;
-        }): GameTurn | undefined => {
-            if (!player || !game) return;
-            const pkeys = Object.keys(game.players);
-            const randomIndex = Math.floor(Math.random() * pkeys.length);
-            const turn: GameTurn = {
-                status: 'stPicksCards',
-                players: Object.keys(game.players).reduce((prev, pkey, i) => {
-                    prev[pkey] = {
-                        playerId: pkey,
-                        score: 0,
-                        role:
-                            randomIndex === i
-                                ? PlayerRole.storyteller
-                                : PlayerRole.gremlin,
-                    };
-                    return prev;
-                }, {} as GamePlayersTurn),
-                timeoutPlayerSelectCards: 10000,
-            };
-            console.log('New turn', turn);
-            return turn;
-        }
-    ),
+    source: $game,
+    effect: createEffect((game: Game | null): GameTurn | undefined => {
+        if (!game) return;
+        const pkeys = Object.keys(game.players);
+        const randomIndex = Math.floor(Math.random() * pkeys.length);
+        const turn: GameTurn = {
+            status: 'stPicksCards',
+            players: Object.keys(game.players).reduce((prev, pkey, i) => {
+                prev[pkey] = {
+                    playerId: pkey,
+                    score: 0,
+                    role:
+                        randomIndex === i
+                            ? PlayerRole.storyteller
+                            : PlayerRole.gremlin,
+                };
+                return prev;
+            }, {} as GamePlayersTurn),
+            timeoutPlayerSelectCards: 10000,
+        };
+        console.log('New turn', turn);
+        return turn;
+    }),
 });
 
 sample({
