@@ -4,9 +4,8 @@ import { setDisplayedCards } from '../../../../state/game';
 import cardsMapping from '../../../../cards_mapping.json';
 import { $player } from '../../../../state/player';
 import { usePlayerTurn, useTurn } from '../../../../state/gameHooks';
-import { StPicksCards } from './StPicksCards';
+import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
-import { PlayersStatus } from '../PlayersStatus';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 import { TurnEnded } from '../TurnEnded';
 
@@ -31,11 +30,10 @@ export const Storyteller: React.FC = () => {
     const renderContent = () => {
         switch (turn.status) {
             case 'stPicksCards':
-                return <StPicksCards />;
+                return <PicksCards />;
             case 'stWriteStory':
             case 'pEstimate':
             case 'pPicksCards':
-            case 'waitForPlayers':
                 return <StWriteStory />;
             case 'turnEnded':
                 return <TurnEnded />;

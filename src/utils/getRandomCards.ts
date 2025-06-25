@@ -3,11 +3,12 @@ export const getRandomCards = (
     limit: number,
     exclude?: number[]
 ) => {
-    const result = [];
+    const result: number[] = [];
     let i = 0;
     while (i < limit) {
-        const n = cards[Math.floor(Math.random() * cards.length)];
-        if (!exclude?.includes(n)) {
+        const r = Math.floor(Math.random() * cards.length);
+        const n = cards[r];
+        if (!result.includes(n) && !exclude?.includes(n)) {
             result.push(n);
             ++i;
         }

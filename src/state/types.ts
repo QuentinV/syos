@@ -28,7 +28,6 @@ export type GameTurnStatus =
     | 'stWriteStory'
     | 'pEstimate'
     | 'pPicksCards'
-    | 'waitForPlayers'
     | 'turnEnded';
 
 export enum PlayerRole {

@@ -1,20 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import { usePlayerTurn } from '../../../../state/gameHooks';
-import { GameCards } from '../../../../components/GameCards';
-import { selectCard } from '../../../../state/game';
+import React, { useState } from 'react';
+import { usePlayerTurn, useStorytellerTurn } from '../../../state/gameHooks';
+import { GameCards } from '../../../components/GameCards';
+import { selectCard, updatePlayersTurn } from '../../../state/game';
 import { useUnit } from 'effector-react';
-import { $player } from '../../../../state/player';
-import { Countdown } from '../../../../components/Countdown';
+import { $player } from '../../../state/player';
+import { Countdown } from '../../../components/Countdown';
 
-export const StPicksCards: React.FC = () => {
+export const PicksCards: React.FC = () => {
     const playerTurn = usePlayerTurn();
     const [cardsVisible, setCardsVisible] = useState<boolean>(true);
     const player = useUnit($player);
+    const storytellerTurn = useStorytellerTurn();
 
     if (!player || !playerTurn) return null;
 
     const onSelectCard = (index: number) => {
         selectCard({ cardIndex: index, playerId: player!.id });
+        if (playerTurn.selectedCards?.length === 3) {
+            updatePlayersTurn({
+                [player.id]: {
+                    playerId: player!.id,
+                    selectedCardsTime: new Date().getTime(),
+                },
+            });
+        }
     };
 
     return (
@@ -30,7 +39,9 @@ export const StPicksCards: React.FC = () => {
                             <>
                                 <div>Memorize cards before count is down</div>
                                 <Countdown
-                                    limit={10}
+                                    limit={
+                                        playerTurn.estimateVisibleCards ?? 10
+                                    }
                                     onComplete={() => setCardsVisible(false)}
                                     style="bar"
                                 />
@@ -39,6 +50,10 @@ export const StPicksCards: React.FC = () => {
                             <div>Pick 3 cards!</div>
                         )}
                     </div>
+
+                    {!cardsVisible && storytellerTurn?.story && (
+                        <div>Story: {storytellerTurn?.story}</div>
+                    )}
 
                     <GameCards
                         indexes={playerTurn.displayedCards}

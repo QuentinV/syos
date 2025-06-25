@@ -108,7 +108,6 @@ const meta = {
                 'stWriteStory',
                 'pEstimate',
                 'pPicksCards',
-                'waitForPlayers',
                 'turnEnded',
             ],
             control: { type: 'radio' },
@@ -203,20 +202,6 @@ export const PlayerCardsPicked: Story = {
         id: '123',
         status: 'running',
         turnStatus: 'pPicksCards',
-        playerRole: PlayerRole.storyteller,
-        selectedCards: [7, 12, 13],
-        displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-        story: 'this is my story',
-        score: 10300,
-        speeds: { 456: 0.6 },
-    },
-};
-
-export const waitForPlayers: Story = {
-    args: {
-        id: '123',
-        status: 'running',
-        turnStatus: 'waitForPlayers',
         playerRole: PlayerRole.storyteller,
         selectedCards: [7, 12, 13],
         displayedCards: [5, 6, 7, 8, 9, 10, 11, 12, 13],

@@ -7,12 +7,11 @@ import {
     useTurn,
 } from '../../../../state/gameHooks';
 import { $player } from '../../../../state/player';
-import { PPicksCards } from './PPicksCards';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 import { setDisplayedCards } from '../../../../state/game';
-import { GameCard } from '../../../../components/GameCard';
 import { PEstimate } from './PEstimate';
 import { TurnEnded } from '../TurnEnded';
+import { PicksCards } from '../PicksCards';
 
 export const Player: React.FC = () => {
     const player = useUnit($player);
@@ -53,9 +52,7 @@ export const Player: React.FC = () => {
             case 'pEstimate':
                 return <PEstimate />;
             case 'pPicksCards':
-                return <PPicksCards />;
-            case 'waitForPlayers':
-                return <>Waiting or everyone to finish</>;
+                return <PicksCards />;
             case 'turnEnded':
                 return <TurnEnded />;
         }

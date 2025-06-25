@@ -142,13 +142,22 @@ async function connectToPeer(
 
     const conn = pod.conn.connect(peerId);
     const peerInfo = { conn, peerId };
+    pod.peers[peerId] = peerInfo;
+
     if (!pi) {
         console.log('[ME] save peer info ', peerId);
-        pod.peers[peerId] = peerInfo;
         savePeerObjectData(objetId, pod);
     }
 
     await new Promise((res) => {
+        conn.on('error', () => {
+            console.log(`[${peerId}] ERROR`);
+        });
+
+        conn.on('iceStateChanged', (e) => {
+            console.log(`[${peerId}] iceStateChanged`, e);
+        });
+
         conn.on('data', (mess) => {
             console.log(`[${peerId}] incoming`, mess);
             processMessage(mess as Message, conn);
@@ -203,15 +212,23 @@ async function initPeerConnection(
         savePeerObjectData(objectId, data);
 
         await new Promise((res) => {
+            conn.on('error', () => {
+                console.log(`[ME] ERROR`);
+            });
+
+            conn.on('iceStateChanged', (e) => {
+                console.log(`[ME] iceStateChanged`, e);
+            });
+
+            conn.on('data', (mess) => {
+                console.log(`[ME] receving data from [${conn.peer}]`, mess);
+                processMessage(mess as Message, conn);
+            });
+
             conn.on('open', () => {
                 console.log('[ME] incoming connection opened to', conn.peer);
                 res(undefined);
             });
-        });
-
-        conn.on('data', (mess) => {
-            console.log(`[ME] receving data from [${conn.peer}]`, mess);
-            processMessage(mess as Message, conn);
         });
 
         console.log('sending message back with state to', conn.peer);
@@ -237,10 +254,15 @@ function broadcastMessage({
 }) {
     const data = peerData[objectId];
     if (!data) return;
+    console.log('peers', Object.keys(data.peers));
     return Promise.allSettled(
         Object.keys(data.peers).map((key) => {
             console.log('broadcasting message to ', key, message);
-            return data.peers[key]?.conn?.send(message);
+            if (!data.peers[key].conn) {
+                console.log('ERROR no connection for ', key);
+                return;
+            }
+            return data.peers[key].conn.send(message);
         })
     );
 }
