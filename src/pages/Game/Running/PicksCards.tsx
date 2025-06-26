@@ -31,7 +31,7 @@ export const PicksCards: React.FC = () => {
         <>
             {playerTurn.displayedCards?.length && (
                 <div>
-                    <div className="flex align-items-center gap-5 mb-3">
+                    <div className="flex align-items-center gap-5 mb-3 flex-wrap">
                         <div>
                             Selected: {playerTurn?.selectedCards?.length ?? 0} /
                             3

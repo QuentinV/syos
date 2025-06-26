@@ -15,7 +15,7 @@ export const PlayersBoard: React.FC<PlayersBoardProps> = ({
     const playersTurns = usePlayersTurn();
     const player = useUnit($player);
     return (
-        <div className="flex flex-column gap-2">
+        <div className="flex flex-column gap-2 mb-3">
             {playersTurns.map((p) => (
                 <div
                     key={p.playerId}

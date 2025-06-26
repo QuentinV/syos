@@ -9,10 +9,33 @@
     padding: 5px;
 }
 
+.gamecard.md img {
+    width: 120px;
+    height: 160px;
+}
+
 .gamecard.sm {
     width: 70px;
     height: 90px;
     padding: 3px;
+}
+
+.gamecard.sm img {
+    width: 60px;
+    height: 80px;
+}
+
+@media (max-width: 800px) {
+    .gamecard.md img {
+        width: 60px;
+        height: 80px;
+    }
+
+    .gamecard.md {
+        width: 70px;
+        height: 90px;
+        padding: 3px;
+    }
 }
 
 .gamecard.invalid {

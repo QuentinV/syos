@@ -34,7 +34,7 @@ export const PEstimate: React.FC = () => {
                 Meanwhile let's estimate how long do you think you will need to
                 memorize the cards?
             </div>
-            <div className="flex align-items-center gap-2">
+            <div className="flex align-items-center gap-2 flex-wrap">
                 {estimateCards.map((k) => (
                     <>
                         <Button

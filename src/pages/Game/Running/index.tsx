@@ -21,14 +21,12 @@ export const Running: React.FC = () => {
     return (
         <>
             <h2 className="text-center">Shape your own stories</h2>
-            <div className="flex col-12">
-                <div className="col-2"></div>
-                <div className="col-2">
+            <div className="flex justify-content-center flex-wrap">
+                <div className="w-15rem">
                     <div className="mb-3">Turns: {game.turns.length} / 10</div>
                     <PlayersBoard />
                 </div>
-                <div className="col-6">{renderGameMode()}</div>
-                <div className="col-2"></div>
+                <div>{renderGameMode()}</div>
             </div>
         </>
     );
