@@ -10,8 +10,10 @@ import { $player } from '../../../state/player';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from 'primereact/button';
 
+const process: any = undefined;
+
 const getJoinUrl = (gameId: string, peerId: string) =>
-    `http://localhost:3000/syos#/game/${gameId}/join/${peerId}`;
+    `${process?.env?.PUBLIC_URL ?? ''}#/game/${gameId}/join/${peerId}`;
 
 export const Lobby: React.FC = () => {
     const game = useGame();
@@ -23,12 +25,9 @@ export const Lobby: React.FC = () => {
     return (
         <>
             <h2 className="text-center">Game room {game.id}</h2>
-            <div className="text-center">
-                You are {player?.name} with id : {player?.id}
-            </div>
             {peerId && (
                 <div className="text-center m-5">
-                    <div>Players can join with QRCode or url</div>
+                    <div>Players can join with QRCode or click to copy URL</div>
                     <div className="m-2">
                         <QRCodeSVG
                             value={getJoinUrl(game.id, peerId)}
@@ -67,19 +66,23 @@ export const Lobby: React.FC = () => {
                     </div>
                 )}
             </div>
-            <div className="flex flex-column align-items-center">
-                {Object.keys(game.players).map((key) => {
-                    const p = game.players[key];
-                    return (
-                        <div className="flex gap-5" key={p.id}>
-                            <div>
-                                {p.name}
-                                {p.id === player?.id ? ' (you)' : ''}
-                            </div>
-                            <div>{p.ready ? 'Ready' : 'Not ready'}</div>
-                        </div>
-                    );
-                })}
+            <div className="flex justify-content-center">
+                <table>
+                    {Object.keys(game.players).map((key) => {
+                        const p = game.players[key];
+                        return (
+                            <tr key={p.id}>
+                                <td className="pr-5 pb-3">
+                                    {p.name}
+                                    {p.id === player?.id ? ' (you)' : ''}
+                                </td>
+                                <td className="pb-3">
+                                    {p.ready ? 'Ready' : 'Not ready'}
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </table>
             </div>
         </>
     );

@@ -129,6 +129,7 @@ export const End: Story = {
     args: {
         id: '123',
         status: 'finished',
+        story: 'thisi s my stokm',
     },
 };
 

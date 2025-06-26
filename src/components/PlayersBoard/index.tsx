@@ -5,7 +5,13 @@ import { PlayerRole } from '../../state/types';
 import { useUnit } from 'effector-react';
 import { $player } from '../../state/player';
 
-export const PlayersBoard: React.FC = () => {
+interface PlayersBoardProps {
+    markStoryteller?: boolean;
+}
+
+export const PlayersBoard: React.FC<PlayersBoardProps> = ({
+    markStoryteller,
+}) => {
     const playersTurns = usePlayersTurn();
     const player = useUnit($player);
     return (
@@ -21,10 +27,10 @@ export const PlayersBoard: React.FC = () => {
                         </div>
                     </div>
                     <div>{p.score}</div>
-                    {p.role === PlayerRole.storyteller && (
+                    {!!markStoryteller && p.role === PlayerRole.storyteller && (
                         <i className="pi pi-circle-fill text-primary" />
                     )}
-                    {p.role === PlayerRole.gremlin &&
+                    {(!markStoryteller || p.role === PlayerRole.gremlin) &&
                         p.playerId === player?.id && (
                             <i className="pi pi-circle-fill" />
                         )}
