@@ -10,7 +10,6 @@ import {
     PlayerTurn,
 } from './types';
 import { $player } from './player';
-import { A } from 'react-router/dist/development/route-data-B9_30zbP';
 
 interface FlowTransition {
     from: GameTurnStatus;
@@ -59,6 +58,12 @@ const workflows: FlowTransition[] = [
             const gameTurn = game.turns[game.turns.length - 1];
             const players = gameTurn.players;
             const playersKeys = Object.keys(players);
+            const storyteller =
+                players[
+                    playersKeys.find(
+                        (pk) => players[pk].role === PlayerRole.storyteller
+                    ) ?? ''
+                ];
 
             const timeoutSelectCards =
                 playersKeys.reduce(
@@ -67,15 +72,14 @@ const workflows: FlowTransition[] = [
                 ) / playersKeys.length;
 
             const playersCorrect = playersKeys.filter(
-                (pk) => (players[pk].selectedCards?.length ?? 0) === 3
-            ).length;
+                (pk) =>
+                    storyteller.selectedCards!.filter(
+                        (c) => players[pk].selectedCards?.includes(c) ?? 0
+                    ).length === 3
+            );
 
             const update = playersKeys.reduce((prev, pk) => {
                 const player = players[pk];
-                const previousScore =
-                    game.turns[game.turns.length - 2]?.players?.[
-                        player.playerId
-                    ]?.score ?? 0;
                 const playerTurn = players[player.playerId];
 
                 const speed =
@@ -83,25 +87,21 @@ const workflows: FlowTransition[] = [
                         ? timeoutSelectCards /
                           ((playerTurn.selectedCardsTime ?? 0) -
                               (playerTurn.displayedCardsTime ?? 0))
-                        : playersCorrect / playersKeys.length;
+                        : playersCorrect.length / playersKeys.length;
 
                 const scorePlus =
                     player.role === PlayerRole.gremlin
-                        ? playerTurn.selectedCards?.length === 3
+                        ? playersCorrect.includes(player.playerId)
                             ? 50
                             : 0
                         : 50;
 
-                console.log(
-                    previousScore,
-                    scorePlus,
-                    speed,
-                    speed * 50,
-                    Math.round(speed * 50)
-                );
                 prev[pk] = {
                     playerId: player.playerId,
-                    score: previousScore + scorePlus + Math.round(speed * 50),
+                    score:
+                        (playerTurn.score ?? 0) +
+                        scorePlus +
+                        Math.round(speed * 50),
                     speed,
                 };
 

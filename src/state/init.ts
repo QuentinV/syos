@@ -32,9 +32,13 @@ export const newTurnFx = attach({
         const turn: GameTurn = {
             status: 'stPicksCards',
             players: Object.keys(game.players).reduce((prev, pkey, i) => {
+                const previousScore =
+                    game.turns[game.turns.length - 1]?.players?.[pkey]?.score ??
+                    0;
+
                 prev[pkey] = {
                     playerId: pkey,
-                    score: 0,
+                    score: previousScore,
                     role:
                         randomIndex === i
                             ? PlayerRole.storyteller
