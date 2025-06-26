@@ -87,20 +87,20 @@ const workflows: FlowTransition[] = [
                         ? timeoutSelectCards /
                           ((playerTurn.selectedCardsTime ?? 0) -
                               (playerTurn.displayedCardsTime ?? 0))
-                        : playersCorrect.length / playersKeys.length;
+                        : (playersCorrect.length - 1) /
+                          (playersKeys.length - 1);
 
-                const scorePlus =
-                    player.role === PlayerRole.gremlin
-                        ? playersCorrect.includes(player.playerId)
-                            ? 50
-                            : 0
-                        : 50;
+                const correctCards = storyteller.selectedCards!.filter(
+                    (c) => player.selectedCards?.includes(c) ?? 0
+                ).length;
+
+                console.log(player.role, correctCards, speed);
 
                 prev[pk] = {
                     playerId: player.playerId,
                     score:
                         (playerTurn.score ?? 0) +
-                        scorePlus +
+                        (correctCards / 3) * 50 +
                         Math.round(speed * 50),
                     speed,
                 };
