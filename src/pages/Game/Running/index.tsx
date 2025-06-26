@@ -24,7 +24,7 @@ export const Running: React.FC = () => {
             <div className="flex justify-content-center flex-wrap">
                 <div className="w-15rem">
                     <div className="mb-3">Turns: {game.turns.length} / 10</div>
-                    <PlayersBoard />
+                    <PlayersBoard markStoryteller />
                 </div>
                 <div>{renderGameMode()}</div>
             </div>
