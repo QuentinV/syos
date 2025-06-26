@@ -47,7 +47,6 @@ export const newTurnFx = attach({
                 return prev;
             }, {} as GamePlayersTurn),
         };
-        console.log('New turn', turn);
         return turn;
     }),
 });
@@ -69,9 +68,7 @@ sample({
 
 const joined = createEvent<Player | null>();
 gameDS.on('joined', joined, (game, player: Player | null) => {
-    console.log('JOINED EVENT');
     if (!game || !player) {
-        console.log('ERROR GAME NOT FOUND');
         return;
     }
     game.players[player.id] = player;
@@ -85,8 +82,7 @@ sample({
     target: createEffect(
         ({ gameId, player }: { gameId: string; player: Player | null }) => {
             joined(player);
-            console.log('redirect to game');
-            location.href = `http://localhost:3000/syos#/game/${gameId}`;
+            location.href = `${document.location.origin}/syos#/game/${gameId}`;
         }
     ),
 });

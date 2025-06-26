@@ -9,9 +9,11 @@
     "eslint": "eslint src/**/* --fix",
     "prettier": "prettier --write src/**/*",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "deploy": "gh-pages -d build"
   },
   "devDependencies": {
+    "gh-pages": "^6.1.1",
     "@storybook/addon-docs": "^9.0.12",
     "@storybook/react-vite": "9.0.12",
     "@types/node": "^22.14.1",

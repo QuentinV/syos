@@ -3,7 +3,7 @@ import glslify from 'rollup-plugin-glslify';
 
 export default defineConfig({
     root: '',
-    base: '/',
+    base: '/syos',
     build: {
         outDir: 'dist',
     },

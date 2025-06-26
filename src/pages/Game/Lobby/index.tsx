@@ -13,7 +13,7 @@ import { Button } from 'primereact/button';
 const process: any = undefined;
 
 const getJoinUrl = (gameId: string, peerId: string) =>
-    `${process?.env?.PUBLIC_URL ?? ''}#/game/${gameId}/join/${peerId}`;
+    `${document.location.origin}/syos#/game/${gameId}/join/${peerId}`;
 
 export const Lobby: React.FC = () => {
     const game = useGame();
@@ -68,20 +68,22 @@ export const Lobby: React.FC = () => {
             </div>
             <div className="flex justify-content-center">
                 <table>
-                    {Object.keys(game.players).map((key) => {
-                        const p = game.players[key];
-                        return (
-                            <tr key={p.id}>
-                                <td className="pr-5 pb-3">
-                                    {p.name}
-                                    {p.id === player?.id ? ' (you)' : ''}
-                                </td>
-                                <td className="pb-3">
-                                    {p.ready ? 'Ready' : 'Not ready'}
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    <tbody>
+                        {Object.keys(game.players).map((key) => {
+                            const p = game.players[key];
+                            return (
+                                <tr key={p.id}>
+                                    <td className="pr-5 pb-3">
+                                        {p.name}
+                                        {p.id === player?.id ? ' (you)' : ''}
+                                    </td>
+                                    <td className="pb-3">
+                                        {p.ready ? 'Ready' : 'Not ready'}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
                 </table>
             </div>
         </>

@@ -101,8 +101,6 @@ const workflows: FlowTransition[] = [
                     (c) => player.selectedCards?.includes(c) ?? 0
                 ).length;
 
-                console.log(player.role, correctCards, speed);
-
                 prev[pk] = {
                     playerId: player.playerId,
                     score:
@@ -121,7 +119,7 @@ const workflows: FlowTransition[] = [
     },
     {
         from: 'turnEnded',
-        filter: ({ game }) => game.turns.length > 10,
+        filter: ({ game }) => game.turns.length >= 10,
         logic: () => {
             stopGame();
         },

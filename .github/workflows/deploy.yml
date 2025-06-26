@@ -1,0 +1,32 @@
+name: Deployment
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    deployment:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v2
+              with:
+                  persist-credentials: true
+                  fetch-depth: 0
+            - name: Set Git user info
+              run: |
+                  git config --global user.email "auto@deploy.com"
+                  git config --global user.name "Auto deploy"
+                  git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+            - name: Set Node.js 20.x
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 20.x
+            - name: Run install
+              uses: borales/actions-yarn@v4
+              with:
+                  cmd: install
+            - name: Run deploy
+              uses: borales/actions-yarn@v4
+              with:
+                  cmd: deploy

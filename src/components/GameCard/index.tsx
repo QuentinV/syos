@@ -25,7 +25,11 @@ export const GameCard: React.FC<GameCardProps> = ({
             onClick={() => !visible && onSelect?.(index)}
         >
             <Image
-                src={visible ? `images/${index}.png` : 'cards_backs/3.png'}
+                src={
+                    visible
+                        ? `/syos/images/${index}.png`
+                        : '/syos/cards_backs/3.png'
+                }
             />
         </div>
     );

@@ -10,6 +10,10 @@ import {
 } from 'effector';
 import { useUnit } from 'effector-react';
 
+const DEBUG = false;
+
+const isDebug = () => DEBUG;
+
 // -- IndexDB
 function openDb(storename: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -138,34 +142,34 @@ async function connectToPeer(
         return pi;
     }
 
-    console.log('[ME] open connection to ', peerId);
+    isDebug() && console.log('[ME] open connection to ', peerId);
 
     const conn = pod.conn.connect(peerId);
     const peerInfo = { conn, peerId };
     pod.peers[peerId] = peerInfo;
 
     if (!pi) {
-        console.log('[ME] save peer info ', peerId);
+        isDebug() && console.log('[ME] save peer info ', peerId);
         savePeerObjectData(objetId, pod);
     }
 
     await new Promise((res) => {
         conn.on('error', () => {
-            console.log(`[${peerId}] ERROR`);
+            isDebug() && console.log(`[${peerId}] ERROR`);
         });
 
         conn.on('iceStateChanged', (e) => {
-            console.log(`[${peerId}] iceStateChanged`, e);
+            isDebug() && console.log(`[${peerId}] iceStateChanged`, e);
         });
 
         conn.on('data', (mess) => {
-            console.log(`[${peerId}] incoming`, mess);
+            isDebug() && console.log(`[${peerId}] incoming`, mess);
             processMessage(mess as Message, conn);
             res(undefined);
         });
 
         conn.on('open', () => {
-            console.log(`[${peerId}] connection opened`);
+            isDebug() && console.log(`[${peerId}] connection opened`);
         });
     });
 }
@@ -190,7 +194,7 @@ async function initPeerConnection(
         return data;
     }
 
-    console.log('init peer connection', data.peerId);
+    isDebug() && console.log('init peer connection', data.peerId);
     const peer = new Peer(data.peerId, {
         host: '0.peerjs.com',
         port: 443,
@@ -200,38 +204,44 @@ async function initPeerConnection(
 
     await new Promise((res) => {
         peer.on('open', (id) => {
-            console.log('[ME] opened', id);
+            isDebug() && console.log('[ME] opened', id);
             res(id);
         });
     });
 
     peer.on('connection', async (conn) => {
-        console.log('[ME] incoming connection', conn);
+        isDebug() && console.log('[ME] incoming connection', conn);
 
         data.peers[conn.peer] = { peerId: conn.peer, conn };
         savePeerObjectData(objectId, data);
 
         await new Promise((res) => {
             conn.on('error', () => {
-                console.log(`[ME] ERROR`);
+                isDebug() && console.log(`[ME] ERROR`);
             });
 
             conn.on('iceStateChanged', (e) => {
-                console.log(`[ME] iceStateChanged`, e);
+                isDebug() && console.log(`[ME] iceStateChanged`, e);
             });
 
             conn.on('data', (mess) => {
-                console.log(`[ME] receving data from [${conn.peer}]`, mess);
+                isDebug() &&
+                    console.log(`[ME] receving data from [${conn.peer}]`, mess);
                 processMessage(mess as Message, conn);
             });
 
             conn.on('open', () => {
-                console.log('[ME] incoming connection opened to', conn.peer);
+                isDebug() &&
+                    console.log(
+                        '[ME] incoming connection opened to',
+                        conn.peer
+                    );
                 res(undefined);
             });
         });
 
-        console.log('sending message back with state to', conn.peer);
+        isDebug() &&
+            console.log('sending message back with state to', conn.peer);
         await conn.send({
             type: 'event',
             data: { eventName: 'setState', payload: getState() },
@@ -254,10 +264,10 @@ function broadcastMessage({
 }) {
     const data = peerData[objectId];
     if (!data) return;
-    console.log('peers', Object.keys(data.peers));
+    isDebug() && console.log('peers', Object.keys(data.peers));
     return Promise.allSettled(
         Object.keys(data.peers).map((key) => {
-            console.log('broadcasting message to ', key, message);
+            isDebug() && console.log('broadcasting message to ', key, message);
             if (!data.peers[key].conn) {
                 console.log('ERROR no connection for ', key);
                 return;
@@ -318,15 +328,14 @@ class DSStore<State extends StateWithId> {
 
         const localEvent = createEvent<E>(); // different event required to avoid circular calls
         this.localUnits[name] = localEvent;
-        //console.log('binding event', name);
 
         this.$store
             .on(trigger, (state, payload) => {
                 const id = state?.id ?? (payload as any)?.id;
-                console.log('trigger update', name, id, payload);
+                isDebug() && console.log('trigger update', name, id, payload);
                 if (!id) return state;
                 const r = reducer(state, payload);
-                console.log('reducer result for', name, r);
+                isDebug() && console.log('reducer result for', name, r);
                 if (r) {
                     broadcastMessage({
                         objectId: id,
@@ -343,7 +352,13 @@ class DSStore<State extends StateWithId> {
             })
             .on(localEvent, (state, payload) => {
                 const id = state?.id ?? (payload as any)?.id;
-                console.log('local event', name, 'calling reducer with id', id);
+                isDebug() &&
+                    console.log(
+                        'local event',
+                        name,
+                        'calling reducer with id',
+                        id
+                    );
                 if (!id) return state;
                 return reducer(state, payload);
             });
@@ -413,10 +428,11 @@ export function createDSApi<State extends StateWithId>({
                 getState
             );
             setPeerId(peerObjectData.peerId);
-            console.log(
-                'object reloaded from storage, peerid = ',
-                peerObjectData.peerId
-            );
+            isDebug() &&
+                console.log(
+                    'object reloaded from storage, peerid = ',
+                    peerObjectData.peerId
+                );
         }),
     });
 
@@ -424,14 +440,15 @@ export function createDSApi<State extends StateWithId>({
         async ({ objectId, peerId }: { objectId: string; peerId: string }) => {
             const obj = await loadFromStorageFx(objectId);
             if (obj) {
-                console.log('OBJECT ALREADY EXISTING');
-                return;
+                isDebug() && console.log('OBJECT ALREADY EXISTING');
+                return objectId;
             }
 
-            console.log('joining object of peer ', objectId, peerId);
+            isDebug() &&
+                console.log('joining object of peer ', objectId, peerId);
             await initPeerConnection(objectId, processMessage, getState);
             await connectToPeer(objectId, peerId, processMessage);
-            console.log('joined');
+            isDebug() && console.log('joined');
             return objectId;
         }
     );
