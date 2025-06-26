@@ -94,7 +94,7 @@ gameDS
     .on('setDisplayedCards', setDisplayedCards, (game, state) =>
         changePlayerTurn(game, state.playerId, (playerTurn) => {
             playerTurn.displayedCards = state.cardIndexes;
-            playerTurn.displayedCardsTime = new Date().getTime();
+            playerTurn.displayedCardsTime = Date.now();
         })
     )
     .on('selectCard', selectCard, (game, state) =>

@@ -16,7 +16,6 @@ export interface Player {
 export interface GameTurn {
     status: GameTurnStatus;
     players: GamePlayersTurn;
-    timeoutPlayerSelectCards?: number;
 }
 
 export type GamePlayersTurn = { [playerId: string]: PlayerTurn };

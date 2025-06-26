@@ -58,19 +58,32 @@ const workflows: FlowTransition[] = [
         logic: ({ game }) => {
             const gameTurn = game.turns[game.turns.length - 1];
             const players = gameTurn.players;
+            const playersKeys = Object.keys(players);
 
-            const update = Object.keys(players).reduce((prev, pk) => {
+            const timeoutSelectCards =
+                playersKeys.reduce(
+                    (prev, pk) => players[pk].estimateVisibleCards ?? 0 + prev,
+                    0
+                ) / playersKeys.length;
+
+            const playersCorrect = playersKeys.filter(
+                (pk) => (players[pk].selectedCards?.length ?? 0) === 3
+            ).length;
+
+            const update = playersKeys.reduce((prev, pk) => {
                 const player = players[pk];
                 const previousScore =
                     game.turns[game.turns.length - 2]?.players?.[
                         player.playerId
                     ]?.score ?? 0;
-                const playerTurn = gameTurn.players[player.playerId];
+                const playerTurn = players[player.playerId];
+
                 const speed =
-                    1 -
-                    (playerTurn.selectedCardsTime ?? 0) /
-                        ((playerTurn.displayedCardsTime ?? 1) +
-                            (gameTurn.timeoutPlayerSelectCards ?? 0));
+                    player.role === PlayerRole.gremlin
+                        ? timeoutSelectCards /
+                          ((playerTurn.selectedCardsTime ?? 0) -
+                              (playerTurn.displayedCardsTime ?? 0))
+                        : playersCorrect / playersKeys.length;
 
                 const scorePlus =
                     player.role === PlayerRole.gremlin
@@ -79,9 +92,16 @@ const workflows: FlowTransition[] = [
                             : 0
                         : 50;
 
+                console.log(
+                    previousScore,
+                    scorePlus,
+                    speed,
+                    speed * 50,
+                    Math.round(speed * 50)
+                );
                 prev[pk] = {
                     playerId: player.playerId,
-                    score: previousScore + scorePlus + speed * 50,
+                    score: previousScore + scorePlus + Math.round(speed * 50),
                     speed,
                 };
 

@@ -42,7 +42,6 @@ export const newTurnFx = attach({
                 };
                 return prev;
             }, {} as GamePlayersTurn),
-            timeoutPlayerSelectCards: 10000,
         };
         console.log('New turn', turn);
         return turn;

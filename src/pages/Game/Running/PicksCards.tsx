@@ -5,6 +5,7 @@ import { selectCard, updatePlayersTurn } from '../../../state/game';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../state/player';
 import { Countdown } from '../../../components/Countdown';
+import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {
     const playerTurn = usePlayerTurn();
@@ -20,7 +21,7 @@ export const PicksCards: React.FC = () => {
             updatePlayersTurn({
                 [player.id]: {
                     playerId: player!.id,
-                    selectedCardsTime: new Date().getTime(),
+                    selectedCardsTime: Date.now(),
                 },
             });
         }
@@ -50,6 +51,16 @@ export const PicksCards: React.FC = () => {
                             <div>Pick 3 cards!</div>
                         )}
                     </div>
+
+                    {cardsVisible && storytellerTurn?.story && (
+                        <div className="text-center my-4">
+                            <Button
+                                onClick={() => setCardsVisible(false)}
+                                label="I memorized all give me more points"
+                                size="small"
+                            />
+                        </div>
+                    )}
 
                     {!cardsVisible && storytellerTurn?.story && (
                         <div>Story: {storytellerTurn?.story}</div>
