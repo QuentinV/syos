@@ -27,6 +27,7 @@ export const {
 export const updateGame = createEvent<Game>();
 export const togglePlayerReady = createEvent<string>();
 export const startGame = createEvent<void>();
+export const stopGame = createEvent<void>();
 export const newTurn = createEvent<GameTurn | undefined>();
 export const newPlayerTurn = createEvent<Player>();
 export const setDisplayedCards = createEvent<{
@@ -66,6 +67,9 @@ gameDS
     })
     .on('startGame', startGame, (game) =>
         game ? { ...game, status: 'running' } : null
+    )
+    .on('stopGame', stopGame, (game) =>
+        game ? { ...game, status: 'finished' } : null
     )
     .on('newTurn', newTurn, (game, turn) =>
         game && turn

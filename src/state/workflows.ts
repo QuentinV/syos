@@ -1,5 +1,5 @@
 import { createEffect, sample } from 'effector';
-import { setGameTurnStatus, $game, updatePlayersTurn } from './game';
+import { setGameTurnStatus, $game, updatePlayersTurn, stopGame } from './game';
 import {
     Game,
     GamePlayersTurn,
@@ -19,7 +19,10 @@ interface FlowTransition {
         playerTurn?: PlayerTurn;
         player: Player;
     }) => boolean;
-    logic?: (context: { game: Game; player: Player }) => () => any;
+    logic?: (context: {
+        game: Game;
+        player: Player;
+    }) => undefined | (() => any) | void;
     next?: GameTurnStatus;
 }
 
@@ -116,13 +119,20 @@ const workflows: FlowTransition[] = [
         },
         next: 'turnEnded',
     },
+    {
+        from: 'turnEnded',
+        filter: ({ game }) => game.turns.length > 10,
+        logic: () => {
+            stopGame();
+        },
+    },
 ];
 
 workflows.forEach((w) => {
     sample({
         source: { $game, $player },
         filter: ({ $game, $player }) => {
-            if (!$game || !$player) return false;
+            if (!$game || !$player || $game.status !== 'running') return false;
             const turn = $game?.turns?.[$game?.turns?.length - 1];
             if (turn?.status !== w.from) return false;
             const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
