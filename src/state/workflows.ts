@@ -104,7 +104,7 @@ const workflows: FlowTransition[] = [
                     playerId: player.playerId,
                     score:
                         (playerTurn.score ?? 0) +
-                        (correctCards / 3) * 50 +
+                        Math.round((correctCards / 3) * 50) +
                         Math.round(speed * 50),
                     speed,
                 };

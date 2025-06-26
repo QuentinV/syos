@@ -12,6 +12,7 @@ export const PlayersBoard: React.FC = () => {
         <div className="flex flex-column gap-2">
             {playersTurns.map((p) => (
                 <div
+                    key={p.playerId}
                     className={`playerBoard ${p.player?.ready ? 'playerReady' : ''}`}
                 >
                     <div>
