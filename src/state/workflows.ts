@@ -65,11 +65,15 @@ const workflows: FlowTransition[] = [
                     ) ?? ''
                 ];
 
+            const playersVoted = playersKeys.filter(
+                (k) => players[k].estimateVisibleCards !== -1
+            );
+
             const timeoutSelectCards =
-                playersKeys.reduce(
+                playersVoted.reduce(
                     (prev, pk) => players[pk].estimateVisibleCards ?? 0 + prev,
                     0
-                ) / playersKeys.length;
+                ) / playersVoted.length;
 
             const playersCorrect = playersKeys.filter(
                 (pk) =>

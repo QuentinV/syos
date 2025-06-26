@@ -7,8 +7,9 @@ import { $player } from '../../../../state/player';
 import { setTimeEstimate } from '../../../../state/game';
 import { usePlayerTurn } from '../../../../state/gameHooks';
 
+const estimateCards = [-1, 1, 2, 3, 5, 8, 10, 13, 21, 34];
+
 export const PEstimate: React.FC = () => {
-    const [estimated, setEstimated] = useState<number>(20);
     const player = useUnit($player);
     const playerTurn = usePlayerTurn();
 
@@ -34,35 +35,28 @@ export const PEstimate: React.FC = () => {
                 memorize the cards?
             </div>
             <div className="flex align-items-center gap-2">
-                <div className="w-9rem">
-                    <InputNumber
-                        value={playerTurn?.estimateVisibleCards ?? estimated}
-                        onValueChange={(event) =>
-                            setEstimated(event.value ?? 0)
-                        }
-                        min={1}
-                        showButtons
-                        buttonLayout="horizontal"
-                        disabled={!!playerTurn?.estimateVisibleCards}
-                    />
-                </div>
-                <div>seconds</div>
+                {estimateCards.map((k) => (
+                    <>
+                        <Button
+                            onClick={() =>
+                                playerTurn?.estimateVisibleCards ===
+                                    undefined &&
+                                setTimeEstimate({
+                                    playerId: player.id,
+                                    estimate: k,
+                                })
+                            }
+                            disabled={
+                                playerTurn?.estimateVisibleCards !==
+                                    undefined &&
+                                playerTurn.estimateVisibleCards !== k
+                            }
+                        >
+                            {k === -1 ? '?' : k}
+                        </Button>
+                    </>
+                ))}
             </div>
-            {!playerTurn?.estimateVisibleCards && (
-                <div>
-                    <Button
-                        size="small"
-                        onClick={() =>
-                            setTimeEstimate({
-                                playerId: player.id,
-                                estimate: estimated,
-                            })
-                        }
-                    >
-                        Lock my decision
-                    </Button>
-                </div>
-            )}
         </div>
     );
 };
