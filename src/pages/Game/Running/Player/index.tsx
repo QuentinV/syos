@@ -22,7 +22,10 @@ export const Player: React.FC = () => {
     if (!player || !turn || !playerTurn || !storytellerTurn) return null;
 
     useEffect(() => {
-        if (!playerTurn?.displayedCards?.length) {
+        if (
+            !playerTurn?.displayedCards?.length &&
+            storytellerTurn.selectedCardsTime
+        ) {
             const r = [
                 ...(storytellerTurn.selectedCards ?? []),
                 ...getRandomCards(
@@ -43,7 +46,7 @@ export const Player: React.FC = () => {
             ].sort(() => Math.random() - 0.5);
             setDisplayedCards({ playerId: player!.id, cardIndexes: r });
         }
-    }, [playerTurn?.displayedCards]);
+    }, [playerTurn?.displayedCards, storytellerTurn.selectedCardsTime]);
 
     const renderContent = () => {
         switch (turn.status) {
