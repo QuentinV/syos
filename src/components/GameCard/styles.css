@@ -1,0 +1,61 @@
+.gamecard {
+    border: 2px var(--surface-200) dotted;
+    border-radius: 10px;
+}
+
+.gamecard.md {
+    width: 134px;
+    height: 174px;
+    padding: 5px;
+}
+
+.gamecard.md img {
+    width: 120px;
+    height: 160px;
+}
+
+.gamecard.sm {
+    width: 70px;
+    height: 90px;
+    padding: 3px;
+}
+
+.gamecard.sm img {
+    width: 60px;
+    height: 80px;
+}
+
+@media (max-width: 800px) {
+    .gamecard.md img {
+        width: 60px;
+        height: 80px;
+    }
+
+    .gamecard.md {
+        width: 70px;
+        height: 90px;
+        padding: 3px;
+    }
+}
+
+.gamecard.invalid {
+    border-color: red;
+}
+
+.gamecard.valid {
+    border-color: green;
+}
+
+.gamecard.selectable:hover {
+    border-style: solid;
+    cursor: pointer;
+    border-color: var(--primary-color);
+}
+
+.gamecard.selected {
+    border-style: solid;
+}
+
+.gamecard:not(.selectable) {
+    pointer-events: none;
+}

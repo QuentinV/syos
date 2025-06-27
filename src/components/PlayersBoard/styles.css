@@ -1,0 +1,18 @@
+.playerBoard {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.playerBoard .playerAvatar {
+    color: black;
+    font-size: 0.8rem;
+    background-color: var(--surface-300);
+    padding: 0.25rem 1rem;
+    border-radius: 1rem;
+    border: thin var(--red-500) solid;
+}
+
+.playerBoard.playerReady .playerAvatar {
+    border-color: var(--green-500);
+}

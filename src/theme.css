@@ -1,0 +1,162 @@
+:root {
+    --font-family: 'Playwrite GB S', cursive;
+    font-family: 'Playwrite GB S', cursive;
+}
+
+html,
+body,
+div,
+main {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+body,
+html {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    position: relative;
+    background: radial-gradient(
+        circle,
+        rgba(17, 24, 39, 0.5) 35%,
+        rgba(255, 255, 255, 0.1) 100%
+    );
+}
+
+html {
+    line-height: normal;
+    font-style: normal;
+    font-optical-sizing: auto;
+}
+
+/* Style the scrollbar track */
+::-webkit-scrollbar {
+    width: 6px; /* Width of the vertical scrollbar */
+    height: 6px; /* Height of the horizontal scrollbar */
+}
+
+/* Style the scrollbar thumb */
+::-webkit-scrollbar-thumb {
+    background: rgba(113, 113, 113, 0.5); /* Color of the scrollbar thumb */
+    border-radius: 6px; /* Rounded corners */
+}
+
+/* Style the scrollbar track */
+::-webkit-scrollbar-track {
+    background: rgba(113, 113, 113, 0.1); /* Color of the scrollbar track */
+    border-radius: 6px; /* Rounded corners */
+}
+
+.p-tabview-panels {
+    flex: 1;
+    background-color: #121212;
+    overflow: auto;
+}
+
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link,
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+    background-color: #121212;
+}
+
+.p-dialog-header {
+    padding: 1.5rem;
+}
+
+.p-datascroller-content {
+    background-color: transparent !important;
+}
+
+.p-inputwrapper,
+.p-inputtext {
+    width: 100%;
+}
+
+.p-inputwrapper button {
+    padding: 0;
+}
+
+.readonlypage input,
+.p-inputwrapper.readonly input,
+.p-inputwrapper.readonly-r input,
+.p-inputtext.readonly {
+    border: none;
+    background: transparent;
+    pointer-events: none;
+}
+
+.readonlypage .p-inputgroup-addon,
+.readonlypage .p-datepicker-trigger {
+    border: none;
+    background: transparent;
+    color: white;
+}
+
+.p-inputgroup.readonly input,
+.p-inputwrapper.readonly input,
+.p-inputtext.readonly {
+    opacity: 1;
+}
+
+.p-inputwrapper.readonly-r input {
+    text-align: right;
+}
+
+.p-inputtext,
+.p-inputnumber-input {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.input-sm,
+.input-sm input {
+    width: 10rem;
+}
+
+.p-stepper.p-stepper-vertical .p-stepper-toggleable-content {
+    background: unset;
+}
+
+/* Accordion */
+.p-accordion-tab {
+    margin-bottom: 1rem;
+}
+
+.p-accordion-header-link {
+    background: unset;
+    border: none;
+    padding: 0.5rem;
+}
+
+.p-accordion-toggle-icon {
+    display: none;
+}
+
+.p-accordion-number {
+    border: 0 none;
+    border-width: 2px;
+    min-width: 2rem;
+    height: 2rem;
+    line-height: 2rem;
+    font-size: 1.143rem;
+    border-radius: 50%;
+    transition:
+        background-color 0.2s,
+        color 0.2s,
+        box-shadow 0.2s;
+    padding: 0;
+}
+
+.p-accordion-separator {
+    flex: 0 0 auto;
+    width: 2px;
+    height: auto;
+    margin-inline-start: calc(1.75rem + 2px);
+    background-color: #424b57;
+}
+
+.p-accordion-content {
+    display: flex;
+    background: unset;
+}
