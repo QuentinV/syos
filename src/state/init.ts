@@ -1,27 +1,12 @@
-import {
-    createEffect,
-    sample,
-    attach,
-    createEvent,
-    createStore,
-} from 'effector';
+import { createEffect, sample, attach, createEvent } from 'effector';
 import './workflows';
 import { $game, gameDS, joinFx, newTurn, startGame, updateGame } from './game';
 import { $player } from './player';
 import { v4 as uuid } from 'uuid';
 import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
-export const navigateToGame = createEvent<string>();
-export const $navigateToGame = createStore<string | null>(null).on(
-    navigateToGame,
-    (_, gameId) => gameId
-);
-
-$player.watch((p) => console.log('player:', p));
-
 export const newGameFx = attach({
     source: $player,
-    mapParams: (_, player) => player,
     effect: (player: Player | null) => {
         const id = uuid();
 
@@ -29,15 +14,9 @@ export const newGameFx = attach({
             id,
             createdAt: Date.now(),
             status: 'lobby',
-            players: {},
+            players: player ? { [player.id]: player } : {},
             turns: [],
         };
-
-        if (player) {
-            game.players[player.id] = player;
-        }
-
-        console.log('CREANDO GAME', game);
 
         return game;
     },
@@ -96,7 +75,13 @@ gameDS.on('joined', joined, (game, player: Player | null) => {
 });
 
 sample({
+    source: $player,
     clock: joinFx.doneData,
-    fn: (gameId) => gameId!,
-    target: navigateToGame,
+    fn: (player, gameId) => ({ gameId: gameId!, player }),
+    target: createEffect(
+        ({ gameId, player }: { gameId: string; player: Player | null }) => {
+            joined(player);
+            location.href = `${document.location.origin}/syos#/game/${gameId}`;
+        }
+    ),
 });

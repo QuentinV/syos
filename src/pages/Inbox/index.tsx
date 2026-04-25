@@ -1,19 +1,10 @@
-import React, { useEffect } from 'react';
-import { useUnit } from 'effector-react';
+import React from 'react';
 import { Button } from 'primereact/button';
 import { useNavigate } from 'react-router-dom';
-import { $navigateToGame, newGameFx } from '../../state/init';
+import { newGameFx } from '../../state/init';
 
 export const InboxPage = () => {
     const navigate = useNavigate();
-    const gameId = useUnit($navigateToGame);
-
-    useEffect(() => {
-        console.log(gameId);
-        if (!gameId) return;
-        navigate(`/game/${gameId}`);
-    }, [gameId, navigate]);
-
     return (
         <>
             <div className="flex align-items-center gap-4 justify-content-center w-full h-full flex-wrap">
@@ -30,7 +21,10 @@ export const InboxPage = () => {
                                 label="New Game"
                                 size="small"
                                 severity="secondary"
-                                onClick={() => newGameFx()}
+                                onClick={async () => {
+                                    const game = await newGameFx();
+                                    navigate(`/game/${game.id}`);
+                                }}
                             />
                         </div>
                     </div>
