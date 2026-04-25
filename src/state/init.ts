@@ -6,19 +6,21 @@ import { v4 as uuid } from 'uuid';
 import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
 export const newGameFx = attach({
-    source: { $player },
-    effect: createEffect(({ $player }: { $player: Player | null }) => {
+    source: $player,
+    effect: createEffect((player: Player | null) => {
         const id = uuid();
         const game: Game = {
             id,
-            createdAt: new Date().getTime(),
+            createdAt: Date.now(),
             status: 'lobby',
             players: {},
             turns: [],
         };
-        if ($player) {
-            game.players = { [$player.id]: $player };
+
+        if (player) {
+            game.players[player.id] = player;
         }
+
         return game;
     }),
 });
@@ -51,6 +53,13 @@ export const newTurnFx = attach({
     }),
 });
 
+const redirectToGameFx = createEffect(
+    ({ gameId, player }: { gameId: string; player: Player | null }) => {
+        joined(player);
+        location.href = `${document.location.origin}/syos#/game/${gameId}`;
+    }
+);
+
 sample({
     source: newGameFx.doneData,
     target: updateGame,
@@ -79,10 +88,5 @@ sample({
     source: $player,
     clock: joinFx.doneData,
     fn: (player, gameId) => ({ gameId: gameId!, player }),
-    target: createEffect(
-        ({ gameId, player }: { gameId: string; player: Player | null }) => {
-            joined(player);
-            location.href = `${document.location.origin}/syos#/game/${gameId}`;
-        }
-    ),
+    target: redirectToGameFx,
 });
