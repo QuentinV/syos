@@ -6,20 +6,21 @@ import { v4 as uuid } from 'uuid';
 import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
 export const newGameFx = attach({
-    source: $player,
-    effect: (player: Player | null) => {
+    source: { $player },
+    effect: createEffect(({ $player }: { $player: Player | null }) => {
         const id = uuid();
-
         const game: Game = {
             id,
-            createdAt: Date.now(),
+            createdAt: new Date().getTime(),
             status: 'lobby',
-            players: player ? { [player.id]: player } : {},
+            players: {},
             turns: [],
         };
-
+        if ($player) {
+            game.players = { [$player.id]: $player };
+        }
         return game;
-    },
+    }),
 });
 
 export const newTurnFx = attach({
