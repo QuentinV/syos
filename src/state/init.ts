@@ -1,4 +1,10 @@
-import { createEffect, sample, attach, createEvent } from 'effector';
+import {
+    createEffect,
+    sample,
+    attach,
+    createEvent,
+    createStore,
+} from 'effector';
 import './workflows';
 import { $game, gameDS, joinFx, newTurn, startGame, updateGame } from './game';
 import { $player } from './player';
@@ -6,6 +12,10 @@ import { v4 as uuid } from 'uuid';
 import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
 export const navigateToGame = createEvent<string>();
+export const $navigateToGame = createStore<string | null>(null).on(
+    navigateToGame,
+    (_, gameId) => gameId
+);
 
 export const newGameFx = attach({
     source: $player,

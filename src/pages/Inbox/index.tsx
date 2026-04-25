@@ -2,11 +2,11 @@ import React, { useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import { Button } from 'primereact/button';
 import { useNavigate } from 'react-router-dom';
-import { navigateToGame, newGameFx } from '../../state/init';
+import { $navigateToGame, newGameFx } from '../../state/init';
 
 export const InboxPage = () => {
     const navigate = useNavigate();
-    const gameId = useUnit(navigateToGame);
+    const gameId = useUnit($navigateToGame);
 
     useEffect(() => {
         if (!gameId) return;
