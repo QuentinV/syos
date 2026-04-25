@@ -9,6 +9,7 @@ export const InboxPage = () => {
     const gameId = useUnit($navigateToGame);
 
     useEffect(() => {
+        console.log(gameId);
         if (!gameId) return;
         navigate(`/game/${gameId}`);
     }, [gameId, navigate]);

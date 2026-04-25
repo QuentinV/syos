@@ -17,10 +17,14 @@ export const $navigateToGame = createStore<string | null>(null).on(
     (_, gameId) => gameId
 );
 
+$player.watch((p) => console.log('player:', p));
+
 export const newGameFx = attach({
     source: $player,
-    effect: createEffect((player: Player | null) => {
+    mapParams: (_, player) => player,
+    effect: (player: Player | null) => {
         const id = uuid();
+
         const game: Game = {
             id,
             createdAt: Date.now(),
@@ -33,8 +37,10 @@ export const newGameFx = attach({
             game.players[player.id] = player;
         }
 
+        console.log('CREANDO GAME', game);
+
         return game;
-    }),
+    },
 });
 
 export const newTurnFx = attach({
