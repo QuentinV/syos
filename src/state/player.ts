@@ -12,6 +12,10 @@ const reloadFromStorageFx = createEffect(() => {
         : { id: uuid(), name: 'Player ' + Math.floor(Math.random() * 1000) };
 });
 
+const savePlayerFx = createEffect((player: Player) => {
+    localStorage.setItem('player', JSON.stringify(player));
+});
+
 $player
     .on(setPlayerName, (player, name) => (player ? { ...player, name } : null))
     .on(reloadFromStorageFx.doneData, (_, state) => state);
@@ -19,9 +23,7 @@ $player
 sample({
     source: $player,
     filter: (player) => !!player,
-    target: createEffect((player: Player) => {
-        localStorage.setItem('player', JSON.stringify(player));
-    }),
+    target: savePlayerFx,
 });
 
 reloadFromStorageFx();
