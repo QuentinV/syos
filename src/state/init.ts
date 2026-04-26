@@ -74,14 +74,20 @@ gameDS.on('joined', joined, (game, player: Player | null) => {
     return { ...game };
 });
 
+const joinGameFx = createEffect(
+    ({ gameId, player }: { gameId: string; player: Player | null }) => {
+        joined(player);
+        return gameId;
+    }
+);
+
+const navigateToGameFx = createEffect((gameId: string) => {
+    location.href = `${document.location.origin}/syos#/game/${gameId}`;
+});
+
 sample({
     source: $player,
     clock: joinFx.doneData,
     fn: (player, gameId) => ({ gameId: gameId!, player }),
-    target: createEffect(
-        ({ gameId, player }: { gameId: string; player: Player | null }) => {
-            joined(player);
-            location.href = `${document.location.origin}/syos#/game/${gameId}`;
-        }
-    ),
+    target: joinGameFx,
 });
