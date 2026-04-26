@@ -5,6 +5,8 @@ import { $player } from './player';
 import { v4 as uuid } from 'uuid';
 import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
+export const createNewGame = createEvent();
+
 export const newGameFx = attach({
     source: $player,
     effect: (player: Player | null) => {
@@ -50,9 +52,31 @@ export const newTurnFx = attach({
     }),
 });
 
+const joinGameFx = createEffect(
+    ({ gameId, player }: { gameId: string; player: Player | null }) => {
+        joined(player);
+        return gameId;
+    }
+);
+
+const navigateToGameFx = createEffect((gameId: string) => {
+    location.href = `${document.location.origin}/syos#/game/${gameId}`;
+});
+
+sample({
+    clock: createNewGame,
+    target: newGameFx,
+});
+
 sample({
     source: newGameFx.doneData,
     target: updateGame,
+});
+
+sample({
+    source: newGameFx.doneData,
+    fn: (game) => game.id,
+    target: navigateToGameFx,
 });
 
 sample({
@@ -72,17 +96,6 @@ gameDS.on('joined', joined, (game, player: Player | null) => {
     }
     game.players[player.id] = player;
     return { ...game };
-});
-
-const joinGameFx = createEffect(
-    ({ gameId, player }: { gameId: string; player: Player | null }) => {
-        joined(player);
-        return gameId;
-    }
-);
-
-const navigateToGameFx = createEffect((gameId: string) => {
-    location.href = `${document.location.origin}/syos#/game/${gameId}`;
 });
 
 sample({
