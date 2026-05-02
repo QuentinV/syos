@@ -11,29 +11,26 @@ export interface GamePageProps {
     init?: boolean;
 }
 
+const views = {
+    lobby: Lobby,
+    running: Running,
+    finished: End,
+} as const;
+
 export const GamePage: React.FC<GamePageProps> = ({ id, init = true }) => {
     const { id: idParams } = useParams();
-    const i = id ?? idParams;
+    const gameId = id ?? idParams;
     const game = useGame();
 
     useEffect(() => {
-        if (init) {
-            initGame(i ?? '');
+        if (init && gameId) {
+            initGame(gameId);
         }
-    }, [i, init]);
+    }, [gameId, init]);
 
     if (!game) return null;
 
-    const renderBasedOnStatus = () => {
-        switch (game.status) {
-            case 'lobby':
-                return <Lobby />;
-            case 'running':
-                return <Running />;
-            case 'finished':
-                return <End />;
-        }
-    };
+    const View = views[game.status];
 
-    return <div>{renderBasedOnStatus()}</div>;
+    return View ? <View /> : null;
 };
