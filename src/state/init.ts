@@ -80,6 +80,11 @@ sample({
 });
 
 sample({
+    source: joinGameFx.doneData,
+    target: navigateToGameFx,
+});
+
+sample({
     source: newTurnFx.doneData,
     target: newTurn,
 });
@@ -101,6 +106,8 @@ gameDS.on('joined', joined, (game, player: Player | null) => {
 sample({
     source: $player,
     clock: joinFx.doneData,
-    fn: (player, gameId) => ({ gameId: gameId!, player }),
+    fn: (player, gameId) => {
+        return { gameId: gameId!, player };
+    },
     target: joinGameFx,
 });
