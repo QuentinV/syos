@@ -22,6 +22,11 @@ export const Lobby: React.FC = () => {
 
     if (!game || !peerId) return null;
 
+    const players = Object.values(game.players);
+
+    const canStart =
+        players.length >= 2 && players.every((player) => player.ready);
+
     return (
         <>
             <h2 className="text-center">Game room {game.id}</h2>
@@ -54,15 +59,24 @@ export const Lobby: React.FC = () => {
                             label="Ready"
                             size="small"
                             onClick={() => togglePlayerReady(player.id)}
-                        />{' '}
+                        />
                         <Button
                             label="Start Game"
                             size="small"
-                            disabled={Object.keys(game.players).some(
-                                (pk) => !game.players[pk].ready
-                            )}
+                            disabled={!canStart}
                             onClick={() => startGame()}
                         />
+                        {!canStart && players.length < 2 && (
+                            <div className="text-sm">
+                                At least 2 players are required to start
+                            </div>
+                        )}
+
+                        {!canStart && players.length >= 2 && (
+                            <div className="text-sm">
+                                Waiting for all players to be ready
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
