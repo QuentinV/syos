@@ -5,6 +5,8 @@ import { initGame, useGame } from '../../state/game';
 import { Lobby } from './Lobby';
 import { End } from './End';
 import { Running } from './Running';
+import { startHeartbeat } from '../../utils/heartbeat';
+import { startPresenceCheck } from '../../state/presence';
 
 export interface GamePageProps {
     id?: string;
@@ -21,6 +23,14 @@ export const GamePage: React.FC<GamePageProps> = ({ id, init = true }) => {
             initGame(i ?? '');
         }
     }, [i, init]);
+
+    useEffect(() => {
+        startHeartbeat();
+    }, []);
+
+    useEffect(() => {
+        startPresenceCheck();
+    }, []);
 
     if (!game) return null;
 

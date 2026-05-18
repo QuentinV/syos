@@ -11,6 +11,7 @@ export interface Player {
     id: string;
     name: string;
     ready: boolean;
+    lastSeen?: number;
 }
 
 export interface GameTurn {

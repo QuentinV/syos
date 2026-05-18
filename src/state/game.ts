@@ -45,6 +45,8 @@ export const setTimeEstimate = createEvent<{
     estimate: number;
 }>();
 
+export const heartbeat = createEvent<{ playerId: string }>(); //this player is still alive
+
 const changePlayerTurn = (
     game: Game | null,
     playerId: string,
@@ -135,6 +137,17 @@ gameDS
                 ...playersTurn[pk],
             };
         });
+
+        return { ...game };
+    })
+    .on('heartbeat', heartbeat, (game, { playerId }) => {
+        if (!game) return null;
+
+        const player = game.players[playerId];
+
+        if (player) {
+            player.lastSeen = Date.now();
+        }
 
         return { ...game };
     });
