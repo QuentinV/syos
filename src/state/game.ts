@@ -9,16 +9,9 @@ import {
     PlayerTurn,
 } from './types';
 import { createDSApi } from '../utils/dsApi';
+import { computeGameChecksum } from './checksum';
 
-const computeGameChecksum = (state: Game | null): string => {
-    if (!state) return 'null';
-    return [
-        state.id,
-        state.status,
-        state.turns.length.toString(),
-        Object.keys(state.players).sort().join(','),
-    ].join('|');
-};
+export { computeGameChecksum } from './checksum';
 
 export const {
     store: gameDS,

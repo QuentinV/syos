@@ -5,6 +5,7 @@ import {
     createMockGameWithPlayers,
 } from '../../utils/__tests__/mockPeer';
 import { Game, GameTurn, PlayerRole } from '../types';
+import { computeGameChecksum } from '../checksum';
 
 /**
  * Simulate the workflow transition check (mirrors the logic in workflows.ts).
@@ -468,25 +469,61 @@ describe('Issue 3: Workflow — Storyteller Disconnect', () => {
 });
 
 describe('Issue 4: State Divergence Detection', () => {
-    it('should detect when peers have diverged states', () => {
-        const initialState = createMockGameWithPlayers(3).game;
-        const [alice, bob] = createWiredPeers(2, initialState);
+    it('should produce different checksums for different states', () => {
+        const state1 = createMockGameWithPlayers(3).game;
+        const state2 = createMockGameWithPlayers(3).game;
 
-        // Bob's state gets corrupted (simulating a bug or race condition)
-        bob.corruptState({
-            players: {
-                ...initialState.players,
-                'player-0': {
-                    ...initialState.players['player-0'],
-                    ready: true, // Alice's player is marked ready without her consent
-                },
-            },
+        // Corrupt state2: mark a player ready
+        state2.players['player-0'].ready = true;
+
+        const checksum1 = computeGameChecksum(state1);
+        const checksum2 = computeGameChecksum(state2);
+
+        // Different states should produce different checksums
+        expect(checksum1).not.toEqual(checksum2);
+    });
+
+    it('should produce the same checksum for identical states', () => {
+        const state1 = createMockGameWithPlayers(3).game;
+        const state2 = createMockGameWithPlayers(3).game;
+
+        const checksum1 = computeGameChecksum(state1);
+        const checksum2 = computeGameChecksum(state2);
+
+        // Identical states should produce the same checksum
+        expect(checksum1).toEqual(checksum2);
+    });
+
+    it('should detect state changes via checksum', () => {
+        const state = createMockGameWithPlayers(3).game;
+        const before = computeGameChecksum(state);
+
+        // Simulate a game event: toggle player ready
+        state.players['player-0'].ready = !state.players['player-0'].ready;
+        const after = computeGameChecksum(state);
+
+        expect(before).not.toEqual(after);
+    });
+
+    it('should detect turn changes via checksum', () => {
+        const state = createMockGameWithPlayers(3).game;
+        state.status = 'running';
+        state.turns.push({
+            status: 'stPicksCards',
+            players: {},
         });
 
-        // EXPECTED FAILURE: No divergence detection exists.
-        // Bob's corrupt state goes unnoticed by Alice.
-        const areEqual = alice.isStateEqual(bob);
-        expect(areEqual).toBe(true);
+        const before = computeGameChecksum(state);
+
+        // Advance turn status
+        state.turns[0].status = 'stWriteStory';
+        const after = computeGameChecksum(state);
+
+        expect(before).not.toEqual(after);
+    });
+
+    it('should return null checksum for null state', () => {
+        expect(computeGameChecksum(null)).toBe('null');
     });
 });
 
