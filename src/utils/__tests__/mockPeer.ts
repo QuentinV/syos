@@ -1,10 +1,18 @@
-import { Game, GameTurnStatus, Player, PlayerRole } from '../../state/types';
+import { Game, Player } from '../../state/types';
 
-export type MessageHandler = (message: { type: string; data?: any }) => void;
+export type MessageHandler = (message: {
+    type: string;
+    data?: any;
+    clock?: number;
+    peerId?: string;
+}) => void;
 
 /**
  * In-memory mock of a PeerJS peer for testing P2P sync without WebRTC.
  * Each MockPeer has its own DSStore-like state and can connect to other peers.
+ *
+ * Now supports Lamport clock-based ordering: messages are stamped with
+ * a monotonic clock and reordered on receive based on (clock, peerId).
  */
 export class MockPeer {
     public peerId: string;
@@ -13,10 +21,16 @@ export class MockPeer {
     public messageLog: { from: string; message: any }[] = [];
     public isDisconnected = false;
     public dropNextMessage = false;
-    public reorderMode: 'in-order' | 'reverse' | 'random' = 'in-order';
     public onMessage: MessageHandler | null = null;
     public onConnection: ((peer: MockPeer) => void) | null = null;
-    private pendingMessages: { from: string; message: any }[] = [];
+
+    // Lamport clock
+    public lamportClock = 0;
+    private eventBuffer: {
+        from: string;
+        message: { type: string; data?: any; clock: number; peerId: string };
+    }[] = [];
+    private flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     constructor(peerId: string, initialState: Game | null = null) {
         this.peerId = peerId;
@@ -40,6 +54,10 @@ export class MockPeer {
             }
         });
         this.connectedPeers.clear();
+        if (this.flushTimeoutId) {
+            clearTimeout(this.flushTimeoutId);
+            this.flushTimeoutId = null;
+        }
     }
 
     reconnect(existingPeer: MockPeer): void {
@@ -48,13 +66,27 @@ export class MockPeer {
     }
 
     /**
-     * Broadcast a message to all connected peers.
-     * Simulates network delay and out-of-order delivery based on reorderMode.
+     * Broadcast a message to all connected peers with a Lamport clock stamp.
+     * Also applies the event locally (simulating the real DSStore behavior
+     * where the reducer runs locally first, then broadcasts to peers).
      */
     broadcast(message: { type: string; data?: any }): void {
         if (this.isDisconnected) return;
 
-        this.connectedPeers.forEach((peer, peerId) => {
+        // Stamp with Lamport clock
+        this.lamportClock++;
+        const stamped = {
+            ...message,
+            clock: this.lamportClock,
+            peerId: this.peerId,
+        };
+
+        // Apply locally first (simulates the local reducer execution)
+        this.messageLog.push({ from: this.peerId, message: stamped });
+        this.onMessage?.(stamped);
+
+        // Then send to connected peers
+        this.connectedPeers.forEach((peer) => {
             if (peer.isDisconnected) return;
 
             if (this.dropNextMessage) {
@@ -62,39 +94,97 @@ export class MockPeer {
                 return;
             }
 
-            const deliveryOrder =
-                this.reorderMode === 'reverse'
-                    ? [...this.connectedPeers.entries()].reverse()
-                    : this.reorderMode === 'random'
-                      ? [...this.connectedPeers.entries()].sort(
-                            () => Math.random() - 0.5
-                        )
-                      : [...this.connectedPeers.entries()];
-
-            deliveryOrder.forEach(([id, p]) => {
-                if (p.isDisconnected) return;
-                p.receiveMessage(this.peerId, message);
-            });
+            peer.receiveMessage(this.peerId, stamped);
         });
-    }
-
-    receiveMessage(from: string, message: { type: string; data?: any }): void {
-        if (this.isDisconnected) return;
-        this.messageLog.push({ from, message });
-        this.onMessage?.(message);
     }
 
     /**
-     * Simulate receiving events in a specific order from multiple peers.
-     * Used to test out-of-order delivery scenarios.
+     * Receive a message, buffer it, and attempt to apply in clock order.
      */
-    receiveInOrder(peerOrder: string[]): void {
-        const messages = this.pendingMessages;
-        this.pendingMessages = [];
-        peerOrder.forEach((peerId) => {
-            const msgs = messages.filter((m) => m.from === peerId);
-            msgs.forEach((m) => this.receiveMessage(m.from, m.message));
+    receiveMessage(
+        from: string,
+        message: {
+            type: string;
+            data?: any;
+            clock?: number;
+            peerId?: string;
+        }
+    ): void {
+        if (this.isDisconnected) return;
+
+        // Update our Lamport clock: take the max of our clock and the received clock, then increment
+        if (message.clock !== undefined) {
+            this.lamportClock = Math.max(this.lamportClock, message.clock) + 1;
+        }
+
+        // Add to buffer with a default clock of 0 if not provided
+        this.eventBuffer.push({
+            from,
+            message: {
+                ...message,
+                clock: message.clock ?? 0,
+                peerId: message.peerId ?? from,
+            },
         });
+
+        this.tryFlushBuffer();
+    }
+
+    /**
+     * Try to apply buffered events in order.
+     * Events are ordered by (clock, peerId) to ensure deterministic ordering.
+     * An event is ready to apply if its clock is exactly lastAppliedClock + 1,
+     * or if we've waited long enough (gap handling via timeout).
+     */
+    private tryFlushBuffer(): void {
+        // Sort by (clock, peerId) for deterministic ordering
+        this.eventBuffer.sort((a, b) => {
+            if (a.message.clock !== b.message.clock) {
+                return a.message.clock - b.message.clock;
+            }
+            return a.message.peerId.localeCompare(b.message.peerId);
+        });
+
+        // Find the contiguous sequence starting from clock 1
+        let lastAppliedClock = 0;
+        const toApply: typeof this.eventBuffer = [];
+        const remaining: typeof this.eventBuffer = [];
+
+        for (const entry of this.eventBuffer) {
+            if (entry.message.clock === lastAppliedClock + 1) {
+                toApply.push(entry);
+                lastAppliedClock = entry.message.clock;
+            } else {
+                remaining.push(entry);
+            }
+        }
+
+        this.eventBuffer = remaining;
+
+        // Apply in order
+        for (const { from, message } of toApply) {
+            this.messageLog.push({ from, message });
+            this.onMessage?.(message);
+        }
+
+        // If there's a gap, schedule a flush attempt after a short delay
+        if (this.eventBuffer.length > 0 && !this.flushTimeoutId) {
+            this.flushTimeoutId = setTimeout(() => {
+                this.flushTimeoutId = null;
+                // Force apply all buffered events in sorted order
+                this.eventBuffer.sort((a, b) => {
+                    if (a.message.clock !== b.message.clock) {
+                        return a.message.clock - b.message.clock;
+                    }
+                    return a.message.peerId.localeCompare(b.message.peerId);
+                });
+                for (const { from, message } of this.eventBuffer) {
+                    this.messageLog.push({ from, message });
+                    this.onMessage?.(message);
+                }
+                this.eventBuffer = [];
+            }, 100);
+        }
     }
 
     /**
