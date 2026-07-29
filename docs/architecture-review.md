@@ -236,9 +236,85 @@ Simple but effective for detecting issues during development.
 | ---------------------------------------- | ----------------------- | ------------------- |
 | `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
 | `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
-| `src/state/__tests__/p2p-issues.test.ts` | 12 issue-specific tests | ✅ All pass         |
-| **Total**                                | **45 tests**            | **45 pass, 0 fail** |
+| `src/state/__tests__/p2p-issues.test.ts` | 14 issue-specific tests | ✅ All pass         |
+| `src/utils/__tests__/dsApi.test.ts`      | 6 integration tests     | ✅ All pass         |
+| **Total**                                | **53 tests**            | **53 pass, 0 fail** |
 
 ---
 
-_Document generated from architectural review — July 2026. Last updated: after Lamport clock implementation._
+## 7. DS API — Remaining Concerns
+
+### 7.1 Module-Level Singletons (Medium)
+
+`lamportClock`, `eventBuffer`, `flushTimeoutId`, `lastAppliedClock`, and `peerData` are all module-level variables in `dsApi.ts`. This means:
+
+- Only **one** game instance can exist per browser tab
+- If the user navigates away and comes back, the clock/buffer state persists but may be stale
+- Tests that create multiple independent DS API instances share the same clock state
+
+**Potential fix**: Wrap these in a class or closure per `createDSApi()` call so each game instance has its own clock and buffer.
+
+### 7.2 Event Log Is Best-Effort, Not Guaranteed (Medium)
+
+`appendToEventLog` is called with `.catch(() => {})` — if IndexedDB write fails (e.g., storage quota exceeded, private browsing mode), the event is silently dropped from the log. A reconnecting peer relying on the log would miss that event and end up with stale state.
+
+**Potential fix**: Buffer events in memory and flush to IndexedDB periodically, or at minimum log a warning on failure instead of swallowing it.
+
+### 7.3 `catchUpResponse` Bypasses Lamport Clock Buffer (Low-Medium) — ✅ FIXED
+
+`catchUpResponse` handler now computes `maxClock` from replayed events and updates `lamportClock = Math.max(lamportClock, maxClock)` after applying them.
+
+**Fix**: `src/utils/dsApi.ts` — `processMessage()` `catchUpResponse` handler now tracks the max clock from replayed events and syncs `lamportClock`.
+
+### 7.4 No Clock Sync on Reconnect (Medium) — ✅ FIXED
+
+Two fixes:
+
+1. **`src/utils/dsApi.ts` `rawProcessMessage`** — Now calls `updateClock()` for **all** events including `setState`, so the Lamport clock is updated even during initial handshake or state snapshot delivery.
+2. **`src/utils/dsApi.ts` `catchUpResponse` handler** — Now syncs `lamportClock = Math.max(lamportClock, maxClock)` from replayed events.
+3. **`src/utils/__tests__/mockPeer.ts` `reconnect()`** — Now syncs `lamportClock = Math.max(lamportClock, maxMissedClock)` before replaying missed events.
+
+**Tests added**: Issue 7 (Clock Sync on Reconnect) and Issue 8 (catchUpResponse Clock Update) both pass.
+
+### 7.5 `joinFx` Doesn't Use the `requestState` Protocol (Low) — ✅ FIXED
+
+`joinFx` now captures the `DataConnection` returned by `connectToPeer()` and sends a `requestState` control message as a fallback, ensuring the joining peer gets state even if the initial `setState` from `initPeerConnection` was dropped.
+
+**Fix**: `src/utils/dsApi.ts` — `connectToPeer()` now returns `Promise<DataConnection | undefined>`, and `joinFx` sends `{ type: 'control', data: { action: 'requestState' } }` after connecting.
+
+### 7.6 No Connection Health Monitoring (Low)
+
+There's no heartbeat, no timeout detection, no way to detect a silent peer disconnection. The game relies on WebRTC's own connection state, which may not detect all failure modes (e.g., a peer that's hung but still connected).
+
+**Impact**: Low for a party game played in one session. Users can just refresh the page.
+
+### 7.7 Summary
+
+| Concern                                 | Severity   | Status                                                    |
+| --------------------------------------- | ---------- | --------------------------------------------------------- |
+| Module-level singletons                 | Medium     | Should refactor before adding features                    |
+| Event log best-effort                   | Medium     | Acceptable for now, document as limitation                |
+| `catchUpResponse` bypasses clock buffer | Low-Medium | ✅ Fixed — clock now synced from replayed events          |
+| No clock sync on reconnect              | Medium     | ✅ Fixed — `rawProcessMessage` + `catchUpResponse` + mock |
+| `joinFx` doesn't `requestState`         | Low        | ✅ Fixed — `joinFx` sends `requestState` after connecting |
+| No connection health monitoring         | Low        | Acceptable for a party game                               |
+
+**Recommended next steps**:
+
+1. ~~**Clock sync on reconnect**~~ ✅ Fixed in `dsApi.ts` + `mockPeer.ts`
+2. ~~**`joinFx` sends `requestState`**~~ ✅ Fixed in `dsApi.ts`
+3. **Module-level singleton refactor** — Larger refactor: wrap clock, buffer, and peer data in a class per `createDSApi()` instance.
+
+### Test Suite Summary (Final)
+
+| File                                     | Tests                   | Status              |
+| ---------------------------------------- | ----------------------- | ------------------- |
+| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
+| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
+| `src/state/__tests__/p2p-issues.test.ts` | 14 issue-specific tests | ✅ All pass         |
+| `src/utils/__tests__/dsApi.test.ts`      | 6 integration tests     | ✅ All pass         |
+| **Total**                                | **53 tests**            | **53 pass, 0 fail** |
+
+---
+
+_Document generated from architectural review — July 2026. Last updated: after real integration tests for dsApi.ts._

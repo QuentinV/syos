@@ -22,6 +22,12 @@ const isDebug = () => DEBUG;
 
 // -- Lamport Clock for event ordering
 let lamportClock = 0;
+
+/** Exported for testing purposes only */
+export function getCurrentClock(): number {
+    return lamportClock;
+}
+
 const eventBuffer: {
     message: Message;
     conn: DataConnection;
@@ -213,13 +219,13 @@ async function connectToPeer(
     objetId: string,
     peerId: string,
     processMessage: ProcessMessageType
-) {
+): Promise<DataConnection | undefined> {
     const pod = peerData[objetId];
     if (!pod?.conn) return;
 
     const pi = pod.peers[peerId];
     if (pi?.conn) {
-        return pi;
+        return pi.conn;
     }
 
     isDebug() && console.log('[ME] open connection to ', peerId);
@@ -252,6 +258,8 @@ async function connectToPeer(
             isDebug() && console.log(`[${peerId}] connection opened`);
         });
     });
+
+    return conn;
 }
 
 async function initPeerConnection(
@@ -503,6 +511,11 @@ export function createDSApi<State extends StateWithId>({
         conn: DataConnection
     ) => {
         if (type === 'event' && data.eventName) {
+            // Update Lamport clock from the message clock (even for setState)
+            if (clock !== undefined) {
+                updateClock(clock);
+            }
+
             localEvents[data.eventName]?.(data.payload);
 
             // Log event to append-only event log for reconnection support
@@ -566,10 +579,16 @@ export function createDSApi<State extends StateWithId>({
                 return;
             }
             if (data?.action === 'catchUpResponse') {
-                // Apply missed events in order
+                // Apply missed events in order and update clock
                 const missedEvents: EventLogEntry[] = data.events ?? [];
+                let maxClock = 0;
                 for (const entry of missedEvents) {
+                    if (entry.clock > maxClock) maxClock = entry.clock;
                     localEvents[entry.eventName]?.(entry.payload);
+                }
+                // Sync our Lamport clock to at least the max clock from replayed events
+                if (maxClock > 0) {
+                    lamportClock = Math.max(lamportClock, maxClock);
                 }
                 return;
             }
@@ -637,7 +656,15 @@ export function createDSApi<State extends StateWithId>({
             isDebug() &&
                 console.log('joining object of peer ', objectId, peerId);
             await initPeerConnection(objectId, processMessage, getState);
-            await connectToPeer(objectId, peerId, processMessage);
+            const conn = await connectToPeer(objectId, peerId, processMessage);
+
+            // Send a requestState control message as fallback in case
+            // the initial setState from initPeerConnection was dropped
+            conn?.send({
+                type: 'control',
+                data: { action: 'requestState' },
+            });
+
             isDebug() && console.log('joined');
             return objectId;
         }
@@ -652,5 +679,10 @@ export function createDSApi<State extends StateWithId>({
         usePeerId: () => useUnit($peerId),
         joinFx,
         events,
+        /** @internal Exposed for testing only */
+        _test: {
+            processMessage,
+            rawProcessMessage,
+        },
     };
 }

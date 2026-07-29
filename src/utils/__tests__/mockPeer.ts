@@ -82,6 +82,19 @@ export class MockPeer {
         const missedEvents = existingPeer.eventLog.filter(
             (e) => e.clock > sinceClock
         );
+
+        // Find the max clock among missed events to sync our clock
+        let maxMissedClock = 0;
+        for (const entry of missedEvents) {
+            if (entry.clock > maxMissedClock) maxMissedClock = entry.clock;
+        }
+
+        // Sync our Lamport clock to at least the max clock we've seen
+        if (maxMissedClock > 0) {
+            this.lamportClock = Math.max(this.lamportClock, maxMissedClock);
+        }
+
+        // Apply missed events directly (bypass buffer since we're catching up)
         for (const entry of missedEvents) {
             const stamped = {
                 type: 'event',

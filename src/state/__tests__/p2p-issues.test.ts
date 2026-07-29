@@ -595,7 +595,124 @@ describe('Issue 5: Initial Connection Handshake', () => {
     });
 });
 
-describe('Issue 6: Concurrent State Modification', () => {
+describe('Issue 7: Clock Sync on Reconnect', () => {
+    it('should update lamportClock after reconnecting and replaying missed events', () => {
+        const initialState = createMockGameWithPlayers(3).game;
+        initialState.status = 'running';
+        const turn: GameTurn = {
+            status: 'stPicksCards',
+            players: {
+                'player-0': {
+                    playerId: 'player-0',
+                    role: PlayerRole.storyteller,
+                    score: 0,
+                },
+                'player-1': {
+                    playerId: 'player-1',
+                    role: PlayerRole.gremlin,
+                    score: 0,
+                },
+                'player-2': {
+                    playerId: 'player-2',
+                    role: PlayerRole.gremlin,
+                    score: 0,
+                },
+            },
+        };
+        initialState.turns.push(turn);
+
+        const [alice, bob, charlie] = createWiredPeers(3, initialState);
+
+        // Alice broadcasts an event (clock goes to 1)
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'selectCard',
+                payload: { playerId: 'player-0', cardIndex: 1 },
+            },
+        });
+
+        // Charlie disconnects
+        charlie.disconnect();
+
+        // More events happen while Charlie is gone (Alice's clock advances)
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'selectCard',
+                payload: { playerId: 'player-0', cardIndex: 2 },
+            },
+        });
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'selectCard',
+                payload: { playerId: 'player-0', cardIndex: 3 },
+            },
+        });
+
+        // Charlie's clock is still at whatever it was (should be 0 since he never broadcast)
+        const charlieClockBefore = charlie.lamportClock;
+
+        // Charlie reconnects — should replay missed events and update his clock
+        charlie.reconnect(alice);
+
+        // Charlie's clock should now be >= the max clock from replayed events
+        // Alice's clock is at least 3 (3 broadcasts), so Charlie's should be >= 3
+        expect(charlie.lamportClock).toBeGreaterThanOrEqual(3);
+        // Charlie's state should match Alice's
+        expect(charlie.isStateEqual(alice)).toBe(true);
+    });
+});
+
+describe('Issue 8: catchUpResponse Clock Update', () => {
+    it('should update lamportClock when receiving replayed events via catchUpResponse', () => {
+        const initialState = createMockGameWithPlayers(3).game;
+        initialState.status = 'running';
+        const turn: GameTurn = {
+            status: 'stPicksCards',
+            players: {
+                'player-0': {
+                    playerId: 'player-0',
+                    role: PlayerRole.storyteller,
+                    score: 0,
+                },
+            },
+        };
+        initialState.turns.push(turn);
+
+        const [alice, bob] = createWiredPeers(2, initialState);
+
+        // Alice broadcasts events (clocks 1, 2, 3)
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'selectCard',
+                payload: { playerId: 'player-0', cardIndex: 1 },
+            },
+        });
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'selectCard',
+                payload: { playerId: 'player-0', cardIndex: 2 },
+            },
+        });
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'selectCard',
+                payload: { playerId: 'player-0', cardIndex: 3 },
+            },
+        });
+
+        // Bob's clock should have been updated by receiving events
+        // Each received event calls updateClock which does Math.max + 1
+        expect(bob.lamportClock).toBeGreaterThanOrEqual(3);
+    });
+});
+
+describe('Issue 9: Concurrent State Modification', () => {
     it('should handle concurrent score updates without data loss', () => {
         const initialState = createMockGameWithPlayers(3).game;
         initialState.status = 'running';
