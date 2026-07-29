@@ -9,6 +9,12 @@ import {
     StoreWritable,
 } from 'effector';
 import { useUnit } from 'effector-react';
+import {
+    appendToEventLog,
+    getEventsSinceClock,
+    getLatestClock,
+    EventLogEntry,
+} from './eventLog';
 
 const DEBUG = false;
 
@@ -493,11 +499,28 @@ export function createDSApi<State extends StateWithId>({
 
     // Wrapped processMessage: buffers and reorders messages by Lamport clock
     const rawProcessMessage = async (
-        { type, data, checksum }: Message,
+        { type, data, checksum, clock, peerId }: Message,
         conn: DataConnection
     ) => {
         if (type === 'event' && data.eventName) {
             localEvents[data.eventName]?.(data.payload);
+
+            // Log event to append-only event log for reconnection support
+            if (
+                data.eventName !== 'setState' &&
+                clock !== undefined &&
+                peerId
+            ) {
+                appendToEventLog({
+                    id: `${peerId}-${clock}-${Date.now()}`,
+                    clock,
+                    peerId,
+                    eventName: data.eventName,
+                    payload: data.payload,
+                    stateChecksum: checksum,
+                    timestamp: Date.now(),
+                }).catch(() => {});
+            }
 
             // Verify checksum after applying the event (if checksums are enabled)
             if (checksum !== undefined && computeChecksum) {
@@ -513,6 +536,46 @@ export function createDSApi<State extends StateWithId>({
     };
 
     const processMessage = async (message: Message, conn: DataConnection) => {
+        // Handle control messages directly (not through Lamport clock buffer)
+        if (message.type === 'control') {
+            const { data } = message;
+            if (data?.action === 'requestState') {
+                // Respond with current state + latest clock
+                const state = getState();
+                const latestClock = await getLatestClock();
+                conn.send({
+                    type: 'event',
+                    data: {
+                        eventName: 'setState',
+                        payload: state,
+                        latestClock,
+                    },
+                });
+                return;
+            }
+            if (data?.action === 'catchUpRequest') {
+                // Reconnecting peer wants events since their last known clock
+                const events = await getEventsSinceClock(data.sinceClock ?? 0);
+                conn.send({
+                    type: 'control',
+                    data: {
+                        action: 'catchUpResponse',
+                        events,
+                    },
+                });
+                return;
+            }
+            if (data?.action === 'catchUpResponse') {
+                // Apply missed events in order
+                const missedEvents: EventLogEntry[] = data.events ?? [];
+                for (const entry of missedEvents) {
+                    localEvents[entry.eventName]?.(entry.payload);
+                }
+                return;
+            }
+            return;
+        }
+
         // Update our clock from incoming message
         if (message.clock !== undefined) {
             updateClock(message.clock);

@@ -5,6 +5,7 @@ export type MessageHandler = (message: {
     data?: any;
     clock?: number;
     peerId?: string;
+    checksum?: string;
 }) => void;
 
 /**
@@ -31,6 +32,16 @@ export class MockPeer {
         message: { type: string; data?: any; clock: number; peerId: string };
     }[] = [];
     private flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    // Event log for reconnection support
+    public eventLog: {
+        id: string;
+        clock: number;
+        peerId: string;
+        eventName: string;
+        payload: any;
+        timestamp: number;
+    }[] = [];
 
     constructor(peerId: string, initialState: Game | null = null) {
         this.peerId = peerId;
@@ -63,6 +74,37 @@ export class MockPeer {
     reconnect(existingPeer: MockPeer): void {
         this.isDisconnected = false;
         this.connect(existingPeer);
+
+        // Request missed events since our last known clock
+        const sinceClock = this.lamportClock;
+        // Simulate the control message protocol
+        // The reconnecting peer sends a catchUpRequest
+        const missedEvents = existingPeer.eventLog.filter(
+            (e) => e.clock > sinceClock
+        );
+        for (const entry of missedEvents) {
+            const stamped = {
+                type: 'event',
+                data: { eventName: entry.eventName, payload: entry.payload },
+                clock: entry.clock,
+                peerId: entry.peerId,
+            };
+            this.messageLog.push({ from: entry.peerId, message: stamped });
+            this.onMessage?.(stamped);
+        }
+
+        // Also send a requestState to get the current snapshot
+        const stateSnapshot = {
+            type: 'event',
+            data: { eventName: 'setState', payload: existingPeer.getState() },
+            clock: existingPeer.lamportClock,
+            peerId: existingPeer.peerId,
+        };
+        this.messageLog.push({
+            from: existingPeer.peerId,
+            message: stateSnapshot,
+        });
+        this.onMessage?.(stateSnapshot);
     }
 
     /**

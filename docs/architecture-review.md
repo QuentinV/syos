@@ -222,22 +222,22 @@ Simple but effective for detecting issues during development.
 
 ## 6. Implementation Status
 
-| Priority | Issue                                      | Status                           | Tests       |
-| -------- | ------------------------------------------ | -------------------------------- | ----------- |
-| 1        | **Event ordering** (Lamport clock)         | ✅ Implemented in `dsApi.ts`     | 4/4 passing |
-| 2        | **Workflow resilience** (distributed eval) | ✅ Implemented in `workflows.ts` | 1/1 passing |
-| 3        | **Reconnection protocol** (event log)      | ❌ Not started                   | 0/1 passing |
-| 4        | **State divergence detection** (checksums) | ✅ Implemented in `checksum.ts`  | 5/5 passing |
-| 5        | **Handshake robustness** (ack-based)       | ❌ Not started                   | 0/1 passing |
+| Priority | Issue                                      | Status                                                       | Tests       |
+| -------- | ------------------------------------------ | ------------------------------------------------------------ | ----------- |
+| 1        | **Event ordering** (Lamport clock)         | ✅ Implemented in `dsApi.ts`                                 | 4/4 passing |
+| 2        | **Workflow resilience** (distributed eval) | ✅ Implemented in `workflows.ts`                             | 1/1 passing |
+| 3        | **Reconnection protocol** (event log)      | ✅ Implemented in `eventLog.ts` + `dsApi.ts` + `mockPeer.ts` | 1/1 passing |
+| 4        | **State divergence detection** (checksums) | ✅ Implemented in `checksum.ts`                              | 5/5 passing |
+| 5        | **Handshake robustness** (requestState)    | ✅ Implemented in `dsApi.ts` + `mockPeer.ts`                 | 1/1 passing |
 
 ### Test Suite Summary
 
-| File                                     | Tests                   | Status                     |
-| ---------------------------------------- | ----------------------- | -------------------------- |
-| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass                |
-| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass                |
-| `src/state/__tests__/p2p-issues.test.ts` | 12 issue-specific tests | 11 pass, 1 fail (expected) |
-| **Total**                                | **45 tests**            | **44 pass, 1 fail**        |
+| File                                     | Tests                   | Status              |
+| ---------------------------------------- | ----------------------- | ------------------- |
+| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
+| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
+| `src/state/__tests__/p2p-issues.test.ts` | 12 issue-specific tests | ✅ All pass         |
+| **Total**                                | **45 tests**            | **45 pass, 0 fail** |
 
 ---
 

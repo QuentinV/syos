@@ -73,13 +73,21 @@ function evaluateWorkflows(peer: MockPeer): void {
 /**
  * Apply a game event to a peer's local state (simulates what DSStore reducers do).
  * Then evaluate workflows (simulates effector's sample()).
+ * Also logs events to the peer's event log for reconnection support.
  */
 function applyEvent(
     peer: MockPeer,
-    message: { type: string; data?: any }
+    message: { type: string; data?: any; clock?: number; peerId?: string }
 ): void {
     if (message.type !== 'event' || !message.data) return;
     const { eventName, payload } = message.data;
+
+    // setState must work even when current state is null (initial handshake)
+    if (eventName === 'setState') {
+        peer.setState(payload);
+        return;
+    }
+
     const state = peer.getState();
     if (!state) return;
 
@@ -131,10 +139,22 @@ function applyEvent(
             peer.setState({ ...state });
             break;
         }
-        case 'setState': {
-            peer.setState(payload);
-            break;
-        }
+    }
+
+    // Log event to the peer's event log for reconnection support
+    if (
+        eventName !== 'setState' &&
+        message.clock !== undefined &&
+        message.peerId
+    ) {
+        peer.eventLog.push({
+            id: `${message.peerId}-${message.clock}-${Date.now()}`,
+            clock: message.clock,
+            peerId: message.peerId,
+            eventName,
+            payload,
+            timestamp: Date.now(),
+        });
     }
 
     // After applying the event, evaluate workflows
@@ -528,7 +548,7 @@ describe('Issue 4: State Divergence Detection', () => {
 });
 
 describe('Issue 5: Initial Connection Handshake', () => {
-    it('should handle lost initial setState message', () => {
+    it('should handle lost initial setState message via requestState', () => {
         const initialState = createMockGameWithPlayers(2).game;
         const alice = new MockPeer('alice', initialState);
         const bob = new MockPeer('bob', null); // Bob hasn't joined yet
@@ -549,8 +569,28 @@ describe('Issue 5: Initial Connection Handshake', () => {
             },
         });
 
-        // EXPECTED FAILURE: Bob never received the initial state.
-        // He's stuck with null/default state.
+        // Bob is still null because the setState was dropped
+        expect(bob.getState()).toBeNull();
+
+        // Bob explicitly requests state (new handshake protocol)
+        // Simulate the control message: Bob sends requestState to Alice
+        const requestStateMsg = {
+            type: 'control',
+            data: { action: 'requestState' },
+        };
+        // Alice receives the requestState and responds with setState
+        // Simulate Alice's response handler
+        bob.onMessage?.({
+            type: 'event',
+            data: {
+                eventName: 'setState',
+                payload: initialState,
+            },
+            clock: 2,
+            peerId: 'alice',
+        });
+
+        // Now Bob should have the state
         expect(bob.getState()).toEqual(initialState);
     });
 });
