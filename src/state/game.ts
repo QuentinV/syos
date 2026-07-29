@@ -73,7 +73,9 @@ gameDS
     .on('updateGame', updateGame, (_, state) => ({ ...state }))
     .on('togglePlayerReady', togglePlayerReady, (game, playerId) => {
         if (!game) return null;
-        game.players[playerId].ready = !game.players[playerId].ready;
+        const player = game.players[playerId];
+        if (!player) return game;
+        player.ready = !player.ready;
         return { ...game };
     })
     .on('startGame', startGame, (game) =>
@@ -131,21 +133,24 @@ gameDS
         if (!game) return null;
         const turn = game?.turns?.[game?.turns?.length - 1];
         if (!turn) return game;
+        if (turn.status === status) return game; // idempotent: no change, no broadcast
         turn.status = status;
         return { ...game };
     })
     .on('updatePlayersTurn', updatePlayersTurn, (game, playersTurn) => {
         if (!game) return null;
 
+        let changed = false;
         Object.keys(playersTurn).forEach((pk) => {
             const playerTurn =
                 game?.turns?.[game?.turns?.length - 1]?.players?.[pk];
             if (!playerTurn) return;
-            game.turns[game.turns.length - 1].players[pk] = {
-                ...playerTurn,
-                ...playersTurn[pk],
-            };
+            const merged = { ...playerTurn, ...playersTurn[pk] };
+            if (JSON.stringify(playerTurn) !== JSON.stringify(merged)) {
+                changed = true;
+                game.turns[game.turns.length - 1].players[pk] = merged;
+            }
         });
 
-        return { ...game };
+        return changed ? { ...game } : game;
     });

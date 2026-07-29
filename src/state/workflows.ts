@@ -134,7 +134,10 @@ workflows.forEach((w) => {
             const turn = $game?.turns?.[$game?.turns?.length - 1];
             if (turn?.status !== w.from) return false;
             const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
-            if (playerTurn?.role !== PlayerRole.storyteller) return false;
+            // Every peer evaluates workflows independently.
+            // Since all peers share the same state via Lamport clock ordering,
+            // they all reach the same conclusion. Idempotent reducers prevent
+            // redundant broadcasts.
             return w.filter({
                 game: $game,
                 player: $player,

@@ -7,7 +7,71 @@ import {
 import { Game, GameTurn, PlayerRole } from '../types';
 
 /**
+ * Simulate the workflow transition check (mirrors the logic in workflows.ts).
+ * After each event is applied, check if any workflow transition should fire.
+ */
+function evaluateWorkflows(peer: MockPeer): void {
+    const state = peer.getState();
+    if (!state || state.status !== 'running') return;
+    const turn = state.turns[state.turns.length - 1];
+    if (!turn) return;
+    const playerId = peerIdToPlayerId(peer.peerId);
+    const playerTurn = turn.players[playerId];
+    if (!playerTurn) return;
+
+    const context = {
+        game: state,
+        turn,
+        playerTurn,
+        player: { id: peer.peerId },
+    };
+
+    // stPicksCards → stWriteStory
+    if (
+        turn.status === 'stPicksCards' &&
+        playerTurn.selectedCards?.length === 3
+    ) {
+        turn.status = 'stWriteStory';
+        peer.setState({ ...state });
+        return;
+    }
+    // stWriteStory → pEstimate
+    if (turn.status === 'stWriteStory' && !!playerTurn.story) {
+        turn.status = 'pEstimate';
+        peer.setState({ ...state });
+        return;
+    }
+    // pEstimate → pPicksCards
+    if (
+        turn.status === 'pEstimate' &&
+        Object.keys(turn.players).every(
+            (pk) =>
+                turn.players[pk].role === PlayerRole.storyteller ||
+                !!turn.players[pk]?.estimateVisibleCards
+        )
+    ) {
+        turn.status = 'pPicksCards';
+        peer.setState({ ...state });
+        return;
+    }
+    // pPicksCards → turnEnded
+    if (
+        turn.status === 'pPicksCards' &&
+        Object.keys(turn.players).every(
+            (pk) =>
+                turn.players[pk].role === PlayerRole.storyteller ||
+                !!turn.players[pk]?.selectedCardsTime
+        )
+    ) {
+        turn.status = 'turnEnded';
+        peer.setState({ ...state });
+        return;
+    }
+}
+
+/**
  * Apply a game event to a peer's local state (simulates what DSStore reducers do).
+ * Then evaluate workflows (simulates effector's sample()).
  */
 function applyEvent(
     peer: MockPeer,
@@ -50,6 +114,7 @@ function applyEvent(
         case 'setGameTurnStatus': {
             const turn = state.turns[state.turns.length - 1];
             if (!turn) return;
+            if (turn.status === payload) return; // idempotent
             turn.status = payload;
             peer.setState({ ...state });
             break;
@@ -70,6 +135,9 @@ function applyEvent(
             break;
         }
     }
+
+    // After applying the event, evaluate workflows
+    evaluateWorkflows(peer);
 }
 
 /**
@@ -81,6 +149,7 @@ function wirePeer(peer: MockPeer): void {
 
 /**
  * Create peers with event handling wired up.
+ * Peer IDs match player IDs in the game state (e.g., peer-0 → player-0).
  */
 function createWiredPeers(
     count: number,
@@ -89,6 +158,14 @@ function createWiredPeers(
     const peers = createPeers(count, initialState);
     peers.forEach(wirePeer);
     return peers;
+}
+
+/**
+ * Get a peer's corresponding player ID.
+ * In tests, peer-0 maps to player-0, peer-1 maps to player-1, etc.
+ */
+function peerIdToPlayerId(peerId: string): string {
+    return peerId.replace('peer-', 'player-');
 }
 
 /**
@@ -353,7 +430,7 @@ describe('Issue 3: Workflow — Storyteller Disconnect', () => {
         // Alice (storyteller) disconnects
         alice.disconnect();
 
-        // Bob and Charlie submit their estimates
+        // Bob submits his estimate locally
         const bobEstimate = {
             type: 'event',
             data: {
@@ -361,6 +438,10 @@ describe('Issue 3: Workflow — Storyteller Disconnect', () => {
                 payload: { playerId: 'player-1', estimate: 5 },
             },
         };
+        // Use onMessage directly to bypass clock buffer
+        bob.onMessage?.(bobEstimate);
+
+        // Charlie submits his estimate locally
         const charlieEstimate = {
             type: 'event',
             data: {
@@ -368,15 +449,21 @@ describe('Issue 3: Workflow — Storyteller Disconnect', () => {
                 payload: { playerId: 'player-2', estimate: 3 },
             },
         };
+        charlie.onMessage?.(charlieEstimate);
 
-        bob.broadcast(bobEstimate);
-        charlie.broadcast(charlieEstimate);
+        // Bob receives Charlie's estimate (simulate remote event)
+        bob.onMessage?.(charlieEstimate);
 
-        // EXPECTED FAILURE: The turn status never advances because only
-        // the storyteller (Alice) evaluates workflow transitions.
-        // Bob and Charlie are stuck in 'pEstimate' forever.
+        // Charlie receives Bob's estimate (simulate remote event)
+        charlie.onMessage?.(bobEstimate);
+
+        // Now both peers have all estimates. With distributed workflow evaluation,
+        // each peer independently advances the turn to pPicksCards.
         const bobState = bob.getState();
         expect(bobState!.turns[0].status).toBe('pPicksCards');
+
+        const charlieState = charlie.getState();
+        expect(charlieState!.turns[0].status).toBe('pPicksCards');
     });
 });
 
