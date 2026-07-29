@@ -10,6 +10,16 @@ import {
 } from './types';
 import { createDSApi } from '../utils/dsApi';
 
+const computeGameChecksum = (state: Game | null): string => {
+    if (!state) return 'null';
+    return [
+        state.id,
+        state.status,
+        state.turns.length.toString(),
+        Object.keys(state.players).sort().join(','),
+    ].join('|');
+};
+
 export const {
     store: gameDS,
     joinFx,
@@ -22,6 +32,7 @@ export const {
 } = createDSApi<Game | null>({
     dbStoreName: 'games',
     defaultValue: null,
+    computeChecksum: computeGameChecksum,
 });
 
 export const updateGame = createEvent<Game>();

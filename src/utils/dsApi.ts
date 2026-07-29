@@ -161,6 +161,7 @@ interface Message {
     data?: any;
     clock?: number;
     peerId?: string;
+    checksum?: string;
 }
 
 type PeerData = { [id: string]: PeerObjectData };
@@ -331,9 +332,13 @@ async function initPeerConnection(
 function broadcastMessage({
     objectId,
     message,
+    getState,
+    computeChecksum,
 }: {
     objectId: string;
     message: Message;
+    getState?: () => any;
+    computeChecksum?: (state: any) => string;
 }) {
     const data = peerData[objectId];
     if (!data) return;
@@ -346,6 +351,11 @@ function broadcastMessage({
         clock,
         peerId: data.peerId,
     };
+
+    // Attach checksum if a computeChecksum function was provided
+    if (computeChecksum && getState) {
+        stamped.checksum = computeChecksum(getState());
+    }
 
     return Promise.allSettled(
         Object.keys(data.peers).map((key) => {
@@ -369,9 +379,18 @@ class DSStore<State extends StateWithId> {
     private $store;
     private units: { [key: string]: EventCallable<any> };
     private localUnits: { [key: string]: EventCallable<any> };
+    private getState: () => State;
+    private computeChecksum?: (state: State) => string;
 
-    constructor($store: StoreWritable<State>, api?: Reducers<State>) {
+    constructor(
+        $store: StoreWritable<State>,
+        getState: () => State,
+        api?: Reducers<State>,
+        computeChecksum?: (state: State) => string
+    ) {
         this.$store = $store;
+        this.getState = getState;
+        this.computeChecksum = computeChecksum;
         this.units = {};
         this.localUnits = {};
         Object.keys(api ?? {}).forEach((event) => {
@@ -428,6 +447,8 @@ class DSStore<State extends StateWithId> {
                                 payload,
                             },
                         },
+                        getState: this.getState,
+                        computeChecksum: this.computeChecksum,
                     });
                 }
                 return r;
@@ -453,15 +474,18 @@ export function createDSApi<State extends StateWithId>({
     dbStoreName,
     defaultValue,
     api,
+    computeChecksum,
 }: {
     dbStoreName: string;
     defaultValue: State;
     api?: Reducers<State>;
+    computeChecksum?: (state: State) => string;
 }) {
     const $store = createStore<State>(defaultValue);
     const $peerId = createStore<string | null>(null);
 
-    const dsStore = new DSStore<State>($store, api);
+    const getState = () => $store.getState();
+    const dsStore = new DSStore<State>($store, getState, api, computeChecksum);
     const initObject = createEvent<string>();
     const setPeerId = createEvent<string>();
     const events = dsStore.getUnits();
@@ -469,11 +493,22 @@ export function createDSApi<State extends StateWithId>({
 
     // Wrapped processMessage: buffers and reorders messages by Lamport clock
     const rawProcessMessage = async (
-        { type, data }: Message,
+        { type, data, checksum }: Message,
         conn: DataConnection
     ) => {
         if (type === 'event' && data.eventName) {
             localEvents[data.eventName]?.(data.payload);
+
+            // Verify checksum after applying the event (if checksums are enabled)
+            if (checksum !== undefined && computeChecksum) {
+                const localChecksum = computeChecksum(getState());
+                if (localChecksum !== checksum) {
+                    console.warn(
+                        `[DIVERGENCE] Event "${data.eventName}" caused state divergence. ` +
+                            `Expected checksum: ${checksum}, local: ${localChecksum}`
+                    );
+                }
+            }
         }
     };
 
@@ -495,8 +530,6 @@ export function createDSApi<State extends StateWithId>({
 
     $store.on(loadFromStorageFx.doneData, (_, state) => state);
     $peerId.on(setPeerId, (_, state) => state);
-
-    const getState = () => $store.getState();
 
     sample({
         source: $store,
