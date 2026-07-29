@@ -166,6 +166,7 @@ interface PeerObjectData {
 interface PeerInfo {
     peerId: string;
     conn?: DataConnection;
+    lastSeen: number;
 }
 
 interface Message {
@@ -208,7 +209,10 @@ function savePeerObjectData(objectId: string, peerObjectData: PeerObjectData) {
             peerId: peerObjectData.peerId,
             objectId,
             peers: Object.keys(peerObjectData.peers).reduce((prev, key) => {
-                prev[key] = { peerId: peerObjectData.peers[key].peerId };
+                prev[key] = {
+                    peerId: peerObjectData.peers[key].peerId,
+                    lastSeen: peerObjectData.peers[key].lastSeen ?? Date.now(),
+                };
                 return prev;
             }, {} as PeersInfos),
         },
@@ -231,7 +235,7 @@ async function connectToPeer(
     isDebug() && console.log('[ME] open connection to ', peerId);
 
     const conn = pod.conn.connect(peerId);
-    const peerInfo = { conn, peerId };
+    const peerInfo: PeerInfo = { conn, peerId, lastSeen: Date.now() };
     pod.peers[peerId] = peerInfo;
 
     if (!pi) {
@@ -300,7 +304,11 @@ async function initPeerConnection(
     peer.on('connection', async (conn) => {
         isDebug() && console.log('[ME] incoming connection', conn);
 
-        data.peers[conn.peer] = { peerId: conn.peer, conn };
+        data.peers[conn.peer] = {
+            peerId: conn.peer,
+            conn,
+            lastSeen: Date.now(),
+        };
         savePeerObjectData(objectId, data);
 
         await new Promise((res) => {
@@ -592,6 +600,28 @@ export function createDSApi<State extends StateWithId>({
                 }
                 return;
             }
+            if (data?.action === 'ping') {
+                // Update lastSeen for this peer and respond with pong
+                const state = getState();
+                const pod = state?.id ? peerData[state.id] : undefined;
+                if (pod?.peers[message.peerId ?? '']) {
+                    pod.peers[message.peerId ?? ''].lastSeen = Date.now();
+                }
+                conn.send({
+                    type: 'control',
+                    data: { action: 'pong' },
+                });
+                return;
+            }
+            if (data?.action === 'pong') {
+                // Update lastSeen for this peer
+                const state = getState();
+                const pod = state?.id ? peerData[state.id] : undefined;
+                if (pod?.peers[message.peerId ?? '']) {
+                    pod.peers[message.peerId ?? ''].lastSeen = Date.now();
+                }
+                return;
+            }
             return;
         }
 
@@ -604,6 +634,98 @@ export function createDSApi<State extends StateWithId>({
         eventBuffer.push({ message, conn });
         tryFlushBuffer(rawProcessMessage);
     };
+
+    // -- Heartbeat / Connection Health Monitoring
+    const HEARTBEAT_INTERVAL = 5000; // 5 seconds
+    const PEER_TIMEOUT = 15000; // 15 seconds (3 missed heartbeats)
+    let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
+    let healthCheckIntervalId: ReturnType<typeof setInterval> | null = null;
+
+    /**
+     * Send ping to all connected peers.
+     */
+    function sendHeartbeats(): void {
+        const state = getState();
+        if (!state?.id) return;
+        const pod = peerData[state.id];
+        if (!pod) return;
+
+        Object.keys(pod.peers).forEach((peerId) => {
+            const peerInfo = pod.peers[peerId];
+            if (peerInfo?.conn) {
+                peerInfo.conn.send({
+                    type: 'control',
+                    data: { action: 'ping' },
+                    peerId: pod.peerId,
+                });
+            }
+        });
+    }
+
+    /**
+     * Check all peers for stale lastSeen timestamps.
+     * Remove peers that haven't responded in PEER_TIMEOUT ms.
+     */
+    function checkPeerHealth(): string[] {
+        const state = getState();
+        if (!state?.id) return [];
+        const pod = peerData[state.id];
+        if (!pod) return [];
+
+        const now = Date.now();
+        const disconnected: string[] = [];
+
+        Object.keys(pod.peers).forEach((peerId) => {
+            const peerInfo = pod.peers[peerId];
+            if (peerInfo && now - peerInfo.lastSeen > PEER_TIMEOUT) {
+                isDebug() &&
+                    console.log(
+                        `[HEALTH] Peer ${peerId} timed out (lastSeen: ${
+                            now - peerInfo.lastSeen
+                        }ms ago)`
+                    );
+                disconnected.push(peerId);
+                try {
+                    peerInfo.conn?.close();
+                } catch (e) {
+                    // ignore
+                }
+                delete pod.peers[peerId];
+            }
+        });
+
+        if (disconnected.length > 0) {
+            savePeerObjectData(state.id, pod);
+        }
+
+        return disconnected;
+    }
+
+    /**
+     * Start heartbeat and health check intervals.
+     */
+    function startHeartbeat(): void {
+        if (heartbeatIntervalId) return;
+        heartbeatIntervalId = setInterval(sendHeartbeats, HEARTBEAT_INTERVAL);
+        healthCheckIntervalId = setInterval(
+            checkPeerHealth,
+            HEARTBEAT_INTERVAL
+        );
+    }
+
+    /**
+     * Stop heartbeat and health check intervals.
+     */
+    function stopHeartbeat(): void {
+        if (heartbeatIntervalId) {
+            clearInterval(heartbeatIntervalId);
+            heartbeatIntervalId = null;
+        }
+        if (healthCheckIntervalId) {
+            clearInterval(healthCheckIntervalId);
+            healthCheckIntervalId = null;
+        }
+    }
 
     const loadFromStorageFx = createEffect(
         async (objectId: string) =>
@@ -637,6 +759,8 @@ export function createDSApi<State extends StateWithId>({
                 getState
             );
             setPeerId(peerObjectData.peerId);
+            // Start heartbeat after peer connection is initialized
+            startHeartbeat();
             isDebug() &&
                 console.log(
                     'object reloaded from storage, peerid = ',
@@ -679,10 +803,15 @@ export function createDSApi<State extends StateWithId>({
         usePeerId: () => useUnit($peerId),
         joinFx,
         events,
+        startHeartbeat,
+        stopHeartbeat,
+        checkPeerHealth,
         /** @internal Exposed for testing only */
         _test: {
             processMessage,
             rawProcessMessage,
+            sendHeartbeats,
+            checkPeerHealth,
         },
     };
 }

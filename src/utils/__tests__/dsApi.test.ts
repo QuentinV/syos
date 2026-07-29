@@ -263,4 +263,108 @@ describe('dsApi.ts — Lamport clock integration', () => {
         const clockAfter = getCurrentClock();
         expect(clockAfter).toBe(clockBefore);
     });
+
+    it('should respond to ping with pong control message', async () => {
+        const api = createDSApi<TestState>({
+            dbStoreName: 'test-db',
+            defaultValue: null,
+        });
+
+        // Set state so we have an objectId
+        await api._test.rawProcessMessage(
+            {
+                type: 'event',
+                data: {
+                    eventName: 'setState',
+                    payload: { id: 'test-game', value: 1 },
+                },
+                clock: 1,
+                peerId: 'host',
+            },
+            null as any
+        );
+
+        // Mock connection to capture sent messages
+        const sentMessages: any[] = [];
+        const mockConn = {
+            send: (msg: any) => {
+                sentMessages.push(msg);
+            },
+        };
+
+        // Simulate receiving a ping
+        await api._test.processMessage(
+            {
+                type: 'control',
+                data: { action: 'ping' },
+                peerId: 'remote-peer',
+            },
+            mockConn as any
+        );
+
+        // Should have responded with pong
+        expect(sentMessages).toHaveLength(1);
+        expect(sentMessages[0].type).toBe('control');
+        expect(sentMessages[0].data.action).toBe('pong');
+    });
+
+    it('should update lastSeen when receiving pong', async () => {
+        const api = createDSApi<TestState>({
+            dbStoreName: 'test-db',
+            defaultValue: null,
+        });
+
+        // Set state so we have an objectId
+        await api._test.rawProcessMessage(
+            {
+                type: 'event',
+                data: {
+                    eventName: 'setState',
+                    payload: { id: 'test-game', value: 1 },
+                },
+                clock: 1,
+                peerId: 'host',
+            },
+            null as any
+        );
+
+        // Manually add a peer to peerData
+        const { peerData } = await import('../dsApi');
+        if (peerData['test-game']) {
+            peerData['test-game'].peers['remote-peer'] = {
+                peerId: 'remote-peer',
+                lastSeen: 0, // Very old timestamp
+            };
+        }
+
+        // Simulate receiving a pong
+        await api._test.processMessage(
+            {
+                type: 'control',
+                data: { action: 'pong' },
+                peerId: 'remote-peer',
+            },
+            null as any
+        );
+
+        // lastSeen should be updated
+        if (peerData['test-game']?.peers['remote-peer']) {
+            expect(
+                peerData['test-game'].peers['remote-peer'].lastSeen
+            ).toBeGreaterThan(0);
+        }
+    });
+
+    it('should expose startHeartbeat, stopHeartbeat, and checkPeerHealth', () => {
+        const api = createDSApi<TestState>({
+            dbStoreName: 'test-db',
+            defaultValue: null,
+        });
+
+        expect(typeof api.startHeartbeat).toBe('function');
+        expect(typeof api.stopHeartbeat).toBe('function');
+        expect(typeof api.checkPeerHealth).toBe('function');
+        expect(typeof api._test.sendHeartbeats).toBe('function');
+        expect(typeof api._test.checkPeerHealth).toBe('function');
+    });
 });

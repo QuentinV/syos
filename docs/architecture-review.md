@@ -236,9 +236,9 @@ Simple but effective for detecting issues during development.
 | ---------------------------------------- | ----------------------- | ------------------- |
 | `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
 | `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
-| `src/state/__tests__/p2p-issues.test.ts` | 14 issue-specific tests | ✅ All pass         |
-| `src/utils/__tests__/dsApi.test.ts`      | 6 integration tests     | ✅ All pass         |
-| **Total**                                | **53 tests**            | **53 pass, 0 fail** |
+| `src/state/__tests__/p2p-issues.test.ts` | 19 issue-specific tests | ✅ All pass         |
+| `src/utils/__tests__/dsApi.test.ts`      | 9 integration tests     | ✅ All pass         |
+| **Total**                                | **61 tests**            | **61 pass, 0 fail** |
 
 ---
 
@@ -282,11 +282,27 @@ Two fixes:
 
 **Fix**: `src/utils/dsApi.ts` — `connectToPeer()` now returns `Promise<DataConnection | undefined>`, and `joinFx` sends `{ type: 'control', data: { action: 'requestState' } }` after connecting.
 
-### 7.6 No Connection Health Monitoring (Low)
+### 7.6 No Connection Health Monitoring (Low) — ✅ FIXED
 
-There's no heartbeat, no timeout detection, no way to detect a silent peer disconnection. The game relies on WebRTC's own connection state, which may not detect all failure modes (e.g., a peer that's hung but still connected).
+Implemented a heartbeat protocol with `ping`/`pong` control messages and `lastSeen` tracking:
 
-**Impact**: Low for a party game played in one session. Users can just refresh the page.
+- **`PeerInfo`** interface extended with `lastSeen: number` field
+- **`ping`/`pong` control messages** — `processMessage` handles `ping` (responds with `pong` + updates `lastSeen`) and `pong` (updates `lastSeen`)
+- **`sendHeartbeats()`** — Sends `ping` to all connected peers every 5 seconds
+- **`checkPeerHealth()`** — Removes peers with stale `lastSeen` (>15 seconds = 3 missed heartbeats), closes their connections, and returns list of disconnected peer IDs
+- **`startHeartbeat()`/`stopHeartbeat()`** — Manages heartbeat and health check intervals, started automatically after `initPeerConnection`
+- **`MockPeer`** — Added `simulateSilentDisconnect()`, `sendPing()`, `handlePing()`, `checkPeerHealth()`, `startHeartbeat()`, `stopHeartbeat()`, and `onPeerDisconnected` callback
+
+**Tests**: 8 new tests (5 mock-based in `p2p-issues.test.ts`, 3 real integration in `dsApi.test.ts`):
+
+- Silent peer detected via heartbeat timeout
+- Healthy peers not disconnected
+- `onPeerDisconnected` callback triggered
+- Ping responded with pong when not silent
+- No response to ping when silent
+- Real `processMessage` responds to ping with pong
+- Real `processMessage` updates `lastSeen` on pong
+- API exposes heartbeat functions
 
 ### 7.7 Summary
 
@@ -297,13 +313,14 @@ There's no heartbeat, no timeout detection, no way to detect a silent peer disco
 | `catchUpResponse` bypasses clock buffer | Low-Medium | ✅ Fixed — clock now synced from replayed events          |
 | No clock sync on reconnect              | Medium     | ✅ Fixed — `rawProcessMessage` + `catchUpResponse` + mock |
 | `joinFx` doesn't `requestState`         | Low        | ✅ Fixed — `joinFx` sends `requestState` after connecting |
-| No connection health monitoring         | Low        | Acceptable for a party game                               |
+| No connection health monitoring         | Low        | ✅ Fixed — heartbeat protocol with ping/pong + lastSeen   |
 
 **Recommended next steps**:
 
 1. ~~**Clock sync on reconnect**~~ ✅ Fixed in `dsApi.ts` + `mockPeer.ts`
 2. ~~**`joinFx` sends `requestState`**~~ ✅ Fixed in `dsApi.ts`
-3. **Module-level singleton refactor** — Larger refactor: wrap clock, buffer, and peer data in a class per `createDSApi()` instance.
+3. ~~**Connection health monitoring**~~ ✅ Fixed in `dsApi.ts` + `mockPeer.ts`
+4. **Module-level singleton refactor** — Larger refactor: wrap clock, buffer, and peer data in a class per `createDSApi()` instance.
 
 ### Test Suite Summary (Final)
 
@@ -311,10 +328,10 @@ There's no heartbeat, no timeout detection, no way to detect a silent peer disco
 | ---------------------------------------- | ----------------------- | ------------------- |
 | `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
 | `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
-| `src/state/__tests__/p2p-issues.test.ts` | 14 issue-specific tests | ✅ All pass         |
-| `src/utils/__tests__/dsApi.test.ts`      | 6 integration tests     | ✅ All pass         |
-| **Total**                                | **53 tests**            | **53 pass, 0 fail** |
+| `src/state/__tests__/p2p-issues.test.ts` | 19 issue-specific tests | ✅ All pass         |
+| `src/utils/__tests__/dsApi.test.ts`      | 9 integration tests     | ✅ All pass         |
+| **Total**                                | **61 tests**            | **61 pass, 0 fail** |
 
 ---
 
-_Document generated from architectural review — July 2026. Last updated: after real integration tests for dsApi.ts._
+_Document generated from architectural review — July 2026. Last updated: after connection health monitoring implementation._

@@ -43,6 +43,13 @@ export class MockPeer {
         timestamp: number;
     }[] = [];
 
+    // Connection health monitoring
+    public lastSeen: number = Date.now();
+    public isSilent = false; // When true, peer doesn't respond to pings
+    private heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
+    private healthCheckIntervalId: ReturnType<typeof setInterval> | null = null;
+    public onPeerDisconnected: ((peerId: string) => void) | null = null;
+
     constructor(peerId: string, initialState: Game | null = null) {
         this.peerId = peerId;
         this.state = initialState;
@@ -58,6 +65,7 @@ export class MockPeer {
 
     disconnect(): void {
         this.isDisconnected = true;
+        this.stopHeartbeat();
         this.connectedPeers.forEach((_, peerId) => {
             const peer = this.connectedPeers.get(peerId);
             if (peer) {
@@ -68,6 +76,89 @@ export class MockPeer {
         if (this.flushTimeoutId) {
             clearTimeout(this.flushTimeoutId);
             this.flushTimeoutId = null;
+        }
+    }
+
+    /**
+     * Simulate a silent disconnect — peer is still "connected" but
+     * doesn't respond to pings. Used to test health monitoring.
+     */
+    simulateSilentDisconnect(): void {
+        this.isSilent = true;
+    }
+
+    /**
+     * Send a ping to all connected peers.
+     */
+    sendPing(): void {
+        if (this.isDisconnected) return;
+        this.connectedPeers.forEach((peer) => {
+            if (peer.isDisconnected) return;
+            peer.receiveMessage(this.peerId, {
+                type: 'control',
+                data: { action: 'ping' },
+                peerId: this.peerId,
+            });
+        });
+    }
+
+    /**
+     * Handle a ping by responding with pong (unless silent).
+     */
+    handlePing(fromPeerId: string): void {
+        if (this.isSilent) return; // Silent peers don't respond
+        const peer = this.connectedPeers.get(fromPeerId);
+        if (peer && !peer.isDisconnected) {
+            this.lastSeen = Date.now();
+            peer.receiveMessage(this.peerId, {
+                type: 'control',
+                data: { action: 'pong' },
+                peerId: this.peerId,
+            });
+        }
+    }
+
+    /**
+     * Check health of all connected peers.
+     * Returns list of peer IDs that have timed out.
+     */
+    checkPeerHealth(timeoutMs = 15000): string[] {
+        const now = Date.now();
+        const disconnected: string[] = [];
+        this.connectedPeers.forEach((peer, peerId) => {
+            if (now - peer.lastSeen > timeoutMs) {
+                disconnected.push(peerId);
+                this.connectedPeers.delete(peerId);
+                this.onPeerDisconnected?.(peerId);
+            }
+        });
+        return disconnected;
+    }
+
+    /**
+     * Start sending heartbeats and checking peer health.
+     */
+    startHeartbeat(intervalMs = 5000): void {
+        if (this.heartbeatIntervalId) return;
+        this.heartbeatIntervalId = setInterval(() => {
+            this.sendPing();
+        }, intervalMs);
+        this.healthCheckIntervalId = setInterval(() => {
+            this.checkPeerHealth();
+        }, intervalMs);
+    }
+
+    /**
+     * Stop heartbeat intervals.
+     */
+    stopHeartbeat(): void {
+        if (this.heartbeatIntervalId) {
+            clearInterval(this.heartbeatIntervalId);
+            this.heartbeatIntervalId = null;
+        }
+        if (this.healthCheckIntervalId) {
+            clearInterval(this.healthCheckIntervalId);
+            this.healthCheckIntervalId = null;
         }
     }
 

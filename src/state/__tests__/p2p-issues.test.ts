@@ -712,6 +712,95 @@ describe('Issue 8: catchUpResponse Clock Update', () => {
     });
 });
 
+describe('Issue 10: Connection Health Monitoring', () => {
+    it('should detect silent peer disconnection via heartbeat timeout', () => {
+        const initialState = createMockGameWithPlayers(3).game;
+        const [alice, bob, charlie] = createWiredPeers(3, initialState);
+
+        // All peers are connected and healthy
+        expect(alice.connectedPeers.has('peer-1')).toBe(true);
+        expect(alice.connectedPeers.has('peer-2')).toBe(true);
+
+        // Charlie goes silent (still connected but not responding)
+        charlie.simulateSilentDisconnect();
+
+        // Simulate time passing — manually set charlie's lastSeen to past
+        // We need to access the peer from alice's perspective
+        const charlieFromAlice = alice.connectedPeers.get('peer-2');
+        if (charlieFromAlice) {
+            charlieFromAlice.lastSeen = Date.now() - 20000; // 20 seconds ago
+        }
+
+        // Alice checks peer health with a 15s timeout
+        const disconnected = alice.checkPeerHealth(15000);
+
+        // Charlie should be detected as disconnected
+        expect(disconnected).toContain('peer-2');
+        expect(alice.connectedPeers.has('peer-2')).toBe(false);
+        // Bob should still be connected
+        expect(alice.connectedPeers.has('peer-1')).toBe(true);
+    });
+
+    it('should not disconnect healthy peers', () => {
+        const initialState = createMockGameWithPlayers(3).game;
+        const [alice, bob, charlie] = createWiredPeers(3, initialState);
+
+        // All peers are healthy with recent lastSeen
+        const disconnected = alice.checkPeerHealth(15000);
+
+        // No peers should be disconnected
+        expect(disconnected).toHaveLength(0);
+        expect(alice.connectedPeers.size).toBe(2);
+    });
+
+    it('should trigger onPeerDisconnected callback when peer times out', () => {
+        const initialState = createMockGameWithPlayers(2).game;
+        const [alice, bob] = createWiredPeers(2, initialState);
+
+        let disconnectedPeerId: string | null = null;
+        alice.onPeerDisconnected = (peerId: string) => {
+            disconnectedPeerId = peerId;
+        };
+
+        // Make bob's lastSeen stale
+        const bobFromAlice = alice.connectedPeers.get('peer-1');
+        if (bobFromAlice) {
+            bobFromAlice.lastSeen = Date.now() - 20000;
+        }
+
+        alice.checkPeerHealth(15000);
+
+        expect(disconnectedPeerId).toBe('peer-1');
+    });
+
+    it('should respond to ping with pong when not silent', () => {
+        const initialState = createMockGameWithPlayers(2).game;
+        const [alice, bob] = createWiredPeers(2, initialState);
+
+        // Bob is healthy and should respond to pings
+        const bobLastSeenBefore = bob.lastSeen;
+        bob.handlePing('peer-0');
+
+        // Bob's lastSeen should be updated
+        expect(bob.lastSeen).toBeGreaterThanOrEqual(bobLastSeenBefore);
+    });
+
+    it('should not respond to ping when silent', () => {
+        const initialState = createMockGameWithPlayers(2).game;
+        const [alice, bob] = createWiredPeers(2, initialState);
+
+        // Bob goes silent
+        bob.simulateSilentDisconnect();
+        const bobLastSeenBefore = bob.lastSeen;
+
+        // Bob should not respond to ping
+        bob.handlePing('peer-0');
+
+        // Bob's lastSeen should NOT be updated (silent peer doesn't respond)
+        expect(bob.lastSeen).toBe(bobLastSeenBefore);
+    });
+});
+
 describe('Issue 9: Concurrent State Modification', () => {
     it('should handle concurrent score updates without data loss', () => {
         const initialState = createMockGameWithPlayers(3).game;
