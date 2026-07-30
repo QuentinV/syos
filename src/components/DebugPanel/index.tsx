@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { Button } from 'primereact/button';
+import { SelectButton } from 'primereact/selectbutton';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { Badge } from 'primereact/badge';
 import {
@@ -38,6 +39,14 @@ const safeStringify = (obj: any): string => {
         return String(obj);
     }
 };
+
+type MessageTypeFilter = 'all' | 'control' | 'event';
+
+const filterOptions = [
+    { label: 'all', value: 'all' },
+    { label: 'control', value: 'control' },
+    { label: 'event', value: 'event' },
+];
 
 const DebugMessageRow: React.FC<{
     message: DebugMessage;
@@ -129,7 +138,13 @@ const StateTab: React.FC = () => {
 const MessagesTab: React.FC = () => {
     const messages = useUnit($debugMessages);
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [typeFilter, setTypeFilter] = useState<MessageTypeFilter>('all');
     const listRef = useRef<HTMLDivElement>(null);
+
+    const filteredMessages =
+        typeFilter === 'all'
+            ? messages
+            : messages.filter((msg) => msg.type === typeFilter);
 
     // Auto-scroll to top when new messages arrive (DESC order — newest first)
     useEffect(() => {
@@ -138,13 +153,15 @@ const MessagesTab: React.FC = () => {
         }
     }, [messages]);
 
-    if (messages.length === 0) {
+    if (filteredMessages.length === 0) {
         return (
             <div className="debugEmptyState">
                 <i className="pi pi-inbox" />
                 <div>No messages yet</div>
                 <div style={{ fontSize: '0.7rem', marginTop: '0.5rem' }}>
-                    P2P messages will appear here in real time
+                    {typeFilter !== 'all'
+                        ? `No ${typeFilter} messages to display`
+                        : 'P2P messages will appear here in real time'}
                 </div>
             </div>
         );
@@ -152,13 +169,13 @@ const MessagesTab: React.FC = () => {
 
     return (
         <div>
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    marginBottom: '0.75rem',
-                }}
-            >
+            <div className="debugFilterToolbar">
+                <SelectButton
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.value)}
+                    options={filterOptions}
+                    className="debugTypeFilter"
+                />
                 <Button
                     label="Clear"
                     icon="pi pi-trash"
@@ -170,7 +187,7 @@ const MessagesTab: React.FC = () => {
                 />
             </div>
             <div className="debugMessageList" ref={listRef}>
-                {[...messages].reverse().map((msg) => (
+                {[...filteredMessages].reverse().map((msg) => (
                     <DebugMessageRow
                         key={msg.id}
                         message={msg}

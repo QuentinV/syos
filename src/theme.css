@@ -160,3 +160,7 @@ html {
     display: flex;
     background: unset;
 }
+
+.p-button {
+    padding: 0.4rem !important;
+}
