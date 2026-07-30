@@ -412,7 +412,13 @@ class DSConnection {
             stamped.checksum = computeChecksum(getState());
         }
 
-        this.onMessage?.('out', stamped);
+        // Defer onMessage callback to avoid effector "pure function" error
+        // when called from within a reducer (e.g., broadcastMessage is called
+        // from the on() method's trigger handler which runs in a store reducer)
+        if (this.onMessage) {
+            const { onMessage } = this;
+            setTimeout(() => onMessage('out', stamped), 0);
+        }
 
         return Promise.allSettled(
             Object.keys(data.peers).map((key) => {
@@ -749,10 +755,14 @@ export function createDSApi<State extends StateWithId>({
             return;
         }
 
-        // Update our clock from incoming message
-        if (message.clock !== undefined) {
-            connection.updateClock(message.clock);
+        // Process messages without a clock immediately (e.g., setState from host)
+        if (message.clock === undefined) {
+            rawProcessMessage(message, conn);
+            return;
         }
+
+        // Update our clock from incoming message
+        connection.updateClock(message.clock);
 
         // Buffer and attempt to flush in order
         connection.bufferMessage(message, conn);

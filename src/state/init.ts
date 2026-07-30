@@ -76,12 +76,17 @@ gameDS.on('joined', joined, (game, player: Player | null) => {
 });
 
 sample({
+    clock: $game,
     source: $player,
-    clock: joinFx.doneData,
-    fn: (player, gameId) => ({ gameId: gameId!, player }),
+    filter: (player, game) => {
+        return game !== null && player !== null && !game.players[player.id];
+    },
+    fn: (player, game) => ({ player, gameId: game!.id }),
     target: createEffect(
-        ({ gameId, player }: { gameId: string; player: Player | null }) => {
-            joined(player);
+        ({ player, gameId }: { player: Player | null; gameId: string }) => {
+            if (player) {
+                joined(player);
+            }
             location.href = `${document.location.origin}/syos#/game/${gameId}`;
         }
     ),
