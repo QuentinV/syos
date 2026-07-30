@@ -29,7 +29,13 @@ export class MockPeer {
     public lamportClock = 0;
     private eventBuffer: {
         from: string;
-        message: { type: string; data?: any; clock: number; peerId: string };
+        message: {
+            type: string;
+            data?: any;
+            clock: number;
+            peerId: string;
+            checksum?: string;
+        };
     }[] = [];
     private flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -49,6 +55,12 @@ export class MockPeer {
     private heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
     private healthCheckIntervalId: ReturnType<typeof setInterval> | null = null;
     public onPeerDisconnected: ((peerId: string) => void) | null = null;
+
+    // Checksum support for divergence detection (Fix A, B, C)
+    public computeChecksum: ((state: Game | null) => string) | null = null;
+    public broadcastCount = 0;
+    public divergenceWarnings: string[] = [];
+    public lastBroadcastChecksum: string | null = null;
 
     constructor(peerId: string, initialState: Game | null = null) {
         this.peerId = peerId;
@@ -221,7 +233,13 @@ export class MockPeer {
 
         // Stamp with Lamport clock
         this.lamportClock++;
-        const stamped = {
+        const stamped: {
+            type: string;
+            data?: any;
+            clock: number;
+            peerId: string;
+            checksum?: string;
+        } = {
             ...message,
             clock: this.lamportClock,
             peerId: this.peerId,
@@ -230,6 +248,14 @@ export class MockPeer {
         // Apply locally first (simulates the local reducer execution)
         this.messageLog.push({ from: this.peerId, message: stamped });
         this.onMessage?.(stamped);
+
+        // Compute checksum from the post-mutation state (Fix A: use new state, not old)
+        if (this.computeChecksum && this.state) {
+            stamped.checksum = this.computeChecksum(this.state);
+            this.lastBroadcastChecksum = stamped.checksum;
+        }
+
+        this.broadcastCount++;
 
         // Then send to connected peers
         this.connectedPeers.forEach((peer) => {
@@ -311,6 +337,21 @@ export class MockPeer {
         for (const { from, message } of toApply) {
             this.messageLog.push({ from, message });
             this.onMessage?.(message);
+
+            // Verify checksum after all synchronous processing (including workflow cascades)
+            if (
+                message.checksum !== undefined &&
+                this.computeChecksum &&
+                this.state
+            ) {
+                const localChecksum = this.computeChecksum(this.state);
+                if (localChecksum !== message.checksum) {
+                    this.divergenceWarnings.push(
+                        `[DIVERGENCE] Event "${message.data?.eventName}" caused state divergence. ` +
+                            `Expected: ${message.checksum}, local: ${localChecksum}`
+                    );
+                }
+            }
         }
 
         // If there's a gap, schedule a flush attempt after a short delay

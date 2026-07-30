@@ -859,3 +859,231 @@ describe('Issue 9: Concurrent State Modification', () => {
         expect(alice.isStateEqual(bob)).toBe(true);
     });
 });
+
+describe('Fix A: Checksum from New State', () => {
+    it('should compute checksum from post-mutation state, not pre-mutation', () => {
+        const initialState = createMockGameWithPlayers(2).game;
+        // status is 'lobby'
+        const peer = new MockPeer('peer-0', initialState);
+        peer.computeChecksum = computeGameChecksum;
+
+        // Simple applyEvent that handles startGame and setGameTurnStatus
+        peer.onMessage = (message) => {
+            if (message.type !== 'event' || !message.data) return;
+            const { eventName, payload } = message.data;
+            const state = peer.getState();
+            if (!state) return;
+
+            if (eventName === 'startGame') {
+                state.status = 'running';
+                peer.setState({ ...state });
+            } else if (eventName === 'setGameTurnStatus') {
+                const turn = state.turns[state.turns.length - 1];
+                if (!turn) return;
+                if (turn.status === payload) return;
+                turn.status = payload;
+                peer.setState({ ...state });
+            }
+        };
+
+        const preChecksum = computeGameChecksum(initialState);
+        expect(preChecksum).toContain('lobby');
+
+        // Broadcast startGame — non-mutating reducer in real code
+        peer.broadcast({ type: 'event', data: { eventName: 'startGame' } });
+
+        // The checksum should be from the state AFTER the event (running)
+        const postState = peer.getState();
+        const postChecksum = computeGameChecksum(postState);
+        expect(postChecksum).toContain('running');
+
+        // lastBroadcastChecksum should match the post-mutation state checksum
+        expect(peer.lastBroadcastChecksum).toBe(postChecksum);
+        expect(peer.lastBroadcastChecksum).not.toBe(preChecksum);
+    });
+
+    it('should handle non-mutating setGameTurnStatus correctly', () => {
+        const initialState = createMockGameWithPlayers(2).game;
+        initialState.status = 'running';
+        initialState.turns.push({
+            status: 'stPicksCards',
+            players: {
+                'player-0': {
+                    playerId: 'player-0',
+                    role: PlayerRole.storyteller,
+                    score: 0,
+                },
+                'player-1': {
+                    playerId: 'player-1',
+                    role: PlayerRole.gremlin,
+                    score: 0,
+                },
+            },
+        });
+
+        const peer = new MockPeer('peer-0', initialState);
+        peer.computeChecksum = computeGameChecksum;
+
+        peer.onMessage = (message) => {
+            if (message.type !== 'event' || !message.data) return;
+            const { eventName, payload } = message.data;
+            const state = peer.getState();
+            if (!state) return;
+
+            if (eventName === 'setGameTurnStatus') {
+                const turn = state.turns[state.turns.length - 1];
+                if (!turn) return;
+                if (turn.status === payload) return;
+                turn.status = payload;
+                peer.setState({ ...state });
+            }
+        };
+
+        const preChecksum = computeGameChecksum(initialState);
+        expect(preChecksum).toContain('stPicksCards');
+
+        peer.broadcast({
+            type: 'event',
+            data: { eventName: 'setGameTurnStatus', payload: 'stWriteStory' },
+        });
+
+        const postState = peer.getState();
+        const postChecksum = computeGameChecksum(postState);
+        expect(postChecksum).toContain('stWriteStory');
+        expect(peer.lastBroadcastChecksum).toBe(postChecksum);
+    });
+});
+
+describe('Fix B: Workflow Cascade No False Positive', () => {
+    function createCascadeState() {
+        const { game } = createMockGameWithPlayers(3);
+        game.status = 'running';
+        game.turns.push({
+            status: 'pEstimate',
+            players: {
+                'player-0': {
+                    playerId: 'player-0',
+                    role: PlayerRole.storyteller,
+                    score: 0,
+                },
+                'player-1': {
+                    playerId: 'player-1',
+                    role: PlayerRole.gremlin,
+                    score: 0,
+                    estimateVisibleCards: 5,
+                },
+                'player-2': {
+                    playerId: 'player-2',
+                    role: PlayerRole.gremlin,
+                    score: 0,
+                    estimateVisibleCards: 3,
+                },
+            },
+        });
+        return game;
+    }
+
+    function workflowAwareApplyEvent(peer: MockPeer, message: any): void {
+        if (message.type !== 'event' || !message.data) return;
+        const { eventName, payload } = message.data;
+        const state = peer.getState();
+        if (!state) return;
+
+        switch (eventName) {
+            case 'setGameTurnStatus': {
+                const turn = state.turns[state.turns.length - 1];
+                if (!turn) return;
+                if (turn.status === payload) return;
+                turn.status = payload;
+                peer.setState({ ...state });
+                break;
+            }
+            case 'setTimeEstimate': {
+                const { playerId, estimate } = payload;
+                const turn = state.turns[state.turns.length - 1];
+                if (!turn || !turn.players[playerId]) return;
+                turn.players[playerId].estimateVisibleCards = estimate;
+                peer.setState({ ...state });
+                break;
+            }
+        }
+
+        // After applying the event, evaluate workflows (simulating effector sample())
+        // pEstimate → pPicksCards: all gremlins have estimated
+        const turn = state.turns[state.turns.length - 1];
+        if (
+            turn &&
+            turn.status === 'pEstimate' &&
+            Object.keys(turn.players).every(
+                (pk) =>
+                    turn.players[pk].role === PlayerRole.storyteller ||
+                    !!turn.players[pk]?.estimateVisibleCards
+            )
+        ) {
+            turn.status = 'pPicksCards';
+            peer.setState({ ...state });
+        }
+    }
+
+    it('should not produce false positive divergence warnings after workflow cascade', () => {
+        const initialState = createCascadeState();
+        const [alice, bob] = createPeers(2, initialState);
+
+        alice.computeChecksum = computeGameChecksum;
+        bob.computeChecksum = computeGameChecksum;
+
+        // Wire both peers with the workflow-aware event handler
+        alice.onMessage = (message) => workflowAwareApplyEvent(alice, message);
+        bob.onMessage = (message) => workflowAwareApplyEvent(bob, message);
+
+        // Connect them (they should already be connected via createPeers)
+        // Alice broadcasts setGameTurnStatus('pEstimate') — this is idempotent
+        // since the state is already at pEstimate, but the cascade should still fire
+        // because the workflow condition is met.
+        // Actually, let's use a different approach: broadcast a setTimeEstimate
+        // that triggers the cascade.
+        bob.getState()!.turns[0].players['player-2'].estimateVisibleCards =
+            undefined;
+        bob.setState({ ...bob.getState()! });
+
+        // Now broadcast setTimeEstimate for player-2, which should trigger the cascade
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'setTimeEstimate',
+                payload: { playerId: 'player-2', estimate: 3 },
+            },
+        });
+
+        // Both peers should have the same state
+        expect(alice.isStateEqual(bob)).toBe(true);
+
+        // No divergence warnings should have been produced
+        expect(alice.divergenceWarnings).toHaveLength(0);
+        expect(bob.divergenceWarnings).toHaveLength(0);
+    });
+
+    it('should not produce false positive when setGameTurnStatus triggers cascade', () => {
+        const initialState = createCascadeState();
+        const [alice, bob] = createPeers(2, initialState);
+
+        alice.computeChecksum = computeGameChecksum;
+        bob.computeChecksum = computeGameChecksum;
+
+        alice.onMessage = (message) => workflowAwareApplyEvent(alice, message);
+        bob.onMessage = (message) => workflowAwareApplyEvent(bob, message);
+
+        // Broadcast setGameTurnStatus('pPicksCards') — this should trigger immediately
+        alice.broadcast({
+            type: 'event',
+            data: {
+                eventName: 'setGameTurnStatus',
+                payload: 'pPicksCards',
+            },
+        });
+
+        expect(alice.isStateEqual(bob)).toBe(true);
+        expect(alice.divergenceWarnings).toHaveLength(0);
+        expect(bob.divergenceWarnings).toHaveLength(0);
+    });
+});

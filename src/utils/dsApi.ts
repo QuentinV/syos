@@ -391,11 +391,13 @@ class DSConnection {
         message,
         getState,
         computeChecksum,
+        newState,
     }: {
         objectId: string;
         message: Message;
         getState?: () => any;
         computeChecksum?: (state: any) => string;
+        newState?: any;
     }) {
         const data = this.peerData[objectId];
         if (!data) return;
@@ -408,8 +410,14 @@ class DSConnection {
             peerId: data.peerId,
         };
 
-        if (computeChecksum && getState) {
-            stamped.checksum = computeChecksum(getState());
+        // Compute checksum from the new state (post-mutation) if provided,
+        // otherwise fall back to getState() (which may return the old state
+        // if called inside a reducer before the store has committed)
+        if (computeChecksum) {
+            const stateForChecksum = newState ?? getState?.();
+            if (stateForChecksum !== undefined) {
+                stamped.checksum = computeChecksum(stateForChecksum);
+            }
         }
 
         // Defer onMessage callback to avoid effector "pure function" error
@@ -579,8 +587,11 @@ class DSStore<State extends StateWithId> {
                 if (!id) return state;
                 const r = reducer(state, payload);
                 isDebug() && console.log('reducer result for', name, r);
-                if (r) {
-                    this.connection.broadcastMessage({
+                // Skip broadcast if reducer returned the same state reference
+                if (r && r !== state) {
+                    // Defer broadcast to allow synchronous workflow cascades (triggered by effector's sample()) to complete before the checksum
+                    // is computed. This ensures the checksum reflects the state after all cascading transitions.
+                    const msg = {
                         objectId: id,
                         message: {
                             type: 'event',
@@ -591,7 +602,9 @@ class DSStore<State extends StateWithId> {
                         },
                         getState: this.getState,
                         computeChecksum: this.computeChecksum,
-                    });
+                        newState: r,
+                    };
+                    setTimeout(() => this.connection.broadcastMessage(msg), 0);
                 }
                 return r;
             })

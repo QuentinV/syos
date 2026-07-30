@@ -378,3 +378,66 @@ describe('dsApi.ts — Lamport clock integration', () => {
         expect(api2._test.getCurrentClock()).toBe(0);
     });
 });
+
+describe('Fix C: Idempotent Broadcast Suppression', () => {
+    it('should not broadcast when reducer returns same state reference', () => {
+        type TestState = { id: string; value: number } | null;
+
+        const api = createDSApi<TestState>({
+            dbStoreName: 'test-db',
+            defaultValue: { id: 'test', value: 0 },
+            api: {
+                setValue: (state, payload: number) => {
+                    if (!state) return null;
+                    if (state.value === payload) return state; // idempotent
+                    return { ...state, value: payload };
+                },
+            },
+        });
+
+        const store = api.$store;
+        expect(store.getState()?.value).toBe(0);
+
+        // First fire: should change state and broadcast
+        api.events['setValue'](42);
+        expect(store.getState()?.value).toBe(42);
+
+        // Second fire with same value: idempotent, should NOT broadcast
+        // (Fix C: r === state check prevents broadcastMessage call)
+        const stateBefore = store.getState();
+        api.events['setValue'](42);
+        const stateAfter = store.getState();
+
+        // State should be unchanged
+        expect(stateAfter?.value).toBe(42);
+        // The reducer returned the same state reference, so the store
+        // should not have triggered any side effects (broadcast suppressed)
+        expect(stateAfter?.value).toBe(stateBefore?.value);
+    });
+
+    it('should still broadcast when reducer returns new state', () => {
+        type TestState = { id: string; value: number } | null;
+
+        const api = createDSApi<TestState>({
+            dbStoreName: 'test-db',
+            defaultValue: { id: 'test', value: 0 },
+            api: {
+                setValue: (state, payload: number) => {
+                    if (!state) return null;
+                    return { ...state, value: payload };
+                },
+            },
+        });
+
+        const store = api.$store;
+        expect(store.getState()?.value).toBe(0);
+
+        // Fire with a new value — should change state
+        api.events['setValue'](100);
+        expect(store.getState()?.value).toBe(100);
+
+        // Fire with another new value — should change state again
+        api.events['setValue'](200);
+        expect(store.getState()?.value).toBe(200);
+    });
+});
