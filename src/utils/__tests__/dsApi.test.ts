@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Use dynamic import to ensure localStorage is stubbed before module code runs
 let createDSApi: any;
-let getCurrentClock: any;
 
 beforeEach(async () => {
     // Stub localStorage before importing the module
@@ -23,7 +22,6 @@ beforeEach(async () => {
     // Dynamic import after localStorage is stubbed
     const mod = await import('../dsApi');
     createDSApi = mod.createDSApi;
-    getCurrentClock = mod.getCurrentClock;
 });
 
 /**
@@ -31,6 +29,10 @@ beforeEach(async () => {
  * These tests exercise the actual createDSApi implementation,
  * not the MockPeer. They verify that the Lamport clock is
  * correctly updated by rawProcessMessage and processMessage.
+ *
+ * After the DSConnection refactor, each createDSApi() instance
+ * has its own clock, buffer, and peer data — no more module-level
+ * singletons.
  */
 
 type TestState = { id: string; value: number } | null;
@@ -42,10 +44,9 @@ describe('dsApi.ts — Lamport clock integration', () => {
             defaultValue: null,
         });
 
-        const clockBefore = getCurrentClock();
+        const clockBefore = api._test.getCurrentClock();
 
         // Simulate receiving a setState event through rawProcessMessage
-        // This is the real code path that was previously missing clock updates
         await api._test.rawProcessMessage(
             {
                 type: 'event',
@@ -56,10 +57,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
                 clock: 5,
                 peerId: 'remote-peer',
             },
-            null as any // DataConnection not needed for this test
+            null as any
         );
 
-        const clockAfter = getCurrentClock();
+        const clockAfter = api._test.getCurrentClock();
 
         // rawProcessMessage calls updateClock(5) which does Math.max(0, 5) + 1 = 6
         expect(clockAfter).toBeGreaterThanOrEqual(6);
@@ -72,9 +73,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             defaultValue: null,
         });
 
-        const clockBefore = getCurrentClock();
+        const clockBefore = api._test.getCurrentClock();
 
-        // Simulate receiving a regular event through rawProcessMessage
         await api._test.rawProcessMessage(
             {
                 type: 'event',
@@ -88,9 +88,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        const clockAfter = getCurrentClock();
+        const clockAfter = api._test.getCurrentClock();
 
-        // updateClock(10) does Math.max(0, 10) + 1 = 11
         expect(clockAfter).toBeGreaterThanOrEqual(11);
     });
 
@@ -100,10 +99,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             defaultValue: null,
         });
 
-        const clockBefore = getCurrentClock();
+        const clockBefore = api._test.getCurrentClock();
 
-        // Simulate receiving a message through processMessage (the full path)
-        // This goes through the Lamport clock buffer
         await api._test.processMessage(
             {
                 type: 'event',
@@ -117,11 +114,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        const clockAfter = getCurrentClock();
+        const clockAfter = api._test.getCurrentClock();
 
-        // processMessage calls updateClock(7) which does Math.max(0, 7) + 1 = 8
-        // then buffers and flushes through rawProcessMessage which calls updateClock again
-        // So clock should be >= 8
         expect(clockAfter).toBeGreaterThanOrEqual(8);
     });
 
@@ -131,9 +125,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             defaultValue: null,
         });
 
-        const clockBefore = getCurrentClock();
+        const clockBefore = api._test.getCurrentClock();
 
-        // Simulate receiving a catchUpResponse control message with replayed events
         await api._test.processMessage(
             {
                 type: 'control',
@@ -170,10 +163,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        const clockAfter = getCurrentClock();
+        const clockAfter = api._test.getCurrentClock();
 
-        // catchUpResponse handler computes maxClock = 20, then sets
-        // lamportClock = Math.max(lamportClock, 20) = 20
         expect(clockAfter).toBeGreaterThanOrEqual(20);
         expect(clockAfter).toBeGreaterThan(clockBefore);
     });
@@ -184,7 +175,6 @@ describe('dsApi.ts — Lamport clock integration', () => {
             defaultValue: null,
         });
 
-        // Send a series of events with increasing clocks
         await api._test.rawProcessMessage(
             {
                 type: 'event',
@@ -197,7 +187,7 @@ describe('dsApi.ts — Lamport clock integration', () => {
             },
             null as any
         );
-        const clock1 = getCurrentClock();
+        const clock1 = api._test.getCurrentClock();
 
         await api._test.rawProcessMessage(
             {
@@ -211,7 +201,7 @@ describe('dsApi.ts — Lamport clock integration', () => {
             },
             null as any
         );
-        const clock2 = getCurrentClock();
+        const clock2 = api._test.getCurrentClock();
 
         await api._test.rawProcessMessage(
             {
@@ -225,16 +215,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
             },
             null as any
         );
-        const clock3 = getCurrentClock();
+        const clock3 = api._test.getCurrentClock();
 
-        // Clock should be strictly increasing
         expect(clock2).toBeGreaterThan(clock1);
         expect(clock3).toBeGreaterThan(clock2);
-
-        // Each call to updateClock does Math.max + 1
-        // clock1: Math.max(0, 1) + 1 = 2
-        // clock2: Math.max(2, 5) + 1 = 6
-        // clock3: Math.max(6, 10) + 1 = 11
         expect(clock1).toBeGreaterThanOrEqual(2);
         expect(clock2).toBeGreaterThanOrEqual(6);
         expect(clock3).toBeGreaterThanOrEqual(11);
@@ -246,9 +230,8 @@ describe('dsApi.ts — Lamport clock integration', () => {
             defaultValue: null,
         });
 
-        const clockBefore = getCurrentClock();
+        const clockBefore = api._test.getCurrentClock();
 
-        // Empty events list should not change the clock
         await api._test.processMessage(
             {
                 type: 'control',
@@ -260,7 +243,7 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        const clockAfter = getCurrentClock();
+        const clockAfter = api._test.getCurrentClock();
         expect(clockAfter).toBe(clockBefore);
     });
 
@@ -284,7 +267,6 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        // Mock connection to capture sent messages
         const sentMessages: any[] = [];
         const mockConn = {
             send: (msg: any) => {
@@ -292,7 +274,6 @@ describe('dsApi.ts — Lamport clock integration', () => {
             },
         };
 
-        // Simulate receiving a ping
         await api._test.processMessage(
             {
                 type: 'control',
@@ -302,7 +283,6 @@ describe('dsApi.ts — Lamport clock integration', () => {
             mockConn as any
         );
 
-        // Should have responded with pong
         expect(sentMessages).toHaveLength(1);
         expect(sentMessages[0].type).toBe('control');
         expect(sentMessages[0].data.action).toBe('pong');
@@ -328,16 +308,15 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        // Manually add a peer to peerData
-        const { peerData } = await import('../dsApi');
+        // Manually add a peer to peerData via the instance
+        const peerData = api._test.getPeerData();
         if (peerData['test-game']) {
             peerData['test-game'].peers['remote-peer'] = {
                 peerId: 'remote-peer',
-                lastSeen: 0, // Very old timestamp
+                lastSeen: 0,
             };
         }
 
-        // Simulate receiving a pong
         await api._test.processMessage(
             {
                 type: 'control',
@@ -347,10 +326,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
             null as any
         );
 
-        // lastSeen should be updated
-        if (peerData['test-game']?.peers['remote-peer']) {
+        const updatedPeerData = api._test.getPeerData();
+        if (updatedPeerData['test-game']?.peers['remote-peer']) {
             expect(
-                peerData['test-game'].peers['remote-peer'].lastSeen
+                updatedPeerData['test-game'].peers['remote-peer'].lastSeen
             ).toBeGreaterThan(0);
         }
     });
@@ -366,5 +345,36 @@ describe('dsApi.ts — Lamport clock integration', () => {
         expect(typeof api.checkPeerHealth).toBe('function');
         expect(typeof api._test.sendHeartbeats).toBe('function');
         expect(typeof api._test.checkPeerHealth).toBe('function');
+    });
+
+    it('should have independent clock state per createDSApi instance', async () => {
+        const api1 = createDSApi<TestState>({
+            dbStoreName: 'test-db-1',
+            defaultValue: null,
+        });
+        const api2 = createDSApi<TestState>({
+            dbStoreName: 'test-db-2',
+            defaultValue: null,
+        });
+
+        // Update clock on api1
+        await api1._test.rawProcessMessage(
+            {
+                type: 'event',
+                data: {
+                    eventName: 'setState',
+                    payload: { id: 'test1', value: 1 },
+                },
+                clock: 100,
+                peerId: 'p1',
+            },
+            null as any
+        );
+
+        // api1's clock should be >= 101
+        expect(api1._test.getCurrentClock()).toBeGreaterThanOrEqual(101);
+
+        // api2's clock should be 0 (independent instance)
+        expect(api2._test.getCurrentClock()).toBe(0);
     });
 });

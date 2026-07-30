@@ -237,22 +237,35 @@ Simple but effective for detecting issues during development.
 | `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
 | `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
 | `src/state/__tests__/p2p-issues.test.ts` | 19 issue-specific tests | ✅ All pass         |
-| `src/utils/__tests__/dsApi.test.ts`      | 9 integration tests     | ✅ All pass         |
-| **Total**                                | **61 tests**            | **61 pass, 0 fail** |
+| `src/utils/__tests__/dsApi.test.ts`      | 10 integration tests    | ✅ All pass         |
+| **Total**                                | **62 tests**            | **62 pass, 0 fail** |
 
 ---
 
 ## 7. DS API — Remaining Concerns
 
-### 7.1 Module-Level Singletons (Medium)
+### 7.1 Module-Level Singletons (Medium) — ✅ FIXED
 
-`lamportClock`, `eventBuffer`, `flushTimeoutId`, `lastAppliedClock`, and `peerData` are all module-level variables in `dsApi.ts`. This means:
+All P2P state has been moved from module-level variables into a `DSConnection` class. Each `createDSApi()` call creates its own `DSConnection` instance with independent:
 
-- Only **one** game instance can exist per browser tab
-- If the user navigates away and comes back, the clock/buffer state persists but may be stale
-- Tests that create multiple independent DS API instances share the same clock state
+- `lamportClock` — Lamport clock counter
+- `eventBuffer` — message buffer for reordering
+- `flushTimeoutId` — timeout for buffer flush
+- `lastAppliedClock` — last applied clock value
+- `peerData` — peer connection data (persisted to localStorage)
+- Heartbeat intervals (`heartbeatIntervalId`, `healthCheckIntervalId`)
 
-**Potential fix**: Wrap these in a class or closure per `createDSApi()` call so each game instance has its own clock and buffer.
+**Changes made**:
+
+- `src/utils/dsApi.ts` — New `DSConnection` class encapsulates all P2P state and logic. `DSStore` now takes a `DSConnection` instance. `createDSApi()` creates a `new DSConnection()` per call.
+- `src/utils/__tests__/dsApi.test.ts` — Updated to use `api._test.getCurrentClock()` and `api._test.getPeerData()` instead of module-level exports. Added test proving two `createDSApi()` instances have independent clock state.
+
+**What stays module-level** (stateless, safe):
+
+- `openDb`, `execQuery`, `put`, `get` — IndexedDB helpers
+- Type interfaces (`Message`, `PeerInfo`, etc.)
+
+**Test**: New test `should have independent clock state per createDSApi instance` verifies that updating one instance's clock doesn't affect another instance.
 
 ### 7.2 Event Log Is Best-Effort, Not Guaranteed (Medium)
 
@@ -306,21 +319,16 @@ Implemented a heartbeat protocol with `ping`/`pong` control messages and `lastSe
 
 ### 7.7 Summary
 
-| Concern                                 | Severity   | Status                                                    |
-| --------------------------------------- | ---------- | --------------------------------------------------------- |
-| Module-level singletons                 | Medium     | Should refactor before adding features                    |
-| Event log best-effort                   | Medium     | Acceptable for now, document as limitation                |
-| `catchUpResponse` bypasses clock buffer | Low-Medium | ✅ Fixed — clock now synced from replayed events          |
-| No clock sync on reconnect              | Medium     | ✅ Fixed — `rawProcessMessage` + `catchUpResponse` + mock |
-| `joinFx` doesn't `requestState`         | Low        | ✅ Fixed — `joinFx` sends `requestState` after connecting |
-| No connection health monitoring         | Low        | ✅ Fixed — heartbeat protocol with ping/pong + lastSeen   |
+| Concern                                 | Severity   | Status                                                       |
+| --------------------------------------- | ---------- | ------------------------------------------------------------ |
+| Module-level singletons                 | Medium     | ✅ Fixed — `DSConnection` class per `createDSApi()` instance |
+| Event log best-effort                   | Medium     | Acceptable for now, document as limitation                   |
+| `catchUpResponse` bypasses clock buffer | Low-Medium | ✅ Fixed — clock now synced from replayed events             |
+| No clock sync on reconnect              | Medium     | ✅ Fixed — `rawProcessMessage` + `catchUpResponse` + mock    |
+| `joinFx` doesn't `requestState`         | Low        | ✅ Fixed — `joinFx` sends `requestState` after connecting    |
+| No connection health monitoring         | Low        | ✅ Fixed — heartbeat protocol with ping/pong + lastSeen      |
 
-**Recommended next steps**:
-
-1. ~~**Clock sync on reconnect**~~ ✅ Fixed in `dsApi.ts` + `mockPeer.ts`
-2. ~~**`joinFx` sends `requestState`**~~ ✅ Fixed in `dsApi.ts`
-3. ~~**Connection health monitoring**~~ ✅ Fixed in `dsApi.ts` + `mockPeer.ts`
-4. **Module-level singleton refactor** — Larger refactor: wrap clock, buffer, and peer data in a class per `createDSApi()` instance.
+**All concerns resolved except 7.2 (event log best-effort, acceptable limitation).**
 
 ### Test Suite Summary (Final)
 
@@ -329,9 +337,9 @@ Implemented a heartbeat protocol with `ping`/`pong` control messages and `lastSe
 | `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
 | `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
 | `src/state/__tests__/p2p-issues.test.ts` | 19 issue-specific tests | ✅ All pass         |
-| `src/utils/__tests__/dsApi.test.ts`      | 9 integration tests     | ✅ All pass         |
-| **Total**                                | **61 tests**            | **61 pass, 0 fail** |
+| `src/utils/__tests__/dsApi.test.ts`      | 10 integration tests    | ✅ All pass         |
+| **Total**                                | **62 tests**            | **62 pass, 0 fail** |
 
 ---
 
-_Document generated from architectural review — July 2026. Last updated: after connection health monitoring implementation._
+_Document generated from architectural review — July 2026. Last updated: after DSConnection refactor (module-level singleton fix)._

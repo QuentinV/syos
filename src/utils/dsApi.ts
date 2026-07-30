@@ -20,84 +20,7 @@ const DEBUG = false;
 
 const isDebug = () => DEBUG;
 
-// -- Lamport Clock for event ordering
-let lamportClock = 0;
-
-/** Exported for testing purposes only */
-export function getCurrentClock(): number {
-    return lamportClock;
-}
-
-const eventBuffer: {
-    message: Message;
-    conn: DataConnection;
-}[] = [];
-let flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
-let lastAppliedClock = 0;
-
-function getNextClock(): number {
-    return ++lamportClock;
-}
-
-function updateClock(receivedClock: number): void {
-    lamportClock = Math.max(lamportClock, receivedClock) + 1;
-}
-
-function tryFlushBuffer(processMessage: ProcessMessageType): void {
-    // Sort by (clock, peerId) for deterministic ordering
-    eventBuffer.sort((a, b) => {
-        if (a.message.clock !== b.message.clock) {
-            return (a.message.clock ?? 0) - (b.message.clock ?? 0);
-        }
-        return (a.message.peerId ?? '').localeCompare(b.message.peerId ?? '');
-    });
-
-    // Find the contiguous sequence starting from lastAppliedClock + 1
-    const toApply: typeof eventBuffer = [];
-    const remaining: typeof eventBuffer = [];
-    let currentClock = lastAppliedClock;
-
-    for (const entry of eventBuffer) {
-        if ((entry.message.clock ?? 0) === currentClock + 1) {
-            toApply.push(entry);
-            currentClock = entry.message.clock ?? 0;
-        } else {
-            remaining.push(entry);
-        }
-    }
-
-    eventBuffer.length = 0;
-    eventBuffer.push(...remaining);
-
-    // Apply in order
-    for (const { message, conn } of toApply) {
-        lastAppliedClock = message.clock ?? 0;
-        processMessage(message, conn);
-    }
-
-    // If there's a gap, schedule a flush attempt after a short delay
-    if (eventBuffer.length > 0 && !flushTimeoutId) {
-        flushTimeoutId = setTimeout(() => {
-            flushTimeoutId = null;
-            // Force apply all buffered events in sorted order
-            eventBuffer.sort((a, b) => {
-                if (a.message.clock !== b.message.clock) {
-                    return (a.message.clock ?? 0) - (b.message.clock ?? 0);
-                }
-                return (a.message.peerId ?? '').localeCompare(
-                    b.message.peerId ?? ''
-                );
-            });
-            for (const { message, conn } of eventBuffer) {
-                lastAppliedClock = message.clock ?? 0;
-                processMessage(message, conn);
-            }
-            eventBuffer.length = 0;
-        }, 500);
-    }
-}
-
-// -- IndexDB
+// -- IndexedDB (stateless helpers, safe to keep module-level)
 function openDb(storename: string): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('ds', 1);
@@ -155,7 +78,7 @@ async function get({ storeName, id }: { storeName: string; id: string }) {
     }
 }
 
-// -- WebRTC
+// -- Types
 interface PeerObjectData {
     objectId: string;
     peerId: string;
@@ -185,214 +108,397 @@ type ProcessMessageType = (
     conn: DataConnection
 ) => Promise<void>;
 
-function savePeerData(data: PeerData) {
-    localStorage.setItem('dsstore-peerData', JSON.stringify(data));
-}
+// -- DSConnection: encapsulates all P2P state per createDSApi() instance
+class DSConnection {
+    private lamportClock = 0;
+    private eventBuffer: {
+        message: Message;
+        conn: DataConnection;
+    }[] = [];
+    private flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    private lastAppliedClock = 0;
+    private peerData: PeerData;
 
-function getPeerData(): PeerData {
-    const str = localStorage.getItem('dsstore-peerData');
-    if (!str) {
-        savePeerData({});
-        return {};
-    }
-    return JSON.parse(str);
-}
+    // Heartbeat
+    private heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
+    private healthCheckIntervalId: ReturnType<typeof setInterval> | null = null;
+    private readonly HEARTBEAT_INTERVAL = 5000;
+    private readonly PEER_TIMEOUT = 15000;
 
-export const peerData = getPeerData();
-
-function savePeerObjectData(objectId: string, peerObjectData: PeerObjectData) {
-    peerData[objectId] = peerObjectData;
-
-    savePeerData({
-        ...peerData,
-        [objectId]: {
-            peerId: peerObjectData.peerId,
-            objectId,
-            peers: Object.keys(peerObjectData.peers).reduce((prev, key) => {
-                prev[key] = {
-                    peerId: peerObjectData.peers[key].peerId,
-                    lastSeen: peerObjectData.peers[key].lastSeen ?? Date.now(),
-                };
-                return prev;
-            }, {} as PeersInfos),
-        },
-    });
-}
-
-async function connectToPeer(
-    objetId: string,
-    peerId: string,
-    processMessage: ProcessMessageType
-): Promise<DataConnection | undefined> {
-    const pod = peerData[objetId];
-    if (!pod?.conn) return;
-
-    const pi = pod.peers[peerId];
-    if (pi?.conn) {
-        return pi.conn;
+    constructor() {
+        this.peerData = this.loadPeerData();
     }
 
-    isDebug() && console.log('[ME] open connection to ', peerId);
-
-    const conn = pod.conn.connect(peerId);
-    const peerInfo: PeerInfo = { conn, peerId, lastSeen: Date.now() };
-    pod.peers[peerId] = peerInfo;
-
-    if (!pi) {
-        isDebug() && console.log('[ME] save peer info ', peerId);
-        savePeerObjectData(objetId, pod);
+    // -- Peer data persistence
+    private savePeerData(data: PeerData) {
+        localStorage.setItem('dsstore-peerData', JSON.stringify(data));
     }
 
-    await new Promise((res) => {
-        conn.on('error', () => {
-            isDebug() && console.log(`[${peerId}] ERROR`);
-        });
-
-        conn.on('iceStateChanged', (e) => {
-            isDebug() && console.log(`[${peerId}] iceStateChanged`, e);
-        });
-
-        conn.on('data', (mess) => {
-            isDebug() && console.log(`[${peerId}] incoming`, mess);
-            processMessage(mess as Message, conn);
-            res(undefined);
-        });
-
-        conn.on('open', () => {
-            isDebug() && console.log(`[${peerId}] connection opened`);
-        });
-    });
-
-    return conn;
-}
-
-async function initPeerConnection(
-    objectId: string,
-    processMessage: ProcessMessageType,
-    getState: () => any
-): Promise<PeerObjectData> {
-    let data = peerData[objectId];
-
-    if (!data) {
-        data = {
-            objectId,
-            peerId: uuid(),
-            peers: {},
-        };
-        savePeerObjectData(objectId, data);
+    private loadPeerData(): PeerData {
+        const str = localStorage.getItem('dsstore-peerData');
+        if (!str) {
+            this.savePeerData({});
+            return {};
+        }
+        return JSON.parse(str);
     }
 
-    if (data.conn) {
-        return data;
+    getPeerData(): PeerData {
+        return this.peerData;
     }
 
-    isDebug() && console.log('init peer connection', data.peerId);
-    const peer = new Peer(data.peerId, {
-        host: '0.peerjs.com',
-        port: 443,
-        path: '/',
-    });
-    data.conn = peer;
+    private savePeerObjectData(
+        objectId: string,
+        peerObjectData: PeerObjectData
+    ) {
+        this.peerData[objectId] = peerObjectData;
 
-    await new Promise((res) => {
-        peer.on('open', (id) => {
-            isDebug() && console.log('[ME] opened', id);
-            res(id);
+        this.savePeerData({
+            ...this.peerData,
+            [objectId]: {
+                peerId: peerObjectData.peerId,
+                objectId,
+                peers: Object.keys(peerObjectData.peers).reduce((prev, key) => {
+                    prev[key] = {
+                        peerId: peerObjectData.peers[key].peerId,
+                        lastSeen:
+                            peerObjectData.peers[key].lastSeen ?? Date.now(),
+                    };
+                    return prev;
+                }, {} as PeersInfos),
+            },
         });
-    });
+    }
 
-    peer.on('connection', async (conn) => {
-        isDebug() && console.log('[ME] incoming connection', conn);
+    // -- Lamport clock
+    getCurrentClock(): number {
+        return this.lamportClock;
+    }
 
-        data.peers[conn.peer] = {
-            peerId: conn.peer,
-            conn,
-            lastSeen: Date.now(),
-        };
-        savePeerObjectData(objectId, data);
+    private getNextClock(): number {
+        return ++this.lamportClock;
+    }
+
+    updateClock(receivedClock: number): void {
+        this.lamportClock = Math.max(this.lamportClock, receivedClock) + 1;
+    }
+
+    setClock(value: number): void {
+        this.lamportClock = Math.max(this.lamportClock, value);
+    }
+
+    // -- Event buffer
+    tryFlushBuffer(processMessage: ProcessMessageType): void {
+        this.eventBuffer.sort((a, b) => {
+            if (a.message.clock !== b.message.clock) {
+                return (a.message.clock ?? 0) - (b.message.clock ?? 0);
+            }
+            return (a.message.peerId ?? '').localeCompare(
+                b.message.peerId ?? ''
+            );
+        });
+
+        const toApply: typeof this.eventBuffer = [];
+        const remaining: typeof this.eventBuffer = [];
+        let currentClock = this.lastAppliedClock;
+
+        for (const entry of this.eventBuffer) {
+            if ((entry.message.clock ?? 0) === currentClock + 1) {
+                toApply.push(entry);
+                currentClock = entry.message.clock ?? 0;
+            } else {
+                remaining.push(entry);
+            }
+        }
+
+        this.eventBuffer.length = 0;
+        this.eventBuffer.push(...remaining);
+
+        for (const { message, conn } of toApply) {
+            this.lastAppliedClock = message.clock ?? 0;
+            processMessage(message, conn);
+        }
+
+        if (this.eventBuffer.length > 0 && !this.flushTimeoutId) {
+            this.flushTimeoutId = setTimeout(() => {
+                this.flushTimeoutId = null;
+                this.eventBuffer.sort((a, b) => {
+                    if (a.message.clock !== b.message.clock) {
+                        return (a.message.clock ?? 0) - (b.message.clock ?? 0);
+                    }
+                    return (a.message.peerId ?? '').localeCompare(
+                        b.message.peerId ?? ''
+                    );
+                });
+                for (const { message, conn } of this.eventBuffer) {
+                    this.lastAppliedClock = message.clock ?? 0;
+                    processMessage(message, conn);
+                }
+                this.eventBuffer.length = 0;
+            }, 500);
+        }
+    }
+
+    bufferMessage(message: Message, conn: DataConnection) {
+        this.eventBuffer.push({ message, conn });
+    }
+
+    // -- WebRTC connection management
+    async connectToPeer(
+        objetId: string,
+        peerId: string,
+        processMessage: ProcessMessageType
+    ): Promise<DataConnection | undefined> {
+        const pod = this.peerData[objetId];
+        if (!pod?.conn) return;
+
+        const pi = pod.peers[peerId];
+        if (pi?.conn) {
+            return pi.conn;
+        }
+
+        isDebug() && console.log('[ME] open connection to ', peerId);
+
+        const conn = pod.conn.connect(peerId);
+        const peerInfo: PeerInfo = { conn, peerId, lastSeen: Date.now() };
+        pod.peers[peerId] = peerInfo;
+
+        if (!pi) {
+            isDebug() && console.log('[ME] save peer info ', peerId);
+            this.savePeerObjectData(objetId, pod);
+        }
 
         await new Promise((res) => {
             conn.on('error', () => {
-                isDebug() && console.log(`[ME] ERROR`);
+                isDebug() && console.log(`[${peerId}] ERROR`);
             });
 
             conn.on('iceStateChanged', (e) => {
-                isDebug() && console.log(`[ME] iceStateChanged`, e);
+                isDebug() && console.log(`[${peerId}] iceStateChanged`, e);
             });
 
             conn.on('data', (mess) => {
-                isDebug() &&
-                    console.log(`[ME] receving data from [${conn.peer}]`, mess);
+                isDebug() && console.log(`[${peerId}] incoming`, mess);
                 processMessage(mess as Message, conn);
+                res(undefined);
             });
 
             conn.on('open', () => {
-                isDebug() &&
-                    console.log(
-                        '[ME] incoming connection opened to',
-                        conn.peer
-                    );
-                res(undefined);
+                isDebug() && console.log(`[${peerId}] connection opened`);
             });
         });
 
-        isDebug() &&
-            console.log('sending message back with state to', conn.peer);
-        await conn.send({
-            type: 'event',
-            data: { eventName: 'setState', payload: getState() },
+        return conn;
+    }
+
+    async initPeerConnection(
+        objectId: string,
+        processMessage: ProcessMessageType,
+        getState: () => any
+    ): Promise<PeerObjectData> {
+        let data = this.peerData[objectId];
+
+        if (!data) {
+            data = {
+                objectId,
+                peerId: uuid(),
+                peers: {},
+            };
+            this.savePeerObjectData(objectId, data);
+        }
+
+        if (data.conn) {
+            return data;
+        }
+
+        isDebug() && console.log('init peer connection', data.peerId);
+        const peer = new Peer(data.peerId, {
+            host: '0.peerjs.com',
+            port: 443,
+            path: '/',
         });
-    });
+        data.conn = peer;
 
-    for (let key in data.peers) {
-        await connectToPeer(objectId, data.peers[key].peerId, processMessage);
+        await new Promise((res) => {
+            peer.on('open', (id) => {
+                isDebug() && console.log('[ME] opened', id);
+                res(id);
+            });
+        });
+
+        peer.on('connection', async (conn) => {
+            isDebug() && console.log('[ME] incoming connection', conn);
+
+            data.peers[conn.peer] = {
+                peerId: conn.peer,
+                conn,
+                lastSeen: Date.now(),
+            };
+            this.savePeerObjectData(objectId, data);
+
+            await new Promise((res) => {
+                conn.on('error', () => {
+                    isDebug() && console.log(`[ME] ERROR`);
+                });
+
+                conn.on('iceStateChanged', (e) => {
+                    isDebug() && console.log(`[ME] iceStateChanged`, e);
+                });
+
+                conn.on('data', (mess) => {
+                    isDebug() &&
+                        console.log(
+                            `[ME] receving data from [${conn.peer}]`,
+                            mess
+                        );
+                    processMessage(mess as Message, conn);
+                });
+
+                conn.on('open', () => {
+                    isDebug() &&
+                        console.log(
+                            '[ME] incoming connection opened to',
+                            conn.peer
+                        );
+                    res(undefined);
+                });
+            });
+
+            isDebug() &&
+                console.log('sending message back with state to', conn.peer);
+            await conn.send({
+                type: 'event',
+                data: { eventName: 'setState', payload: getState() },
+            });
+        });
+
+        for (let key in data.peers) {
+            await this.connectToPeer(
+                objectId,
+                data.peers[key].peerId,
+                processMessage
+            );
+        }
+
+        return data;
     }
 
-    return data;
-}
+    broadcastMessage({
+        objectId,
+        message,
+        getState,
+        computeChecksum,
+    }: {
+        objectId: string;
+        message: Message;
+        getState?: () => any;
+        computeChecksum?: (state: any) => string;
+    }) {
+        const data = this.peerData[objectId];
+        if (!data) return;
+        isDebug() && console.log('peers', Object.keys(data.peers));
 
-function broadcastMessage({
-    objectId,
-    message,
-    getState,
-    computeChecksum,
-}: {
-    objectId: string;
-    message: Message;
-    getState?: () => any;
-    computeChecksum?: (state: any) => string;
-}) {
-    const data = peerData[objectId];
-    if (!data) return;
-    isDebug() && console.log('peers', Object.keys(data.peers));
+        const clock = this.getNextClock();
+        const stamped: Message = {
+            ...message,
+            clock,
+            peerId: data.peerId,
+        };
 
-    // Stamp with Lamport clock before broadcasting
-    const clock = getNextClock();
-    const stamped: Message = {
-        ...message,
-        clock,
-        peerId: data.peerId,
-    };
+        if (computeChecksum && getState) {
+            stamped.checksum = computeChecksum(getState());
+        }
 
-    // Attach checksum if a computeChecksum function was provided
-    if (computeChecksum && getState) {
-        stamped.checksum = computeChecksum(getState());
+        return Promise.allSettled(
+            Object.keys(data.peers).map((key) => {
+                isDebug() &&
+                    console.log('broadcasting message to ', key, stamped);
+                if (!data.peers[key].conn) {
+                    console.log('ERROR no connection for ', key);
+                    return;
+                }
+                return data.peers[key].conn.send(stamped);
+            })
+        );
     }
 
-    return Promise.allSettled(
-        Object.keys(data.peers).map((key) => {
-            isDebug() && console.log('broadcasting message to ', key, stamped);
-            if (!data.peers[key].conn) {
-                console.log('ERROR no connection for ', key);
-                return;
+    // -- Heartbeat / Connection Health Monitoring
+    sendHeartbeats(getState: () => any): void {
+        const state = getState();
+        if (!state?.id) return;
+        const pod = this.peerData[state.id];
+        if (!pod) return;
+
+        Object.keys(pod.peers).forEach((peerId) => {
+            const peerInfo = pod.peers[peerId];
+            if (peerInfo?.conn) {
+                peerInfo.conn.send({
+                    type: 'control',
+                    data: { action: 'ping' },
+                    peerId: pod.peerId,
+                });
             }
-            return data.peers[key].conn.send(stamped);
-        })
-    );
+        });
+    }
+
+    checkPeerHealth(getState: () => any): string[] {
+        const state = getState();
+        if (!state?.id) return [];
+        const pod = this.peerData[state.id];
+        if (!pod) return [];
+
+        const now = Date.now();
+        const disconnected: string[] = [];
+
+        Object.keys(pod.peers).forEach((peerId) => {
+            const peerInfo = pod.peers[peerId];
+            if (peerInfo && now - peerInfo.lastSeen > this.PEER_TIMEOUT) {
+                isDebug() &&
+                    console.log(
+                        `[HEALTH] Peer ${peerId} timed out (lastSeen: ${
+                            now - peerInfo.lastSeen
+                        }ms ago)`
+                    );
+                disconnected.push(peerId);
+                try {
+                    peerInfo.conn?.close();
+                } catch (e) {
+                    // ignore
+                }
+                delete pod.peers[peerId];
+            }
+        });
+
+        if (disconnected.length > 0) {
+            this.savePeerObjectData(state.id, pod);
+        }
+
+        return disconnected;
+    }
+
+    startHeartbeat(getState: () => any): void {
+        if (this.heartbeatIntervalId) return;
+        this.heartbeatIntervalId = setInterval(() => {
+            this.sendHeartbeats(getState);
+        }, this.HEARTBEAT_INTERVAL);
+        this.healthCheckIntervalId = setInterval(() => {
+            this.checkPeerHealth(getState);
+        }, this.HEARTBEAT_INTERVAL);
+    }
+
+    stopHeartbeat(): void {
+        if (this.heartbeatIntervalId) {
+            clearInterval(this.heartbeatIntervalId);
+            this.heartbeatIntervalId = null;
+        }
+        if (this.healthCheckIntervalId) {
+            clearInterval(this.healthCheckIntervalId);
+            this.healthCheckIntervalId = null;
+        }
+    }
 }
 
-// ---
-
+// -- DSStore: effector store wrapper with P2P sync
 export type StateWithId = { id: string } | null;
 export type Reducer<State> = (state: State, payload: any) => State | void;
 type Reducers<State> = { [key: string]: Reducer<State> };
@@ -403,15 +509,18 @@ class DSStore<State extends StateWithId> {
     private localUnits: { [key: string]: EventCallable<any> };
     private getState: () => State;
     private computeChecksum?: (state: State) => string;
+    private connection: DSConnection;
 
     constructor(
         $store: StoreWritable<State>,
         getState: () => State,
+        connection: DSConnection,
         api?: Reducers<State>,
         computeChecksum?: (state: State) => string
     ) {
         this.$store = $store;
         this.getState = getState;
+        this.connection = connection;
         this.computeChecksum = computeChecksum;
         this.units = {};
         this.localUnits = {};
@@ -449,7 +558,7 @@ class DSStore<State extends StateWithId> {
     ): this {
         this.units[name] = trigger;
 
-        const localEvent = createEvent<E>(); // different event required to avoid circular calls
+        const localEvent = createEvent<E>();
         this.localUnits[name] = localEvent;
 
         this.$store
@@ -460,7 +569,7 @@ class DSStore<State extends StateWithId> {
                 const r = reducer(state, payload);
                 isDebug() && console.log('reducer result for', name, r);
                 if (r) {
-                    broadcastMessage({
+                    this.connection.broadcastMessage({
                         objectId: id,
                         message: {
                             type: 'event',
@@ -507,7 +616,14 @@ export function createDSApi<State extends StateWithId>({
     const $peerId = createStore<string | null>(null);
 
     const getState = () => $store.getState();
-    const dsStore = new DSStore<State>($store, getState, api, computeChecksum);
+    const connection = new DSConnection();
+    const dsStore = new DSStore<State>(
+        $store,
+        getState,
+        connection,
+        api,
+        computeChecksum
+    );
     const initObject = createEvent<string>();
     const setPeerId = createEvent<string>();
     const events = dsStore.getUnits();
@@ -521,7 +637,7 @@ export function createDSApi<State extends StateWithId>({
         if (type === 'event' && data.eventName) {
             // Update Lamport clock from the message clock (even for setState)
             if (clock !== undefined) {
-                updateClock(clock);
+                connection.updateClock(clock);
             }
 
             localEvents[data.eventName]?.(data.payload);
@@ -561,7 +677,6 @@ export function createDSApi<State extends StateWithId>({
         if (message.type === 'control') {
             const { data } = message;
             if (data?.action === 'requestState') {
-                // Respond with current state + latest clock
                 const state = getState();
                 const latestClock = await getLatestClock();
                 conn.send({
@@ -575,7 +690,6 @@ export function createDSApi<State extends StateWithId>({
                 return;
             }
             if (data?.action === 'catchUpRequest') {
-                // Reconnecting peer wants events since their last known clock
                 const events = await getEventsSinceClock(data.sinceClock ?? 0);
                 conn.send({
                     type: 'control',
@@ -587,23 +701,22 @@ export function createDSApi<State extends StateWithId>({
                 return;
             }
             if (data?.action === 'catchUpResponse') {
-                // Apply missed events in order and update clock
                 const missedEvents: EventLogEntry[] = data.events ?? [];
                 let maxClock = 0;
                 for (const entry of missedEvents) {
                     if (entry.clock > maxClock) maxClock = entry.clock;
                     localEvents[entry.eventName]?.(entry.payload);
                 }
-                // Sync our Lamport clock to at least the max clock from replayed events
                 if (maxClock > 0) {
-                    lamportClock = Math.max(lamportClock, maxClock);
+                    connection.setClock(maxClock);
                 }
                 return;
             }
             if (data?.action === 'ping') {
-                // Update lastSeen for this peer and respond with pong
                 const state = getState();
-                const pod = state?.id ? peerData[state.id] : undefined;
+                const pod = state?.id
+                    ? connection.getPeerData()[state.id]
+                    : undefined;
                 if (pod?.peers[message.peerId ?? '']) {
                     pod.peers[message.peerId ?? ''].lastSeen = Date.now();
                 }
@@ -614,9 +727,10 @@ export function createDSApi<State extends StateWithId>({
                 return;
             }
             if (data?.action === 'pong') {
-                // Update lastSeen for this peer
                 const state = getState();
-                const pod = state?.id ? peerData[state.id] : undefined;
+                const pod = state?.id
+                    ? connection.getPeerData()[state.id]
+                    : undefined;
                 if (pod?.peers[message.peerId ?? '']) {
                     pod.peers[message.peerId ?? ''].lastSeen = Date.now();
                 }
@@ -627,105 +741,13 @@ export function createDSApi<State extends StateWithId>({
 
         // Update our clock from incoming message
         if (message.clock !== undefined) {
-            updateClock(message.clock);
+            connection.updateClock(message.clock);
         }
 
         // Buffer and attempt to flush in order
-        eventBuffer.push({ message, conn });
-        tryFlushBuffer(rawProcessMessage);
+        connection.bufferMessage(message, conn);
+        connection.tryFlushBuffer(rawProcessMessage);
     };
-
-    // -- Heartbeat / Connection Health Monitoring
-    const HEARTBEAT_INTERVAL = 5000; // 5 seconds
-    const PEER_TIMEOUT = 15000; // 15 seconds (3 missed heartbeats)
-    let heartbeatIntervalId: ReturnType<typeof setInterval> | null = null;
-    let healthCheckIntervalId: ReturnType<typeof setInterval> | null = null;
-
-    /**
-     * Send ping to all connected peers.
-     */
-    function sendHeartbeats(): void {
-        const state = getState();
-        if (!state?.id) return;
-        const pod = peerData[state.id];
-        if (!pod) return;
-
-        Object.keys(pod.peers).forEach((peerId) => {
-            const peerInfo = pod.peers[peerId];
-            if (peerInfo?.conn) {
-                peerInfo.conn.send({
-                    type: 'control',
-                    data: { action: 'ping' },
-                    peerId: pod.peerId,
-                });
-            }
-        });
-    }
-
-    /**
-     * Check all peers for stale lastSeen timestamps.
-     * Remove peers that haven't responded in PEER_TIMEOUT ms.
-     */
-    function checkPeerHealth(): string[] {
-        const state = getState();
-        if (!state?.id) return [];
-        const pod = peerData[state.id];
-        if (!pod) return [];
-
-        const now = Date.now();
-        const disconnected: string[] = [];
-
-        Object.keys(pod.peers).forEach((peerId) => {
-            const peerInfo = pod.peers[peerId];
-            if (peerInfo && now - peerInfo.lastSeen > PEER_TIMEOUT) {
-                isDebug() &&
-                    console.log(
-                        `[HEALTH] Peer ${peerId} timed out (lastSeen: ${
-                            now - peerInfo.lastSeen
-                        }ms ago)`
-                    );
-                disconnected.push(peerId);
-                try {
-                    peerInfo.conn?.close();
-                } catch (e) {
-                    // ignore
-                }
-                delete pod.peers[peerId];
-            }
-        });
-
-        if (disconnected.length > 0) {
-            savePeerObjectData(state.id, pod);
-        }
-
-        return disconnected;
-    }
-
-    /**
-     * Start heartbeat and health check intervals.
-     */
-    function startHeartbeat(): void {
-        if (heartbeatIntervalId) return;
-        heartbeatIntervalId = setInterval(sendHeartbeats, HEARTBEAT_INTERVAL);
-        healthCheckIntervalId = setInterval(
-            checkPeerHealth,
-            HEARTBEAT_INTERVAL
-        );
-    }
-
-    /**
-     * Stop heartbeat and health check intervals.
-     */
-    function stopHeartbeat(): void {
-        if (heartbeatIntervalId) {
-            clearInterval(heartbeatIntervalId);
-            heartbeatIntervalId = null;
-        }
-        if (healthCheckIntervalId) {
-            clearInterval(healthCheckIntervalId);
-            healthCheckIntervalId = null;
-        }
-    }
 
     const loadFromStorageFx = createEffect(
         async (objectId: string) =>
@@ -753,14 +775,13 @@ export function createDSApi<State extends StateWithId>({
         clock: initObject,
         target: createEffect(async (id: string) => {
             await loadFromStorageFx(id);
-            const peerObjectData = await initPeerConnection(
+            const peerObjectData = await connection.initPeerConnection(
                 id,
                 processMessage,
                 getState
             );
             setPeerId(peerObjectData.peerId);
-            // Start heartbeat after peer connection is initialized
-            startHeartbeat();
+            connection.startHeartbeat(getState);
             isDebug() &&
                 console.log(
                     'object reloaded from storage, peerid = ',
@@ -779,11 +800,17 @@ export function createDSApi<State extends StateWithId>({
 
             isDebug() &&
                 console.log('joining object of peer ', objectId, peerId);
-            await initPeerConnection(objectId, processMessage, getState);
-            const conn = await connectToPeer(objectId, peerId, processMessage);
+            await connection.initPeerConnection(
+                objectId,
+                processMessage,
+                getState
+            );
+            const conn = await connection.connectToPeer(
+                objectId,
+                peerId,
+                processMessage
+            );
 
-            // Send a requestState control message as fallback in case
-            // the initial setState from initPeerConnection was dropped
             conn?.send({
                 type: 'control',
                 data: { action: 'requestState' },
@@ -803,15 +830,17 @@ export function createDSApi<State extends StateWithId>({
         usePeerId: () => useUnit($peerId),
         joinFx,
         events,
-        startHeartbeat,
-        stopHeartbeat,
-        checkPeerHealth,
+        startHeartbeat: () => connection.startHeartbeat(getState),
+        stopHeartbeat: () => connection.stopHeartbeat(),
+        checkPeerHealth: () => connection.checkPeerHealth(getState),
         /** @internal Exposed for testing only */
         _test: {
             processMessage,
             rawProcessMessage,
-            sendHeartbeats,
-            checkPeerHealth,
+            sendHeartbeats: () => connection.sendHeartbeats(getState),
+            checkPeerHealth: () => connection.checkPeerHealth(getState),
+            getCurrentClock: () => connection.getCurrentClock(),
+            getPeerData: () => connection.getPeerData(),
         },
     };
 }
