@@ -10,6 +10,7 @@ import {
 } from './types';
 import { createDSApi } from '../utils/dsApi';
 import { computeGameChecksum } from './checksum';
+import { logDebugMessage } from './debug';
 
 export { computeGameChecksum } from './checksum';
 
@@ -26,6 +27,9 @@ export const {
     dbStoreName: 'games',
     defaultValue: null,
     computeChecksum: computeGameChecksum,
+    onMessage: (direction, message) => {
+        logDebugMessage({ direction, message });
+    },
 });
 
 export const updateGame = createEvent<Game>();

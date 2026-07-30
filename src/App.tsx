@@ -9,6 +9,7 @@ import { Toast, ToastMessage } from 'primereact/toast';
 import { ToastContext } from './context';
 import { GamePage } from './pages/Game';
 import { JoinPage } from './pages/Join';
+import { DebugPanel } from './components/DebugPanel';
 
 export const App = () => {
     const toast = useRef<Toast>(null);
@@ -31,6 +32,7 @@ export const App = () => {
                     </Routes>
                 </HashRouter>
                 <Toast ref={toast} position="top-right" className="w-25rem" />
+                <DebugPanel />
             </ToastContext.Provider>
         </>
     );

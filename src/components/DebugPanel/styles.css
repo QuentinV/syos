@@ -1,0 +1,300 @@
+.debugPanelToggle {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1000;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.4),
+        0 0 0 2px rgba(245, 158, 11, 0.3);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+.debugPanelToggle:hover {
+    transform: scale(1.1);
+    box-shadow:
+        0 6px 16px rgba(0, 0, 0, 0.5),
+        0 0 0 3px rgba(245, 158, 11, 0.5);
+}
+
+.debugPanelToggle .p-badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    line-height: 1.25rem;
+    font-size: 0.65rem;
+}
+
+.debugPanelSidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 440px;
+    max-width: 90vw;
+    height: 100vh;
+    z-index: 999;
+    background-color: #1a1a1a;
+    border-left: 2px solid rgba(245, 158, 11, 0.3);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.debugPanelSidebar.open {
+    transform: translateX(0);
+}
+
+.debugPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+    background-color: #121212;
+}
+
+.debugPanelTitle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.debugPanelTitle i {
+    color: var(--primary-color);
+}
+
+.debugPanelClose {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-color-secondary);
+    transition: all 0.2s ease;
+    background: transparent;
+    border: none;
+}
+
+.debugPanelClose:hover {
+    color: var(--primary-color);
+    background-color: rgba(245, 158, 11, 0.1);
+}
+
+.debugPanelContent {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.debugPanelContent .p-tabview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.debugPanelContent .p-tabview-panels {
+    flex: 1;
+    overflow: auto;
+    padding: 1rem;
+}
+
+.debugStateSection {
+    margin-bottom: 1.5rem;
+}
+
+.debugStateLabel {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-color-secondary);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+}
+
+.debugStateValue {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    background-color: #0d0d0d;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+}
+
+.debugStateJson {
+    font-size: 0.75rem;
+    color: #a8e6a3;
+    background-color: #0d0d0d;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+    max-height: 400px;
+    overflow: auto;
+    line-height: 1.5;
+}
+
+.debugMessageList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.debugMessageItem {
+    background-color: #0d0d0d;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.375rem;
+    padding: 0.6rem 0.75rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.debugMessageItem:hover {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.debugMessageItem.expanded {
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.debugMessageHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.debugMessageDirection {
+    font-size: 0.75rem;
+    font-weight: 700;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.debugMessageDirection.in {
+    color: #22d3ee;
+}
+
+.debugMessageDirection.out {
+    color: #f59e0b;
+}
+
+.debugMessageBadge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.debugMessageBadge.event {
+    background-color: rgba(34, 211, 238, 0.15);
+    color: #22d3ee;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+.debugMessageBadge.control {
+    background-color: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.debugMessageName {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    font-weight: 500;
+    font-family: 'Courier New', monospace;
+}
+
+.debugMessageMeta {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.65rem;
+    color: var(--text-color-secondary);
+    margin-top: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.debugMessageMeta span {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.debugMessageMeta .label {
+    opacity: 0.6;
+}
+
+.debugMessagePayload {
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    color: #a8e6a3;
+    background-color: #080808;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.debugEmptyState {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-color-secondary);
+    font-size: 0.85rem;
+}
+
+.debugEmptyState i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+}
+
+.debugClearButton {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+}
+
+.debugOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 998;
+    background-color: rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.debugOverlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}

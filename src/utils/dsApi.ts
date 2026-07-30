@@ -92,7 +92,7 @@ interface PeerInfo {
     lastSeen: number;
 }
 
-interface Message {
+export interface Message {
     type: string;
     data?: any;
     clock?: number;
@@ -124,6 +124,9 @@ class DSConnection {
     private healthCheckIntervalId: ReturnType<typeof setInterval> | null = null;
     private readonly HEARTBEAT_INTERVAL = 5000;
     private readonly PEER_TIMEOUT = 15000;
+
+    // Debug interceptor — called for every incoming/outgoing message
+    onMessage?: (direction: 'in' | 'out', message: Message) => void;
 
     constructor() {
         this.peerData = this.loadPeerData();
@@ -409,6 +412,8 @@ class DSConnection {
             stamped.checksum = computeChecksum(getState());
         }
 
+        this.onMessage?.('out', stamped);
+
         return Promise.allSettled(
             Object.keys(data.peers).map((key) => {
                 isDebug() &&
@@ -606,17 +611,20 @@ export function createDSApi<State extends StateWithId>({
     defaultValue,
     api,
     computeChecksum,
+    onMessage,
 }: {
     dbStoreName: string;
     defaultValue: State;
     api?: Reducers<State>;
     computeChecksum?: (state: State) => string;
+    onMessage?: (direction: 'in' | 'out', message: Message) => void;
 }) {
     const $store = createStore<State>(defaultValue);
     const $peerId = createStore<string | null>(null);
 
     const getState = () => $store.getState();
     const connection = new DSConnection();
+    connection.onMessage = onMessage;
     const dsStore = new DSStore<State>(
         $store,
         getState,
@@ -673,6 +681,8 @@ export function createDSApi<State extends StateWithId>({
     };
 
     const processMessage = async (message: Message, conn: DataConnection) => {
+        connection.onMessage?.('in', message);
+
         // Handle control messages directly (not through Lamport clock buffer)
         if (message.type === 'control') {
             const { data } = message;
