@@ -2,15 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DebugPanel } from '.';
 import { fork } from 'effector';
 import { Provider } from 'effector-react';
-import {
-    $debugMessages,
-    $debugPanelOpen,
-    $debugClock,
-    $debugChecksum,
-} from '../../state/debug';
-import { $game, $peerId } from '../../state/game';
-import { PlayerRole } from '../../state/types';
-import { DebugMessage } from '../../state/debug';
+import { debug } from '../../debug';
+import { DebugMessage } from '../../types';
 
 const sampleMessages: DebugMessage[] = [
     {
@@ -63,7 +56,7 @@ const sampleMessages: DebugMessage[] = [
 ];
 
 const meta = {
-    title: 'components/DebugPanel',
+    title: 'chorus/components/DebugPanel',
     parameters: {
         layout: 'fullscreen',
     },
@@ -74,51 +67,13 @@ const meta = {
             const { parameters } = context;
             const scope = fork({
                 values: [
+                    [debug.$panelOpen, parameters.open ?? false],
+                    [debug.$clock, 3],
                     [
-                        $game,
-                        {
-                            id: 'game-123',
-                            turns: [
-                                {
-                                    status: 'stPicksCards',
-                                    players: {
-                                        abc: {
-                                            playerId: 'abc',
-                                            role: PlayerRole.storyteller,
-                                            score: 0,
-                                        },
-                                        def: {
-                                            playerId: 'def',
-                                            role: PlayerRole.gremlin,
-                                            score: 0,
-                                        },
-                                    },
-                                },
-                            ],
-                            players: {
-                                abc: {
-                                    id: 'abc',
-                                    name: 'Alice',
-                                    ready: true,
-                                },
-                                def: {
-                                    id: 'def',
-                                    name: 'Bob',
-                                    ready: true,
-                                },
-                            },
-                            createdAt: Date.now(),
-                            status: 'running',
-                        },
-                    ],
-                    [$peerId, 'my-peer-id-xyz'],
-                    [$debugPanelOpen, parameters.open ?? false],
-                    [$debugClock, 3],
-                    [
-                        $debugChecksum,
+                        debug.$checksum,
                         'game-123|running|stPicksCards:2|abc:1,def:1',
                     ],
-                    [$debugMessages, parameters.messages ?? sampleMessages],
+                    [debug.$messages, parameters.messages ?? sampleMessages],
                 ],
             });
             return (
@@ -134,16 +89,28 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Closed: Story = {
-    args: {},
+    args: {
+        state: { id: 'game-123', status: 'running' },
+        peerId: 'my-peer-id-xyz',
+        liveChecksum: 'game-123|running|stPicksCards:2|abc:1,def:1',
+    },
     parameters: { open: false },
 };
 
 export const Open: Story = {
-    args: {},
+    args: {
+        state: { id: 'game-123', status: 'running' },
+        peerId: 'my-peer-id-xyz',
+        liveChecksum: 'game-123|running|stPicksCards:2|abc:1,def:1',
+    },
     parameters: { open: true },
 };
 
 export const EmptyMessages: Story = {
-    args: {},
+    args: {
+        state: { id: 'game-123', status: 'running' },
+        peerId: 'my-peer-id-xyz',
+        liveChecksum: 'game-123|running|stPicksCards:2|abc:1,def:1',
+    },
     parameters: { open: true, messages: [] },
 };

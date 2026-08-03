@@ -1,0 +1,59 @@
+.chorus-countdown-knob {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 75px;
+    height: 75px;
+}
+
+.chorus-countdown-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.chorus-countdown-track {
+    stroke: rgba(255, 255, 255, 0.1);
+}
+
+.chorus-countdown-progress {
+    stroke: var(--primary-color, #f59e0b);
+    transition: stroke-dashoffset 1s linear;
+}
+
+.chorus-countdown-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color, #fff);
+}
+
+.chorus-countdown-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 10rem;
+}
+
+.chorus-countdown-bar-track {
+    flex: 1;
+    height: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.chorus-countdown-bar-fill {
+    height: 100%;
+    background-color: var(--primary-color, #f59e0b);
+    border-radius: 0.25rem;
+    transition: width 1s linear;
+}
+
+.chorus-countdown-bar-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color, #fff);
+    min-width: 1.5rem;
+    text-align: center;
+}

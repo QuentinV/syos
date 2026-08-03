@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Countdown } from '.';
 
 const meta = {
-    title: 'components/Countdown',
+    title: 'chorus/components/Countdown',
     parameters: {
         layout: 'centered',
     },

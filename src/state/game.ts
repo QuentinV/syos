@@ -8,9 +8,8 @@ import {
     PlayerRole,
     PlayerTurn,
 } from './types';
-import { createChorus } from '../chorus';
+import { createChorus, logDebugMessage } from '../chorus';
 import { computeGameChecksum } from './checksum';
-import { logDebugMessage } from './debug';
 
 export { computeGameChecksum } from './checksum';
 

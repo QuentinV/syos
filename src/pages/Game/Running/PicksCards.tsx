@@ -4,7 +4,7 @@ import { GameCards } from '../../../components/GameCards';
 import { selectCard, updatePlayersTurn } from '../../../state/game';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../state/player';
-import { Countdown } from '../../../components/Countdown';
+import { Countdown } from '../../../chorus';
 import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {

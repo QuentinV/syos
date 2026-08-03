@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
 import { $player } from '../../state/player';
 import { joinFx } from '../../state/game';
+import { JoinSession } from '../../chorus';
 
 export const JoinPage: React.FC = () => {
     const { gameId, peerId } = useParams();
@@ -15,18 +16,13 @@ export const JoinPage: React.FC = () => {
         joinFx({ objectId: gameId, peerId });
     }, [gameId, peerId]);
 
+    if (!peerId || !gameId) return null;
+
     return (
-        <div className="m-auto">
-            <h2>Hello {player?.name}</h2>
-            <div>
-                You are being connected
-                <div>- Game {gameId}</div>
-                <div>- Peer {peerId}</div>
-            </div>
-            <div className="text-center mt-5">
-                <i className="pi pi-spin pi-spinner mr-2" />
-                Please hold on
-            </div>
-        </div>
+        <JoinSession
+            sessionId={gameId}
+            peerId={peerId}
+            playerName={player?.name}
+        />
     );
 };

@@ -1,0 +1,35 @@
+.chorus-join {
+    margin: auto;
+    max-width: 30rem;
+}
+
+.chorus-join-info {
+    margin: 0.25rem 0;
+}
+
+.chorus-join-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.chorus-join-spinner {
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0.2rem solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--primary-color, #f59e0b);
+    border-radius: 50%;
+    animation: chorus-join-spin 0.8s linear infinite;
+}
+
+.chorus-join-progress-text {
+    font-size: 0.9rem;
+}
+
+@keyframes chorus-join-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

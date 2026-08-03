@@ -4,7 +4,20 @@ export { ChorusSession } from './core/session';
 export { createStorage } from './core/storage';
 export { createHooks } from './react';
 export { createWorkflowEngine } from './workflow';
-export { debug } from './debug';
+export { debug, logDebugMessage } from './debug';
+export { QRCode } from './components/QRCode';
+export type { QRCodeProps } from './components/QRCode';
+export { Countdown } from './components/Countdown';
+export type { CountdownProps } from './components/Countdown';
+export { DebugPanel } from './components/DebugPanel';
+export type { DebugPanelProps } from './components/DebugPanel';
+export { SessionLobby } from './components/SessionLobby';
+export type {
+    SessionLobbyProps,
+    SessionLobbyPlayer,
+} from './components/SessionLobby';
+export { JoinSession } from './components/JoinSession';
+export type { JoinSessionProps } from './components/JoinSession';
 export {
     appendToEventLog,
     getEventsSinceClock,

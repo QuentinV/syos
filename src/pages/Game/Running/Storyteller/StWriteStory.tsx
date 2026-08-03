@@ -5,7 +5,7 @@ import {
     useTurn,
 } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
-import { Countdown } from '../../../../components/Countdown';
+import { Countdown } from '../../../../chorus';
 import { useUnit } from 'effector-react';
 import { $player } from '../../../../state/player';
 import { FloatLabel } from 'primereact/floatlabel';

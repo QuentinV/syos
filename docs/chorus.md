@@ -121,10 +121,10 @@ The workflow engine calls `session.setStatus` to advance status. Provide a `setS
 const session = chorus.createSession<MyState>({
     name: 'my-session',
     defaultValue: null,
-    getStatus: (state) => state.status,                  // read status
+    getStatus: (state) => state.status, // read status
     setStatus: (state, status) => {
         if (!state) return null;
-        if (state.status === status) return state;       // idempotent
+        if (state.status === status) return state; // idempotent
         return { ...state, status };
     },
 });
@@ -146,6 +146,120 @@ chorus.debug.clear(); // clear messages
 chorus.debug.togglePanel(); // toggle panel
 chorus.debug.setPanelOpen(true);
 ```
+
+## Components
+
+Chorus ships with a set of generic, UI-framework-agnostic React components for common P2P session patterns.
+
+### QRCode
+
+Renders a QR code for a given value (e.g., a join link).
+
+```tsx
+import { QRCode } from 'chorus';
+
+<QRCode
+    value="https://example.com/join/session-123/peer-abc"
+    bgColor="#1a1a1a"
+    fgColor="#f59e0b"
+    title="Join session QRCode"
+    onClick={() => navigator.clipboard.writeText(joinUrl)}
+/>;
+```
+
+| Prop         | Type         | Description                    |
+| ------------ | ------------ | ------------------------------ |
+| `value`      | `string`     | The value to encode (required) |
+| `bgColor?`   | `string`     | Background color               |
+| `fgColor?`   | `string`     | Foreground color               |
+| `title?`     | `string`     | Accessible title               |
+| `className?` | `string`     | Additional CSS class           |
+| `onClick?`   | `() => void` | Click handler                  |
+
+### Countdown
+
+A simple countdown timer with two visual styles.
+
+```tsx
+import { Countdown } from 'chorus';
+
+<Countdown limit={60} onComplete={() => handleTimeout()} style="knob" />;
+```
+
+| Prop         | Type              | Description                         |
+| ------------ | ----------------- | ----------------------------------- |
+| `limit`      | `number`          | Countdown duration in seconds       |
+| `onComplete` | `() => void`      | Called when the countdown reaches 0 |
+| `style?`     | `'knob' \| 'bar'` | Visual style (default: `'knob'`)    |
+
+### DebugPanel
+
+A floating debug sidebar that displays P2P messages, Lamport clock, checksums, and the current session state. Reads directly from the Chorus debug stores.
+
+```tsx
+import { DebugPanel } from 'chorus';
+
+<DebugPanel
+    state={myState}
+    peerId={peerId}
+    liveChecksum={computeChecksum(myState)}
+/>;
+```
+
+| Prop            | Type             | Description                           |
+| --------------- | ---------------- | ------------------------------------- |
+| `state?`        | `any`            | Current session state (shown as JSON) |
+| `peerId?`       | `string \| null` | This peer's ID                        |
+| `liveChecksum?` | `string`         | Live checksum of the current state    |
+
+### SessionLobby
+
+A generic pre-game lobby showing connected players, ready status, and a join QR code.
+
+```tsx
+import { SessionLobby } from 'chorus';
+
+<SessionLobby
+    sessionId="session-123"
+    peerId="peer-abc"
+    players={[
+        { id: 'p1', name: 'Alice', ready: true },
+        { id: 'p2', name: 'Bob', ready: false },
+    ]}
+    currentPlayerId="p1"
+    joinUrl="https://example.com/join/session-123/peer-abc"
+    onToggleReady={(id) => toggleReady(id)}
+    onStart={() => startSession()}
+    canStart={allPlayersReady}
+/>;
+```
+
+| Prop               | Type                         | Description                                |
+| ------------------ | ---------------------------- | ------------------------------------------ |
+| `sessionId`        | `string`                     | The session ID to display                  |
+| `peerId`           | `string`                     | This peer's ID                             |
+| `players`          | `SessionLobbyPlayer[]`       | List of players `{ id, name, ready }`      |
+| `currentPlayerId?` | `string`                     | The local player's ID                      |
+| `joinUrl`          | `string`                     | URL shown in the QR code                   |
+| `onToggleReady`    | `(playerId: string) => void` | Called when the local player toggles ready |
+| `onStart`          | `() => void`                 | Called when the host starts the session    |
+| `canStart`         | `boolean`                    | Whether the start button is enabled        |
+
+### JoinSession
+
+A generic "connecting" screen shown while a player joins a session via a P2P link.
+
+```tsx
+import { JoinSession } from 'chorus';
+
+<JoinSession sessionId="session-123" peerId="peer-abc" playerName="Alice" />;
+```
+
+| Prop          | Type     | Description                 |
+| ------------- | -------- | --------------------------- |
+| `sessionId`   | `string` | The session ID being joined |
+| `peerId`      | `string` | The host peer ID            |
+| `playerName?` | `string` | The local player's name     |
 
 ## Storage Adapters
 
