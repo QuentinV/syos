@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createMockGameWithPlayers } from '../../utils/__tests__/mockPeer';
+import { createMockGameWithPlayers } from './mockGame';
 import {
     Game,
     GameTurn,

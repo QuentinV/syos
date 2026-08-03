@@ -52,7 +52,7 @@ async function putIndexedDb({
     } catch (e) {
         const obj = JSON.parse(sessionStorage.getItem(storeName) ?? '{}');
         obj[data.id] = data;
-        sessionStorage.setItem(storeName, obj);
+        sessionStorage.setItem(storeName, JSON.stringify(obj));
     }
 }
 
@@ -66,7 +66,9 @@ async function getIndexedDb({
     try {
         return await execQuery(storeName, (s: IDBObjectStore) => s.get(id));
     } catch (e) {
-        return JSON.parse(sessionStorage.getItem(storeName) ?? '{}')[storeName];
+        return (
+            JSON.parse(sessionStorage.getItem(storeName) ?? '{}')[id] ?? null
+        );
     }
 }
 

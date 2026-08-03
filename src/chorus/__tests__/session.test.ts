@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createEvent } from 'effector';
 
 // Use dynamic import to ensure localStorage is stubbed before module code runs
-let createChorus: typeof import('../../chorus').createChorus;
+let createChorus: typeof import('../index').createChorus;
 
 beforeEach(async () => {
     // Stub localStorage before importing the module
@@ -20,24 +21,24 @@ beforeEach(async () => {
     });
 
     // Dynamic import after localStorage is stubbed
-    const mod = await import('../../chorus');
+    const mod = await import('../index');
     createChorus = mod.createChorus;
 });
 
 /**
- * Real integration tests for dsApi.ts.
- * These tests exercise the actual createDSApi implementation,
+ * Real integration tests for the Chorus session.
+ * These tests exercise the actual createChorus().createSession() implementation,
  * not the MockPeer. They verify that the Lamport clock is
  * correctly updated by rawProcessMessage and processMessage.
  *
- * After the DSConnection refactor, each createDSApi() instance
+ * After the ChorusConnection refactor, each createSession() instance
  * has its own clock, buffer, and peer data — no more module-level
  * singletons.
  */
 
 type TestState = { id: string; value: number } | null;
 
-describe('dsApi.ts — Lamport clock integration', () => {
+describe('Chorus session — Lamport clock integration', () => {
     it('should update lamportClock when rawProcessMessage receives a setState event', async () => {
         const chorus = createChorus({ storage: 'memory' });
         const api = chorus.createSession<TestState>({
@@ -364,7 +365,7 @@ describe('dsApi.ts — Lamport clock integration', () => {
         expect(typeof api._test.checkPeerHealth).toBe('function');
     });
 
-    it('should have independent clock state per createDSApi instance', async () => {
+    it('should have independent clock state per createSession instance', async () => {
         const api1 = createChorus({
             storage: 'memory',
         }).createSession<TestState>({
@@ -397,6 +398,64 @@ describe('dsApi.ts — Lamport clock integration', () => {
 
         // api2's clock should be 0 (independent instance)
         expect(api2._test.getCurrentClock()).toBe(0);
+    });
+});
+
+describe('Chorus session — localOn', () => {
+    it('should register a local-only reducer', () => {
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
+            defaultValue: { id: 'test', value: 0 },
+        });
+
+        const localEvent = createEvent<number>();
+        api.store.localOn(localEvent, (state, payload) => {
+            if (!state) return null;
+            return { ...state, value: payload };
+        });
+
+        localEvent(42);
+        expect(api.$state.getState()?.value).toBe(42);
+    });
+});
+
+describe('Chorus session — getUnits / getLocalUnits', () => {
+    it('should return the event maps', () => {
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
+            defaultValue: { id: 'test', value: 0 },
+            api: {
+                increment: (state: TestState, by: number) => {
+                    if (!state) return null;
+                    return { ...state, value: state.value + by };
+                },
+            },
+        });
+
+        const units = api.store.getUnits();
+        const localUnits = api.store.getLocalUnits();
+
+        expect(typeof units['increment']).toBe('function');
+        expect(typeof localUnits['increment']).toBe('function');
+        expect(typeof units['setState']).toBe('function');
+    });
+});
+
+describe('Chorus session — setState reducer', () => {
+    it('should replace state via setState event', () => {
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
+            defaultValue: { id: 'test', value: 0 },
+        });
+
+        api.events['setState']({ id: 'test', value: 99 });
+        expect(api.$state.getState()).toEqual({ id: 'test', value: 99 });
     });
 });
 

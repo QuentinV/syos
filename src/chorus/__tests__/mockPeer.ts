@@ -1,5 +1,3 @@
-import { Game, Player } from '../../state/types';
-
 export type MessageHandler = (message: {
     type: string;
     data?: any;
@@ -10,20 +8,20 @@ export type MessageHandler = (message: {
 
 /**
  * In-memory mock of a PeerJS peer for testing P2P sync without WebRTC.
- * Each MockPeer has its own DSStore-like state and can connect to other peers.
+ * Each MockPeer has its own state and can connect to other peers.
  *
  * Now supports Lamport clock-based ordering: messages are stamped with
  * a monotonic clock and reordered on receive based on (clock, peerId).
  */
-export class MockPeer {
+export class MockPeer<T> {
     public peerId: string;
-    public state: Game | null = null;
-    public connectedPeers: Map<string, MockPeer> = new Map();
+    public state: T | null = null;
+    public connectedPeers: Map<string, MockPeer<T>> = new Map();
     public messageLog: { from: string; message: any }[] = [];
     public isDisconnected = false;
     public dropNextMessage = false;
     public onMessage: MessageHandler | null = null;
-    public onConnection: ((peer: MockPeer) => void) | null = null;
+    public onConnection: ((peer: MockPeer<T>) => void) | null = null;
 
     // Lamport clock
     public lamportClock = 0;
@@ -57,17 +55,17 @@ export class MockPeer {
     public onPeerDisconnected: ((peerId: string) => void) | null = null;
 
     // Checksum support for divergence detection (Fix A, B, C)
-    public computeChecksum: ((state: Game | null) => string) | null = null;
+    public computeChecksum: ((state: T | null) => string) | null = null;
     public broadcastCount = 0;
     public divergenceWarnings: string[] = [];
     public lastBroadcastChecksum: string | null = null;
 
-    constructor(peerId: string, initialState: Game | null = null) {
+    constructor(peerId: string, initialState: T | null = null) {
         this.peerId = peerId;
         this.state = initialState;
     }
 
-    connect(other: MockPeer): void {
+    connect(other: MockPeer<T>): void {
         if (this.isDisconnected) return;
         this.connectedPeers.set(other.peerId, other);
         other.connectedPeers.set(this.peerId, this);
@@ -174,7 +172,7 @@ export class MockPeer {
         }
     }
 
-    reconnect(existingPeer: MockPeer): void {
+    reconnect(existingPeer: MockPeer<T>): void {
         this.isDisconnected = false;
         this.connect(existingPeer);
 
@@ -225,7 +223,7 @@ export class MockPeer {
 
     /**
      * Broadcast a message to all connected peers with a Lamport clock stamp.
-     * Also applies the event locally (simulating the real DSStore behavior
+     * Also applies the event locally (simulating the real store behavior
      * where the reducer runs locally first, then broadcasts to peers).
      */
     broadcast(message: { type: string; data?: any }): void {
@@ -362,24 +360,24 @@ export class MockPeer {
     /**
      * Corrupt the local state to simulate divergence.
      */
-    corruptState(overrides: Partial<Game>): void {
+    corruptState(overrides: Partial<T>): void {
         if (this.state) {
             this.state = { ...this.state, ...overrides };
         }
     }
 
-    getState(): Game | null {
+    getState(): T | null {
         return this.state;
     }
 
-    setState(state: Game | null): void {
+    setState(state: T | null): void {
         this.state = state;
     }
 
     /**
      * Check if this peer's state matches another peer's state.
      */
-    isStateEqual(other: MockPeer): boolean {
+    isStateEqual(other: MockPeer<T>): boolean {
         return JSON.stringify(this.state) === JSON.stringify(other.state);
     }
 }
@@ -387,13 +385,13 @@ export class MockPeer {
 /**
  * Create a set of connected MockPeers for testing.
  */
-export function createPeers(
+export function createPeers<T>(
     count: number,
-    initialState?: Game | null
-): MockPeer[] {
-    const peers: MockPeer[] = [];
+    initialState?: T | null
+): MockPeer<T>[] {
+    const peers: MockPeer<T>[] = [];
     for (let i = 0; i < count; i++) {
-        peers.push(new MockPeer(`peer-${i}`, initialState ?? null));
+        peers.push(new MockPeer<T>(`peer-${i}`, initialState ?? null));
     }
     // Connect all peers to each other
     for (let i = 0; i < count; i++) {
@@ -402,57 +400,4 @@ export function createPeers(
         }
     }
     return peers;
-}
-
-/**
- * Create a minimal mock game state for testing.
- */
-export function createMockGame(overrides: Partial<Game> = {}): Game {
-    return {
-        id: 'test-game-id',
-        players: {},
-        turns: [],
-        createdAt: Date.now(),
-        status: 'lobby',
-        peerId: 'test-peer-id',
-        ...overrides,
-    };
-}
-
-/**
- * Create a mock player.
- */
-export function createMockPlayer(
-    id: string,
-    overrides: Partial<Player> = {}
-): Player {
-    return {
-        id,
-        name: `Player ${id}`,
-        ready: false,
-        ...overrides,
-    };
-}
-
-/**
- * Create a mock game with N players in lobby state.
- */
-export function createMockGameWithPlayers(playerCount: number): {
-    game: Game;
-    players: Player[];
-} {
-    const players: Player[] = [];
-    for (let i = 0; i < playerCount; i++) {
-        players.push(createMockPlayer(`player-${i}`));
-    }
-    const game = createMockGame({
-        players: players.reduce(
-            (acc, p) => {
-                acc[p.id] = p;
-                return acc;
-            },
-            {} as { [playerId: string]: Player }
-        ),
-    });
-    return { game, players };
 }

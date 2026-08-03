@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-    MockPeer,
-    createPeers,
-    createMockGameWithPlayers,
-} from '../../utils/__tests__/mockPeer';
+import { MockPeer, createPeers } from '../../chorus/__tests__/mockPeer';
+import { createMockGameWithPlayers } from './mockGame';
 import { Game, GameTurn, PlayerRole } from '../types';
 import { computeGameChecksum } from '../checksum';
 
@@ -11,7 +8,7 @@ import { computeGameChecksum } from '../checksum';
  * Simulate the workflow transition check (mirrors the logic in workflows.ts).
  * After each event is applied, check if any workflow transition should fire.
  */
-function evaluateWorkflows(peer: MockPeer): void {
+function evaluateWorkflows(peer: MockPeer<Game>): void {
     const state = peer.getState();
     if (!state || state.status !== 'running') return;
     const turn = state.turns[state.turns.length - 1];
@@ -76,7 +73,7 @@ function evaluateWorkflows(peer: MockPeer): void {
  * Also logs events to the peer's event log for reconnection support.
  */
 function applyEvent(
-    peer: MockPeer,
+    peer: MockPeer<Game>,
     message: { type: string; data?: any; clock?: number; peerId?: string }
 ): void {
     if (message.type !== 'event' || !message.data) return;
@@ -164,7 +161,7 @@ function applyEvent(
 /**
  * Wire up a MockPeer's onMessage to apply game events to its local state.
  */
-function wirePeer(peer: MockPeer): void {
+function wirePeer(peer: MockPeer<Game>): void {
     peer.onMessage = (message) => applyEvent(peer, message);
 }
 
@@ -175,7 +172,7 @@ function wirePeer(peer: MockPeer): void {
 function createWiredPeers(
     count: number,
     initialState?: Game | null
-): MockPeer[] {
+): MockPeer<Game>[] {
     const peers = createPeers(count, initialState);
     peers.forEach(wirePeer);
     return peers;
@@ -550,8 +547,8 @@ describe('Issue 4: State Divergence Detection', () => {
 describe('Issue 5: Initial Connection Handshake', () => {
     it('should handle lost initial setState message via requestState', () => {
         const initialState = createMockGameWithPlayers(2).game;
-        const alice = new MockPeer('alice', initialState);
-        const bob = new MockPeer('bob', null); // Bob hasn't joined yet
+        const alice = new MockPeer<Game>('alice', initialState);
+        const bob = new MockPeer<Game>('bob', null); // Bob hasn't joined yet
 
         wirePeer(alice);
         wirePeer(bob);
@@ -864,7 +861,7 @@ describe('Fix A: Checksum from New State', () => {
     it('should compute checksum from post-mutation state, not pre-mutation', () => {
         const initialState = createMockGameWithPlayers(2).game;
         // status is 'lobby'
-        const peer = new MockPeer('peer-0', initialState);
+        const peer = new MockPeer<Game>('peer-0', initialState);
         peer.computeChecksum = computeGameChecksum;
 
         // Simple applyEvent that handles startGame and setGameTurnStatus
@@ -921,7 +918,7 @@ describe('Fix A: Checksum from New State', () => {
             },
         });
 
-        const peer = new MockPeer('peer-0', initialState);
+        const peer = new MockPeer<Game>('peer-0', initialState);
         peer.computeChecksum = computeGameChecksum;
 
         peer.onMessage = (message) => {
@@ -983,7 +980,7 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         return game;
     }
 
-    function workflowAwareApplyEvent(peer: MockPeer, message: any): void {
+    function workflowAwareApplyEvent(peer: MockPeer<Game>, message: any): void {
         if (message.type !== 'event' || !message.data) return;
         const { eventName, payload } = message.data;
         const state = peer.getState();

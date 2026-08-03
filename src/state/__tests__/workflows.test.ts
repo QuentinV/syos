@@ -6,7 +6,7 @@ import {
     PlayerRole,
     PlayerTurn,
 } from '../types';
-import { createMockGame } from '../../utils/__tests__/mockPeer';
+import { createMockGame } from './mockGame';
 
 // Extract workflow transition logic from workflows.ts for testing
 interface FlowTransition {
