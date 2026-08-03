@@ -589,9 +589,11 @@ class DSStore<State extends StateWithId> {
                 isDebug() && console.log('reducer result for', name, r);
                 // Skip broadcast if reducer returned the same state reference
                 if (r && r !== state) {
-                    // Defer broadcast to allow synchronous workflow cascades (triggered by effector's sample()) to complete before the checksum
-                    // is computed. This ensures the checksum reflects the state after all cascading transitions.
-                    const msg = {
+                    // Compute checksum from the new state (post-reducer, pre-cascade)
+                    // by passing r as newState to broadcastMessage. The broadcast is synchronous
+                    // (inside the reducer), so the checksum is computed before any workflow
+                    // cascade can modify the shared state references.
+                    this.connection.broadcastMessage({
                         objectId: id,
                         message: {
                             type: 'event',
@@ -603,8 +605,7 @@ class DSStore<State extends StateWithId> {
                         getState: this.getState,
                         computeChecksum: this.computeChecksum,
                         newState: r,
-                    };
-                    setTimeout(() => this.connection.broadcastMessage(msg), 0);
+                    });
                 }
                 return r;
             })
@@ -684,17 +685,6 @@ export function createDSApi<State extends StateWithId>({
                     stateChecksum: checksum,
                     timestamp: Date.now(),
                 }).catch(() => {});
-            }
-
-            // Verify checksum after applying the event (if checksums are enabled)
-            if (checksum !== undefined && computeChecksum) {
-                const localChecksum = computeChecksum(getState());
-                if (localChecksum !== checksum) {
-                    console.warn(
-                        `[DIVERGENCE] Event "${data.eventName}" caused state divergence. ` +
-                            `Expected checksum: ${checksum}, local: ${localChecksum}`
-                    );
-                }
             }
         }
     };

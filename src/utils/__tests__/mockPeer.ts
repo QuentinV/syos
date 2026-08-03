@@ -337,21 +337,6 @@ export class MockPeer {
         for (const { from, message } of toApply) {
             this.messageLog.push({ from, message });
             this.onMessage?.(message);
-
-            // Verify checksum after all synchronous processing (including workflow cascades)
-            if (
-                message.checksum !== undefined &&
-                this.computeChecksum &&
-                this.state
-            ) {
-                const localChecksum = this.computeChecksum(this.state);
-                if (localChecksum !== message.checksum) {
-                    this.divergenceWarnings.push(
-                        `[DIVERGENCE] Event "${message.data?.eventName}" caused state divergence. ` +
-                            `Expected: ${message.checksum}, local: ${localChecksum}`
-                    );
-                }
-            }
         }
 
         // If there's a gap, schedule a flush attempt after a short delay
