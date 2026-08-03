@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Use dynamic import to ensure localStorage is stubbed before module code runs
-let createDSApi: any;
+let createChorus: typeof import('../../chorus').createChorus;
 
 beforeEach(async () => {
     // Stub localStorage before importing the module
@@ -20,8 +20,8 @@ beforeEach(async () => {
     });
 
     // Dynamic import after localStorage is stubbed
-    const mod = await import('../dsApi');
-    createDSApi = mod.createDSApi;
+    const mod = await import('../../chorus');
+    createChorus = mod.createChorus;
 });
 
 /**
@@ -39,8 +39,9 @@ type TestState = { id: string; value: number } | null;
 
 describe('dsApi.ts — Lamport clock integration', () => {
     it('should update lamportClock when rawProcessMessage receives a setState event', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const chorus = createChorus({ storage: 'memory' });
+        const api = chorus.createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -68,8 +69,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should update lamportClock when rawProcessMessage receives a regular event', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -94,8 +97,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should update lamportClock when processMessage receives a regular event through the buffer', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -120,8 +125,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should update lamportClock from catchUpResponse with replayed events', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -170,8 +177,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should handle multiple events and keep clock monotonic', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -225,8 +234,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should handle catchUpResponse with empty events list', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -248,8 +259,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should respond to ping with pong control message', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -289,8 +302,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should update lastSeen when receiving pong', async () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -335,8 +350,10 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should expose startHeartbeat, stopHeartbeat, and checkPeerHealth', () => {
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: null,
         });
 
@@ -348,12 +365,16 @@ describe('dsApi.ts — Lamport clock integration', () => {
     });
 
     it('should have independent clock state per createDSApi instance', async () => {
-        const api1 = createDSApi<TestState>({
-            dbStoreName: 'test-db-1',
+        const api1 = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db-1',
             defaultValue: null,
         });
-        const api2 = createDSApi<TestState>({
-            dbStoreName: 'test-db-2',
+        const api2 = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db-2',
             defaultValue: null,
         });
 
@@ -383,11 +404,13 @@ describe('Fix C: Idempotent Broadcast Suppression', () => {
     it('should not broadcast when reducer returns same state reference', () => {
         type TestState = { id: string; value: number } | null;
 
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: { id: 'test', value: 0 },
             api: {
-                setValue: (state, payload: number) => {
+                setValue: (state: TestState, payload: number) => {
                     if (!state) return null;
                     if (state.value === payload) return state; // idempotent
                     return { ...state, value: payload };
@@ -395,7 +418,7 @@ describe('Fix C: Idempotent Broadcast Suppression', () => {
             },
         });
 
-        const store = api.$store;
+        const store = api.$state;
         expect(store.getState()?.value).toBe(0);
 
         // First fire: should change state and broadcast
@@ -418,18 +441,20 @@ describe('Fix C: Idempotent Broadcast Suppression', () => {
     it('should still broadcast when reducer returns new state', () => {
         type TestState = { id: string; value: number } | null;
 
-        const api = createDSApi<TestState>({
-            dbStoreName: 'test-db',
+        const api = createChorus({
+            storage: 'memory',
+        }).createSession<TestState>({
+            name: 'test-db',
             defaultValue: { id: 'test', value: 0 },
             api: {
-                setValue: (state, payload: number) => {
+                setValue: (state: TestState, payload: number) => {
                     if (!state) return null;
                     return { ...state, value: payload };
                 },
             },
         });
 
-        const store = api.$store;
+        const store = api.$state;
         expect(store.getState()?.value).toBe(0);
 
         // Fire with a new value — should change state

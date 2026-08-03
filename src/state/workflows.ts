@@ -1,46 +1,45 @@
-import { createEffect, sample } from 'effector';
-import { setGameTurnStatus, $game, updatePlayersTurn, stopGame } from './game';
+import { stopGame, updatePlayersTurn, workflows } from './game';
 import {
     Game,
     GamePlayersTurn,
     GameTurn,
-    GameTurnStatus,
-    Player,
     PlayerRole,
     PlayerTurn,
 } from './types';
 import { $player } from './player';
 
-interface FlowTransition {
-    from: GameTurnStatus;
-    filter: (context: {
-        game: Game;
-        turn?: GameTurn;
-        playerTurn?: PlayerTurn;
-        player: Player;
-    }) => boolean;
-    logic?: (context: {
-        game: Game;
-        player: Player;
-    }) => undefined | (() => any) | void;
-    next?: GameTurnStatus;
-}
+// Derive the workflow context from game state + local player
+const deriveContext = (game: Game | null) => {
+    const player = $player.getState();
+    const turn: GameTurn | undefined = game?.turns?.[game?.turns?.length - 1];
+    const playerTurn: PlayerTurn | undefined =
+        turn?.players?.[player?.id ?? ''];
+    return {
+        game,
+        turn,
+        playerTurn,
+        player,
+    };
+};
 
-const workflows: FlowTransition[] = [
+workflows([
     {
         // storyteller selected all necessary cards, moving to next stage
         from: 'stPicksCards',
+        context: deriveContext,
         filter: ({ playerTurn }) => playerTurn?.selectedCards?.length === 3,
         next: 'stWriteStory',
     },
     {
         // storyteller wrote story, moving to next stage
         from: 'stWriteStory',
+        context: deriveContext,
         filter: ({ playerTurn }) => !!playerTurn?.story,
         next: 'pEstimate',
     },
     {
         from: 'pEstimate',
+        context: deriveContext,
         filter: ({ turn }) =>
             Object.keys(turn?.players ?? {}).every(
                 (pk) =>
@@ -51,6 +50,7 @@ const workflows: FlowTransition[] = [
     },
     {
         from: 'pPicksCards',
+        context: deriveContext,
         filter: ({ turn }) =>
             Object.keys(turn?.players ?? {}).every(
                 (pk) =>
@@ -81,7 +81,8 @@ const workflows: FlowTransition[] = [
             const playersCorrect = playersKeys.filter(
                 (pk) =>
                     storyteller.selectedCards!.filter(
-                        (c) => players[pk].selectedCards?.includes(c) ?? 0
+                        (c: number) =>
+                            players[pk].selectedCards?.includes(c) ?? 0
                     ).length === 3
             );
 
@@ -98,7 +99,7 @@ const workflows: FlowTransition[] = [
                           (playersKeys.length - 1);
 
                 const correctCards = storyteller.selectedCards!.filter(
-                    (c) => player.selectedCards?.includes(c) ?? 0
+                    (c: number) => player.selectedCards?.includes(c) ?? 0
                 ).length;
 
                 prev[pk] = {
@@ -119,45 +120,10 @@ const workflows: FlowTransition[] = [
     },
     {
         from: 'turnEnded',
+        context: deriveContext,
         filter: ({ game }) => game.turns.length >= 10,
         logic: () => {
             stopGame();
         },
     },
-];
-
-workflows.forEach((w) => {
-    sample({
-        source: { $game, $player },
-        filter: ({ $game, $player }) => {
-            if (!$game || !$player || $game.status !== 'running') return false;
-            const turn = $game?.turns?.[$game?.turns?.length - 1];
-            if (turn?.status !== w.from) return false;
-            const playerTurn: PlayerTurn = turn?.players?.[$player?.id ?? ''];
-            // Every peer evaluates workflows independently.
-            // Since all peers share the same state via Lamport clock ordering,
-            // they all reach the same conclusion. Idempotent reducers prevent
-            // redundant broadcasts.
-            return w.filter({
-                game: $game,
-                player: $player,
-                playerTurn,
-                turn,
-            });
-        },
-        target: createEffect(
-            ({
-                $game,
-                $player,
-            }: {
-                $game: Game | null;
-                $player: Player | null;
-            }) => {
-                if (!$game || !$player) return;
-                const res = w.logic?.({ game: $game, player: $player });
-                if (w.next) setGameTurnStatus(w.next);
-                res?.();
-            }
-        ),
-    });
-});
+]);

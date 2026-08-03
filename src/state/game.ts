@@ -8,25 +8,40 @@ import {
     PlayerRole,
     PlayerTurn,
 } from './types';
-import { createDSApi } from '../utils/dsApi';
+import { createChorus } from '../chorus';
 import { computeGameChecksum } from './checksum';
 import { logDebugMessage } from './debug';
 
 export { computeGameChecksum } from './checksum';
 
+const chorus = createChorus({
+    debug: true,
+});
+
 export const {
     store: gameDS,
     joinFx,
     $peerId,
-    $store: $game,
+    $state: $game,
     events: gameEvents,
     useStore: useGame,
     init: initGame,
     usePeerId,
-} = createDSApi<Game | null>({
-    dbStoreName: 'games',
+    setStatus,
+    workflows,
+} = chorus.createSession<Game | null>({
+    name: 'games',
     defaultValue: null,
-    computeChecksum: computeGameChecksum,
+    checksum: computeGameChecksum,
+    getStatus: (game) => game?.turns?.[game.turns.length - 1]?.status,
+    setStatus: (game, status) => {
+        if (!game) return null;
+        const turn = game?.turns?.[game?.turns?.length - 1];
+        if (!turn) return game;
+        if (turn.status === (status as GameTurnStatus)) return game; // idempotent
+        turn.status = status as GameTurnStatus;
+        return { ...game };
+    },
     onMessage: (direction, message) => {
         logDebugMessage({ direction, message });
     },
