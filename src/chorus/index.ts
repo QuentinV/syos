@@ -16,7 +16,7 @@ export type { DebugPanelProps } from './components/DebugPanel';
 export { SessionLobby } from './components/SessionLobby';
 export type {
     SessionLobbyProps,
-    SessionLobbyPlayer,
+    SessionLobbyParticipant,
 } from './components/SessionLobby';
 export { JoinSession } from './components/JoinSession';
 export type { JoinSessionProps } from './components/JoinSession';

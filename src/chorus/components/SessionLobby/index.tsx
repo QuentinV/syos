@@ -3,23 +3,23 @@ import { useChorusSession } from '../../context';
 import { QRCode } from '../QRCode';
 import './styles.css';
 
-export interface SessionLobbyPlayer {
+export interface SessionLobbyParticipant {
     id: string;
     name: string;
     ready: boolean;
 }
 
 export interface SessionLobbyProps {
-    players: SessionLobbyPlayer[];
-    currentPlayerId?: string;
-    onToggleReady: (playerId: string) => void;
+    participants: SessionLobbyParticipant[];
+    currentParticipantId?: string;
+    onToggleReady: (participantId: string) => void;
     onStart: () => void;
     canStart: boolean;
 }
 
 export const SessionLobby: React.FC<SessionLobbyProps> = ({
-    players,
-    currentPlayerId,
+    participants,
+    currentParticipantId,
     onToggleReady,
     onStart,
     canStart,
@@ -33,7 +33,7 @@ export const SessionLobby: React.FC<SessionLobbyProps> = ({
             {peerId && (
                 <div className="chorus-lobby-join">
                     <div className="chorus-lobby-join-text">
-                        Players can join with QRCode or click to copy URL
+                        Participants can join with QRCode or click to copy URL
                     </div>
                     <div className="chorus-lobby-join-qr">
                         <QRCode />
@@ -42,12 +42,14 @@ export const SessionLobby: React.FC<SessionLobbyProps> = ({
             )}
 
             <div className="chorus-lobby-controls">
-                <div className="chorus-lobby-players-label">Players</div>
-                {currentPlayerId && (
+                <div className="chorus-lobby-participants-label">
+                    Participants
+                </div>
+                {currentParticipantId && (
                     <div className="chorus-lobby-buttons">
                         <button
                             className="chorus-lobby-btn"
-                            onClick={() => onToggleReady(currentPlayerId)}
+                            onClick={() => onToggleReady(currentParticipantId)}
                         >
                             Ready
                         </button>{' '}
@@ -62,16 +64,18 @@ export const SessionLobby: React.FC<SessionLobbyProps> = ({
                 )}
             </div>
 
-            <div className="chorus-lobby-players-list">
+            <div className="chorus-lobby-participants-list">
                 <table>
                     <tbody>
-                        {players.map((p) => (
+                        {participants.map((p) => (
                             <tr key={p.id}>
-                                <td className="chorus-lobby-player-name">
+                                <td className="chorus-lobby-participant-name">
                                     {p.name}
-                                    {p.id === currentPlayerId ? ' (you)' : ''}
+                                    {p.id === currentParticipantId
+                                        ? ' (you)'
+                                        : ''}
                                 </td>
-                                <td className="chorus-lobby-player-status">
+                                <td className="chorus-lobby-participant-status">
                                     {p.ready ? 'Ready' : 'Not ready'}
                                 </td>
                             </tr>

@@ -32,12 +32,12 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
     args: {
-        players: [
+        participants: [
             { id: 'p1', name: 'Alice', ready: true },
             { id: 'p2', name: 'Bob', ready: false },
             { id: 'p3', name: 'Charlie', ready: false },
         ],
-        currentPlayerId: 'p1',
+        currentParticipantId: 'p1',
         onToggleReady: (id) => console.log('toggle ready', id),
         onStart: () => console.log('start'),
         canStart: false,
@@ -46,11 +46,11 @@ export const Default: Story = {
 
 export const CanStart: Story = {
     args: {
-        players: [
+        participants: [
             { id: 'p1', name: 'Alice', ready: true },
             { id: 'p2', name: 'Bob', ready: true },
         ],
-        currentPlayerId: 'p1',
+        currentParticipantId: 'p1',
         onToggleReady: (id) => console.log('toggle ready', id),
         onStart: () => console.log('start'),
         canStart: true,
@@ -59,7 +59,7 @@ export const CanStart: Story = {
 
 export const Observer: Story = {
     args: {
-        players: [
+        participants: [
             { id: 'p1', name: 'Alice', ready: true },
             { id: 'p2', name: 'Bob', ready: false },
         ],

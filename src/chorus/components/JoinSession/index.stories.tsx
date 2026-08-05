@@ -17,6 +17,6 @@ export const Default: Story = {
     args: {
         sessionId: 'session-123',
         peerId: 'peer-abc',
-        playerName: 'Alice',
+        participantName: 'Alice',
     },
 };

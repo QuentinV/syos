@@ -29,7 +29,7 @@
     gap: 1rem;
 }
 
-.chorus-lobby-players-label {
+.chorus-lobby-participants-label {
     font-weight: 600;
 }
 
@@ -71,16 +71,16 @@
     color: #1a1a1a;
 }
 
-.chorus-lobby-players-list {
+.chorus-lobby-participants-list {
     display: flex;
     justify-content: center;
 }
 
-.chorus-lobby-player-name {
+.chorus-lobby-participant-name {
     padding-right: 1.25rem;
     padding-bottom: 0.75rem;
 }
 
-.chorus-lobby-player-status {
+.chorus-lobby-participant-status {
     padding-bottom: 0.75rem;
 }

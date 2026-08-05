@@ -4,17 +4,17 @@ import './styles.css';
 export interface JoinSessionProps {
     sessionId: string;
     peerId: string;
-    playerName?: string;
+    participantName?: string;
 }
 
 export const JoinSession: React.FC<JoinSessionProps> = ({
     sessionId,
     peerId,
-    playerName,
+    participantName,
 }) => {
     return (
         <div className="chorus-join">
-            <h2>Hello {playerName}</h2>
+            <h2>Hello {participantName}</h2>
             <div>
                 You are being connected
                 <div className="chorus-join-info">- Session {sessionId}</div>

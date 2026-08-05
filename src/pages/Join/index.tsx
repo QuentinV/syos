@@ -22,7 +22,7 @@ export const JoinPage: React.FC = () => {
         <JoinSession
             sessionId={gameId}
             peerId={peerId}
-            playerName={player?.name}
+            participantName={player?.name}
         />
     );
 };

@@ -91,9 +91,9 @@ const session = chorus.createSession<MyState>({
 ```tsx
 import { SessionLobby } from 'chorus';
 
-const MyLobby = ({ players, ... }) => (
+const MyLobby = ({ participants, ... }) => (
     <session.Provider>
-        <SessionLobby players={players} ... />
+        <SessionLobby participants={participants} ... />
     </session.Provider>
 );
 ```
@@ -256,46 +256,50 @@ import { DebugPanel } from 'chorus';
 
 ### SessionLobby
 
-A generic pre-game lobby showing connected players, ready status, and a join QR code. Reads `sessionId` and `peerId` from the session context (see `session.Provider` below).
+A generic session lobby showing connected participants, ready status, and a join QR code. Reads `sessionId` and `peerId` from the session context (see `session.Provider` below).
 
 ```tsx
 import { SessionLobby } from 'chorus';
 
 <SessionLobby
-    players={[
+    participants={[
         { id: 'p1', name: 'Alice', ready: true },
         { id: 'p2', name: 'Bob', ready: false },
     ]}
-    currentPlayerId="p1"
+    currentParticipantId="p1"
     onToggleReady={(id) => toggleReady(id)}
     onStart={() => startSession()}
-    canStart={allPlayersReady}
+    canStart={allParticipantsReady}
 />;
 ```
 
-| Prop               | Type                         | Description                                |
-| ------------------ | ---------------------------- | ------------------------------------------ |
-| `players`          | `SessionLobbyPlayer[]`       | List of players `{ id, name, ready }`      |
-| `currentPlayerId?` | `string`                     | The local player's ID                      |
-| `onToggleReady`    | `(playerId: string) => void` | Called when the local player toggles ready |
-| `onStart`          | `() => void`                 | Called when the host starts the session    |
-| `canStart`         | `boolean`                    | Whether the start button is enabled        |
+| Prop                    | Type                              | Description                                     |
+| ----------------------- | --------------------------------- | ----------------------------------------------- |
+| `participants`          | `SessionLobbyParticipant[]`       | List of participants `{ id, name, ready }`      |
+| `currentParticipantId?` | `string`                          | The local participant's ID                      |
+| `onToggleReady`         | `(participantId: string) => void` | Called when the local participant toggles ready |
+| `onStart`               | `() => void`                      | Called when the host starts the session         |
+| `canStart`              | `boolean`                         | Whether the start button is enabled             |
 
 ### JoinSession
 
-A generic "connecting" screen shown while a player joins a session via a P2P link.
+A generic "connecting" screen shown while a participant joins a session via a P2P link.
 
 ```tsx
 import { JoinSession } from 'chorus';
 
-<JoinSession sessionId="session-123" peerId="peer-abc" playerName="Alice" />;
+<JoinSession
+    sessionId="session-123"
+    peerId="peer-abc"
+    participantName="Alice"
+/>;
 ```
 
-| Prop          | Type     | Description                 |
-| ------------- | -------- | --------------------------- |
-| `sessionId`   | `string` | The session ID being joined |
-| `peerId`      | `string` | The host peer ID            |
-| `playerName?` | `string` | The local player's name     |
+| Prop               | Type     | Description                  |
+| ------------------ | -------- | ---------------------------- |
+| `sessionId`        | `string` | The session ID being joined  |
+| `peerId`           | `string` | The host peer ID             |
+| `participantName?` | `string` | The local participant's name |
 
 ## Storage Adapters
 
