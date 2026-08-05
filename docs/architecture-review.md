@@ -5,11 +5,82 @@
 
 ---
 
+## 0. Chorus Library Extraction (Latest)
+
+The core P2P state engine has been extracted from `src/utils/dsApi.ts` into a reusable library called **Chorus** at `src/chorus/`. syos now consumes it.
+
+### Public API
+
+```typescript
+const chorus = createChorus({ peerHost, debug, storage });
+const session = chorus.createSession<MyState>({
+    name,
+    defaultValue,
+    api,
+    checksum,
+    getJoinUrl,
+});
+```
+
+The session returns: `store`, `init`, `$state`, `$peerId`, `$id`, `useStore()`, `usePeerId()`, `joinFx`, `events`, `setStatus`, `Provider`, `getJoinUrl`, `workflows()`, heartbeat controls.
+
+### Module layout
+
+```
+src/chorus/
+├── index.ts              ← public entry
+├── types.ts              ← shared types
+├── context.ts            ← ChorusSessionContext + useChorusSession
+├── core/
+│   ├── createChorus.tsx  ← main factory (createChorus + createSession + Provider)
+│   ├── connection.ts     ← ChorusConnection (PeerJS transport, heartbeat)
+│   ├── session.ts        ← ChorusSession (effector store + P2P reducers)
+│   └── storage.ts        ← IndexedDB / memory / localStorage adapters
+├── components/           ← generic UI components
+│   ├── QRCode/           ← session-context QR code (copy-on-click)
+│   ├── Countdown/        ← timer (knob/bar)
+│   ├── DebugPanel/       ← P2P debug sidebar
+│   ├── SessionLobby/     ← generic session lobby
+│   └── JoinSession/      ← generic join screen
+├── eventLog.ts           ← append-only event log
+├── workflow.ts           ← generic workflow engine
+├── debug.ts              ← debug stores
+└── react.ts              ← React hooks
+```
+
+### Naming changes from the original design
+
+| Old (dsApi)       | New (Chorus)                     |
+| ----------------- | -------------------------------- |
+| `createDSApi`     | `createChorus` + `createSession` |
+| `DSStore`         | `ChorusSession`                  |
+| `DSConnection`    | `ChorusConnection`               |
+| `dbStoreName`     | `name`                           |
+| `computeChecksum` | `checksum`                       |
+
+### Generic UI components + Session Context
+
+`QRCode`, `Countdown`, `DebugPanel`, `SessionLobby`, and `JoinSession` were extracted into `src/chorus/components/` as UI-framework-agnostic components (plain HTML/CSS, no PrimeReact/PrimeFlex/PrimeIcons dependency).
+
+Session-aware components (`QRCode`, `SessionLobby`) read from a `ChorusSessionContext` provided by the session's `Provider` component:
+
+- **`getJoinUrl`** — a `createSession` option that builds the join URL. Defaults to `${origin}/join/${sessionId}/${peerId}`.
+- **`$id`** — a derived store tracking `state.id`. It only fires when the session id changes (not on every state mutation), so the `Provider` never re-renders the tree during gameplay.
+- **`Provider`** — subscribes to `$id` + `$peerId` only, keeping the component tree stable while the game runs.
+- **`useChorusSession()`** — exposes `{ sessionId, peerId, getJoinUrl }` to any consumer under the provider.
+- **`QRCode`** — always copies the join URL on click; no props needed beyond styling.
+
+syos wiring: `src/state/game.ts` configures `getJoinUrl` and exposes `GameProvider`; `src/pages/Game/Lobby/index.tsx` wraps `SessionLobby` in `<GameProvider>`.
+
+Perf note: `App` no longer subscribes to `$game`/`$peerId` — the debug panel reads state via a leaf `GameDebugPanel` component, so game state changes do not re-render the router or pages.
+
+---
+
 ## 1. Core Concept Assessment
 
 ### What's innovative
 
-The `DSStore` abstraction — wrapping effector stores with automatic WebRTC broadcast — is a genuinely novel approach. The developer experience of writing a reducer once and getting both local state update + P2P sync + IndexedDB persistence is elegant and productive.
+The `ChorusSession` abstraction — wrapping effector stores with automatic WebRTC broadcast — is a genuinely novel approach. The developer experience of writing a reducer once and getting both local state update + P2P sync + IndexedDB persistence is elegant and productive.
 
 ### What's solid
 
@@ -222,23 +293,23 @@ Simple but effective for detecting issues during development.
 
 ## 6. Implementation Status
 
-| Priority | Issue                                      | Status                                                       | Tests       |
-| -------- | ------------------------------------------ | ------------------------------------------------------------ | ----------- |
-| 1        | **Event ordering** (Lamport clock)         | ✅ Implemented in `dsApi.ts`                                 | 4/4 passing |
-| 2        | **Workflow resilience** (distributed eval) | ✅ Implemented in `workflows.ts`                             | 1/1 passing |
-| 3        | **Reconnection protocol** (event log)      | ✅ Implemented in `eventLog.ts` + `dsApi.ts` + `mockPeer.ts` | 1/1 passing |
-| 4        | **State divergence detection** (checksums) | ✅ Implemented in `checksum.ts`                              | 5/5 passing |
-| 5        | **Handshake robustness** (requestState)    | ✅ Implemented in `dsApi.ts` + `mockPeer.ts`                 | 1/1 passing |
+| Priority | Issue                                      | Status                                                                 | Tests       |
+| -------- | ------------------------------------------ | ---------------------------------------------------------------------- | ----------- |
+| 1        | **Event ordering** (Lamport clock)         | ✅ Implemented in `src/chorus/core/connection.ts` + `createChorus.tsx` | 4/4 passing |
+| 2        | **Workflow resilience** (distributed eval) | ✅ Implemented in `src/chorus/workflow.ts`                             | 1/1 passing |
+| 3        | **Reconnection protocol** (event log)      | ✅ Implemented in `src/chorus/eventLog.ts` + `createChorus.tsx`        | 1/1 passing |
+| 4        | **State divergence detection** (checksums) | ✅ Implemented in `src/state/checksum.ts`                              | 5/5 passing |
+| 5        | **Handshake robustness** (requestState)    | ✅ Implemented in `src/chorus/core/createChorus.tsx`                   | 1/1 passing |
 
-### Test Suite Summary
+### Test Suite Summary (Current)
 
-| File                                     | Tests                   | Status              |
-| ---------------------------------------- | ----------------------- | ------------------- |
-| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
-| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
-| `src/state/__tests__/p2p-issues.test.ts` | 19 issue-specific tests | ✅ All pass         |
-| `src/utils/__tests__/dsApi.test.ts`      | 10 integration tests    | ✅ All pass         |
-| **Total**                                | **62 tests**            | **62 pass, 0 fail** |
+| File                                     | Tests                   | Status               |
+| ---------------------------------------- | ----------------------- | -------------------- |
+| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass          |
+| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass          |
+| `src/state/__tests__/p2p-issues.test.ts` | 23 issue-specific tests | ✅ All pass          |
+| `src/chorus/__tests__/*.test.ts`         | 63 Chorus tests         | ✅ All pass          |
+| **Total**                                | **119 tests**           | **119 pass, 0 fail** |
 
 ---
 
@@ -330,16 +401,16 @@ Implemented a heartbeat protocol with `ping`/`pong` control messages and `lastSe
 
 **All concerns resolved except 7.2 (event log best-effort, acceptable limitation).**
 
-### Test Suite Summary (Final)
+### Test Suite Summary (Final — Current)
 
-| File                                     | Tests                   | Status              |
-| ---------------------------------------- | ----------------------- | ------------------- |
-| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass         |
-| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass         |
-| `src/state/__tests__/p2p-issues.test.ts` | 19 issue-specific tests | ✅ All pass         |
-| `src/utils/__tests__/dsApi.test.ts`      | 10 integration tests    | ✅ All pass         |
-| **Total**                                | **62 tests**            | **62 pass, 0 fail** |
+| File                                     | Tests                   | Status               |
+| ---------------------------------------- | ----------------------- | -------------------- |
+| `src/state/__tests__/game.test.ts`       | 20 reducer tests        | ✅ All pass          |
+| `src/state/__tests__/workflows.test.ts`  | 13 workflow tests       | ✅ All pass          |
+| `src/state/__tests__/p2p-issues.test.ts` | 23 issue-specific tests | ✅ All pass          |
+| `src/chorus/__tests__/*.test.ts`         | 63 Chorus tests         | ✅ All pass          |
+| **Total**                                | **119 tests**           | **119 pass, 0 fail** |
 
 ---
 
-_Document generated from architectural review — July 2026. Last updated: after DSConnection refactor (module-level singleton fix)._
+_Document generated from architectural review — July 2026. Last updated: after Chorus library extraction (P2P engine + generic UI components)._

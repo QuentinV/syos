@@ -64,6 +64,8 @@ export interface SessionConfig<State extends StateWithId> {
     checksum?: (state: State) => string;
     /** Optional message interceptor. */
     onMessage?: (direction: 'in' | 'out', message: Message) => void;
+    /** Build the join URL for a session. Defaults to `${origin}/join/${sessionId}/${peerId}`. */
+    getJoinUrl?: (sessionId: string, peerId: string) => string;
     /** Derive the current status from state. Used by the workflow engine. Defaults to (state) => (state as any)?.status. */
     getStatus?: (state: State) => string | undefined;
     /** Write the status to state. Auto-registers setStatus as a P2P-synced reducer. */
@@ -109,12 +111,18 @@ export interface ChorusSessionApi<State extends StateWithId> {
     init: EventCallable<string>;
     $state: StoreWritable<State>;
     $peerId: StoreWritable<string | null>;
+    /** Derived store: the active session id (from state.id). Only changes when the session id changes. */
+    $id: StoreWritable<string | null>;
     useStore: () => State;
     usePeerId: () => string | null;
     joinFx: Effect<{ objectId: string; peerId: string }, string, Error>;
     events: { [key: string]: EventCallable<any> };
     /** Event to advance the session status. Wire it to your state via session.store.on('setStatus', ...). */
     setStatus: EventCallable<string>;
+    /** React context provider supplying { sessionId, peerId, getJoinUrl } to Chorus components. */
+    Provider: React.FC<{ children?: React.ReactNode }>;
+    /** Build the join URL for this session. */
+    getJoinUrl: (sessionId: string, peerId: string) => string;
     startHeartbeat: () => void;
     stopHeartbeat: () => void;
     checkPeerHealth: () => string[];

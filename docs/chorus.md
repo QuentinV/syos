@@ -50,21 +50,71 @@ const MyComponent = () => {
 
 ## Session API
 
-| Property                 | Type                    | Description                                |
-| ------------------------ | ----------------------- | ------------------------------------------ |
-| `store`                  | `ChorusSession`         | Register reducers (`.on()` / `.localOn()`) |
-| `init`                   | `Event<string>`         | Initialize as host for a session ID        |
-| `$state`                 | `Store<State>`          | Effector store (read with `useUnit`)       |
-| `$peerId`                | `Store<string \| null>` | This peer's ID                             |
-| `useStore()`             | `() => State`           | React hook for state                       |
-| `usePeerId()`            | `() => string \| null`  | React hook for peer ID                     |
-| `joinFx`                 | `Effect`                | Join an existing session via P2P link      |
-| `events`                 | `{ [name]: Event }`     | Mapped effector events from `api`          |
-| `setStatus`              | `Event<string>`         | Advance session status (used by workflows) |
-| `workflows(transitions)` | `(t) => void`           | Register workflow transitions              |
-| `startHeartbeat()`       | `() => void`            | Start heartbeat monitoring                 |
-| `stopHeartbeat()`        | `() => void`            | Stop heartbeat monitoring                  |
-| `checkPeerHealth()`      | `() => string[]`        | Check for disconnected peers               |
+| Property                 | Type                            | Description                                                                     |
+| ------------------------ | ------------------------------- | ------------------------------------------------------------------------------- |
+| `store`                  | `ChorusSession`                 | Register reducers (`.on()` / `.localOn()`)                                      |
+| `init`                   | `Event<string>`                 | Initialize as host for a session ID                                             |
+| `$state`                 | `Store<State>`                  | Effector store (read with `useUnit`)                                            |
+| `$peerId`                | `Store<string \| null>`         | This peer's ID                                                                  |
+| `useStore()`             | `() => State`                   | React hook for state                                                            |
+| `usePeerId()`            | `() => string \| null`          | React hook for peer ID                                                          |
+| `joinFx`                 | `Effect`                        | Join an existing session via P2P link                                           |
+| `events`                 | `{ [name]: Event }`             | Mapped effector events from `api`                                               |
+| `setStatus`              | `Event<string>`                 | Advance session status (used by workflows)                                      |
+| `workflows(transitions)` | `(t) => void`                   | Register workflow transitions                                                   |
+| `startHeartbeat()`       | `() => void`                    | Start heartbeat monitoring                                                      |
+| `stopHeartbeat()`        | `() => void`                    | Stop heartbeat monitoring                                                       |
+| `checkPeerHealth()`      | `() => string[]`                | Check for disconnected peers                                                    |
+| `$id`                    | `Store<string \| null>`         | Derived store: the active session id (only changes when the session id changes) |
+| `Provider`               | `React.FC`                      | React context provider for Chorus components                                    |
+| `getJoinUrl`             | `(sessionId, peerId) => string` | Build the join URL for this session                                             |
+
+## Session Context
+
+Chorus components like `QRCode` and `SessionLobby` need to know the active session (`sessionId`, `peerId`) and how to build a join URL. Instead of prop drilling, the session provides a React context via its `Provider` component.
+
+### Configure getJoinUrl
+
+Provide a `getJoinUrl` function in the session config to customize how join URLs are built. It defaults to `${origin}/join/${sessionId}/${peerId}`.
+
+```typescript
+const session = chorus.createSession<MyState>({
+    name: 'my-session',
+    defaultValue: null,
+    getJoinUrl: (sessionId, peerId) =>
+        `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
+});
+```
+
+### Mount the Provider
+
+```tsx
+import { SessionLobby } from 'chorus';
+
+const MyLobby = ({ players, ... }) => (
+    <session.Provider>
+        <SessionLobby players={players} ... />
+    </session.Provider>
+);
+```
+
+The `Provider` reads from the `$id` and `$peerId` stores (not the full `$state`), so it only re-renders when the session id or peer id changes — not on every state mutation, keeping the component tree stable during gameplay.
+
+### useChorusSession
+
+Any component can read the session context directly:
+
+```tsx
+import { useChorusSession } from 'chorus';
+
+const MyComponent = () => {
+    const { sessionId, peerId, getJoinUrl } = useChorusSession();
+    const url = getJoinUrl(sessionId, peerId);
+    return <a href={url}>{url}</a>;
+};
+```
+
+`useChorusSession` throws if used outside a session `Provider`.
 
 ## Registering Reducers
 
@@ -153,28 +203,20 @@ Chorus ships with a set of generic, UI-framework-agnostic React components for c
 
 ### QRCode
 
-Renders a QR code for a given value (e.g., a join link).
+Renders a QR code for the active session's join URL. Reads `sessionId`, `peerId`, and `getJoinUrl` from the session context (see `session.Provider` below). Clicking the QR code always copies the join URL to the clipboard.
 
 ```tsx
 import { QRCode } from 'chorus';
 
-<QRCode
-    value="https://example.com/join/session-123/peer-abc"
-    bgColor="#1a1a1a"
-    fgColor="#f59e0b"
-    title="Join session QRCode"
-    onClick={() => navigator.clipboard.writeText(joinUrl)}
-/>;
+<QRCode bgColor="#1a1a1a" fgColor="#f59e0b" title="Join session QRCode" />;
 ```
 
-| Prop         | Type         | Description                    |
-| ------------ | ------------ | ------------------------------ |
-| `value`      | `string`     | The value to encode (required) |
-| `bgColor?`   | `string`     | Background color               |
-| `fgColor?`   | `string`     | Foreground color               |
-| `title?`     | `string`     | Accessible title               |
-| `className?` | `string`     | Additional CSS class           |
-| `onClick?`   | `() => void` | Click handler                  |
+| Prop         | Type     | Description          |
+| ------------ | -------- | -------------------- |
+| `bgColor?`   | `string` | Background color     |
+| `fgColor?`   | `string` | Foreground color     |
+| `title?`     | `string` | Accessible title     |
+| `className?` | `string` | Additional CSS class |
 
 ### Countdown
 
@@ -214,20 +256,17 @@ import { DebugPanel } from 'chorus';
 
 ### SessionLobby
 
-A generic pre-game lobby showing connected players, ready status, and a join QR code.
+A generic pre-game lobby showing connected players, ready status, and a join QR code. Reads `sessionId` and `peerId` from the session context (see `session.Provider` below).
 
 ```tsx
 import { SessionLobby } from 'chorus';
 
 <SessionLobby
-    sessionId="session-123"
-    peerId="peer-abc"
     players={[
         { id: 'p1', name: 'Alice', ready: true },
         { id: 'p2', name: 'Bob', ready: false },
     ]}
     currentPlayerId="p1"
-    joinUrl="https://example.com/join/session-123/peer-abc"
     onToggleReady={(id) => toggleReady(id)}
     onStart={() => startSession()}
     canStart={allPlayersReady}
@@ -236,11 +275,8 @@ import { SessionLobby } from 'chorus';
 
 | Prop               | Type                         | Description                                |
 | ------------------ | ---------------------------- | ------------------------------------------ |
-| `sessionId`        | `string`                     | The session ID to display                  |
-| `peerId`           | `string`                     | This peer's ID                             |
 | `players`          | `SessionLobbyPlayer[]`       | List of players `{ id, name, ready }`      |
 | `currentPlayerId?` | `string`                     | The local player's ID                      |
-| `joinUrl`          | `string`                     | URL shown in the QR code                   |
 | `onToggleReady`    | `(playerId: string) => void` | Called when the local player toggles ready |
 | `onStart`          | `() => void`                 | Called when the host starts the session    |
 | `canStart`         | `boolean`                    | Whether the start button is enabled        |

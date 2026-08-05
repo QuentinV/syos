@@ -1,4 +1,5 @@
 import React from 'react';
+import { useChorusSession } from '../../context';
 import { QRCode } from '../QRCode';
 import './styles.css';
 
@@ -9,29 +10,21 @@ export interface SessionLobbyPlayer {
 }
 
 export interface SessionLobbyProps {
-    sessionId: string;
-    peerId: string;
     players: SessionLobbyPlayer[];
     currentPlayerId?: string;
-    joinUrl: string;
     onToggleReady: (playerId: string) => void;
     onStart: () => void;
     canStart: boolean;
 }
 
 export const SessionLobby: React.FC<SessionLobbyProps> = ({
-    sessionId,
-    peerId,
     players,
     currentPlayerId,
-    joinUrl,
     onToggleReady,
     onStart,
     canStart,
 }) => {
-    const copyJoinUrl = () => {
-        navigator.clipboard?.writeText(joinUrl);
-    };
+    const { sessionId, peerId } = useChorusSession();
 
     return (
         <div className="chorus-lobby">
@@ -43,7 +36,7 @@ export const SessionLobby: React.FC<SessionLobbyProps> = ({
                         Players can join with QRCode or click to copy URL
                     </div>
                     <div className="chorus-lobby-join-qr">
-                        <QRCode value={joinUrl} onClick={copyJoinUrl} />
+                        <QRCode />
                     </div>
                 </div>
             )}

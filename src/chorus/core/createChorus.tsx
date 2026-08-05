@@ -1,4 +1,6 @@
 import { createEffect, createEvent, createStore, sample } from 'effector';
+import { useUnit } from 'effector-react';
+import React from 'react';
 import { DataConnection } from 'peerjs';
 import { ChorusConnection } from './connection';
 import { ChorusSession } from './session';
@@ -6,6 +8,7 @@ import { createStorage, Storage } from './storage';
 import { createHooks } from '../react';
 import { createWorkflowEngine } from '../workflow';
 import { debug as debugApi, logDebugMessage } from '../debug';
+import { ChorusSessionContext } from '../context';
 import {
     appendToEventLog,
     getEventsSinceClock,
@@ -34,9 +37,19 @@ export function createChorus(options: ChorusOptions = {}) {
     ): ChorusSessionApi<State> {
         const $store = createStore<State>(config.defaultValue);
         const $peerId = createStore<string | null>(null);
+        // Derived store: only changes when the session id changes (not on every state mutation)
+        const $id = createStore<string | null>(null).on(
+            $store.updates,
+            (_, state) => state?.id ?? null
+        );
 
         const getState = () => $store.getState();
         const connection = new ChorusConnection(peerHost);
+
+        const getJoinUrl =
+            config.getJoinUrl ??
+            ((sessionId: string, peerId: string) =>
+                `${document.location.origin}/join/${sessionId}/${peerId}`);
 
         // Wire debug interceptor if enabled
         if (options.debug) {
@@ -271,16 +284,34 @@ export function createChorus(options: ChorusOptions = {}) {
 
         const hooks = createHooks({ $state: $store, $peerId });
 
+        const Provider: React.FC<{ children?: React.ReactNode }> = ({
+            children,
+        }) => {
+            const sessionId = useUnit($id);
+            const peerId = useUnit($peerId);
+            if (!sessionId || !peerId) return null;
+            return (
+                <ChorusSessionContext.Provider
+                    value={{ sessionId, peerId, getJoinUrl }}
+                >
+                    {children}
+                </ChorusSessionContext.Provider>
+            );
+        };
+
         return {
             store: dsStore,
             init: initObject,
             $state: $store,
             $peerId,
+            $id,
             useStore: hooks.useStore,
             usePeerId: hooks.usePeerId,
             joinFx,
             events,
             setStatus,
+            Provider,
+            getJoinUrl,
             startHeartbeat: () => connection.startHeartbeat(getState),
             stopHeartbeat: () => connection.stopHeartbeat(),
             checkPeerHealth: () => connection.checkPeerHealth(getState),

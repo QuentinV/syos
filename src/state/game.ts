@@ -21,6 +21,7 @@ export const {
     store: gameDS,
     joinFx,
     $peerId,
+    $id: $gameId,
     $state: $game,
     events: gameEvents,
     useStore: useGame,
@@ -28,6 +29,7 @@ export const {
     usePeerId,
     setStatus,
     workflows,
+    Provider: GameProvider,
 } = chorus.createSession<Game | null>({
     name: 'games',
     defaultValue: null,
@@ -41,6 +43,8 @@ export const {
         turn.status = status as GameTurnStatus;
         return { ...game };
     },
+    getJoinUrl: (sessionId, peerId) =>
+        `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
     onMessage: (direction, message) => {
         logDebugMessage({ direction, message });
     },

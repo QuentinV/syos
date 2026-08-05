@@ -5,6 +5,8 @@ export { createStorage } from './core/storage';
 export { createHooks } from './react';
 export { createWorkflowEngine } from './workflow';
 export { debug, logDebugMessage } from './debug';
+export { ChorusSessionContext, useChorusSession } from './context';
+export type { ChorusSessionContextValue } from './context';
 export { QRCode } from './components/QRCode';
 export type { QRCodeProps } from './components/QRCode';
 export { Countdown } from './components/Countdown';
