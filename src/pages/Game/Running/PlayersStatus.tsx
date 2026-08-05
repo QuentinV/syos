@@ -1,16 +1,16 @@
 import React from 'react';
 import { usePlayersTurn, useValidCards } from '../../../state/gameHooks';
 import { useUnit } from 'effector-react';
-import { $player } from '../../../state/player';
+import { $participant } from '../../../state/player';
 import { Avatar } from 'primereact/avatar';
 import { GameCards } from '../../../components/GameCards';
 
 export const PlayersStatus: React.FC = () => {
     const players = usePlayersTurn();
-    const player = useUnit($player);
+    const participant = useUnit($participant);
     const validCards = useValidCards();
 
-    if (!player || !players?.length) return null;
+    if (!participant || !players?.length) return null;
 
     const renderSpeed = (s?: number) => {
         if (s === undefined) return;
@@ -34,7 +34,7 @@ export const PlayersStatus: React.FC = () => {
             <div className="mb-2">Status of other players</div>
             <div>
                 {players.map((p, i) =>
-                    p.playerId !== player.id ? (
+                    p.playerId !== participant.id ? (
                         <div
                             key={i}
                             className="flex align-items-center gap-5 mt-3"

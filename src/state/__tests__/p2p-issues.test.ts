@@ -117,7 +117,7 @@ function applyEvent(
             peer.setState({ ...state });
             break;
         }
-        case 'setGameTurnStatus': {
+        case 'setStatus': {
             const turn = state.turns[state.turns.length - 1];
             if (!turn) return;
             if (turn.status === payload) return; // idempotent
@@ -125,7 +125,7 @@ function applyEvent(
             peer.setState({ ...state });
             break;
         }
-        case 'updatePlayersTurn': {
+        case 'updateTurnPlayers': {
             const turn = state.turns[state.turns.length - 1];
             if (!turn) return;
             Object.keys(payload).forEach((pk) => {
@@ -293,8 +293,8 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
     });
 
     it('should converge when events arrive out of order across peers', () => {
-        // Causal ordering: setGameTurnStatus should be applied before
-        // updatePlayersTurn because the score update depends on the turn
+        // Causal ordering: setStatus should be applied before
+        // updateTurnPlayers because the score update depends on the turn
         // having ended. The Lamport clock ensures this order.
         const initialState = createMockGameWithPlayers(3).game;
         initialState.status = 'running';
@@ -330,19 +330,19 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
         const [alice, bob] = createWiredPeers(2, initialState);
 
         // Alice emits two events in order:
-        // 1. setGameTurnStatus('turnEnded') — turn status change
-        // 2. updatePlayersTurn(...) — score calculation
+        // 1. setStatus('turnEnded') — turn status change
+        // 2. updateTurnPlayers(...) — score calculation
         const statusEvent = {
             type: 'event',
             data: {
-                eventName: 'setGameTurnStatus',
+                eventName: 'setStatus',
                 payload: 'turnEnded',
             },
         };
         const scoreEvent = {
             type: 'event',
             data: {
-                eventName: 'updatePlayersTurn',
+                eventName: 'updateTurnPlayers',
                 payload: {
                     'player-0': { score: 100, speed: 0.5 },
                     'player-1': { score: 80, speed: 0.8 },
@@ -830,7 +830,7 @@ describe('Issue 9: Concurrent State Modification', () => {
         const scoreUpdate1 = {
             type: 'event',
             data: {
-                eventName: 'updatePlayersTurn',
+                eventName: 'updateTurnPlayers',
                 payload: {
                     'player-0': { score: 100 },
                     'player-1': { score: 60 },
@@ -840,7 +840,7 @@ describe('Issue 9: Concurrent State Modification', () => {
         const scoreUpdate2 = {
             type: 'event',
             data: {
-                eventName: 'updatePlayersTurn',
+                eventName: 'updateTurnPlayers',
                 payload: {
                     'player-1': { score: 70 },
                     'player-2': { score: 50 },
@@ -864,17 +864,17 @@ describe('Fix A: Checksum from New State', () => {
         const peer = new MockPeer<Game>('peer-0', initialState);
         peer.computeChecksum = computeGameChecksum;
 
-        // Simple applyEvent that handles startGame and setGameTurnStatus
+        // Simple applyEvent that handles startSession and setStatus
         peer.onMessage = (message) => {
             if (message.type !== 'event' || !message.data) return;
             const { eventName, payload } = message.data;
             const state = peer.getState();
             if (!state) return;
 
-            if (eventName === 'startGame') {
+            if (eventName === 'startSession') {
                 state.status = 'running';
                 peer.setState({ ...state });
-            } else if (eventName === 'setGameTurnStatus') {
+            } else if (eventName === 'setStatus') {
                 const turn = state.turns[state.turns.length - 1];
                 if (!turn) return;
                 if (turn.status === payload) return;
@@ -886,8 +886,8 @@ describe('Fix A: Checksum from New State', () => {
         const preChecksum = computeGameChecksum(initialState);
         expect(preChecksum).toContain('lobby');
 
-        // Broadcast startGame — non-mutating reducer in real code
-        peer.broadcast({ type: 'event', data: { eventName: 'startGame' } });
+        // Broadcast startSession — non-mutating reducer in real code
+        peer.broadcast({ type: 'event', data: { eventName: 'startSession' } });
 
         // The checksum should be from the state AFTER the event (running)
         const postState = peer.getState();
@@ -899,7 +899,7 @@ describe('Fix A: Checksum from New State', () => {
         expect(peer.lastBroadcastChecksum).not.toBe(preChecksum);
     });
 
-    it('should handle non-mutating setGameTurnStatus correctly', () => {
+    it('should handle non-mutating setStatus correctly', () => {
         const initialState = createMockGameWithPlayers(2).game;
         initialState.status = 'running';
         initialState.turns.push({
@@ -927,7 +927,7 @@ describe('Fix A: Checksum from New State', () => {
             const state = peer.getState();
             if (!state) return;
 
-            if (eventName === 'setGameTurnStatus') {
+            if (eventName === 'setStatus') {
                 const turn = state.turns[state.turns.length - 1];
                 if (!turn) return;
                 if (turn.status === payload) return;
@@ -941,7 +941,7 @@ describe('Fix A: Checksum from New State', () => {
 
         peer.broadcast({
             type: 'event',
-            data: { eventName: 'setGameTurnStatus', payload: 'stWriteStory' },
+            data: { eventName: 'setStatus', payload: 'stWriteStory' },
         });
 
         const postState = peer.getState();
@@ -987,7 +987,7 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         if (!state) return;
 
         switch (eventName) {
-            case 'setGameTurnStatus': {
+            case 'setStatus': {
                 const turn = state.turns[state.turns.length - 1];
                 if (!turn) return;
                 if (turn.status === payload) return;
@@ -1053,7 +1053,7 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         expect(alice.getState()!.turns[0].status).toBe('pPicksCards');
     });
 
-    it('should converge state when setGameTurnStatus triggers cascade', () => {
+    it('should converge state when setStatus triggers cascade', () => {
         const initialState = createCascadeState();
         const [alice, bob] = createPeers(2, initialState);
 
@@ -1063,11 +1063,11 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         alice.onMessage = (message) => workflowAwareApplyEvent(alice, message);
         bob.onMessage = (message) => workflowAwareApplyEvent(bob, message);
 
-        // Broadcast setGameTurnStatus('pPicksCards') — this should trigger immediately
+        // Broadcast setStatus('pPicksCards') — this should trigger immediately
         alice.broadcast({
             type: 'event',
             data: {
-                eventName: 'setGameTurnStatus',
+                eventName: 'setStatus',
                 payload: 'pPicksCards',
             },
         });

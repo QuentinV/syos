@@ -1,17 +1,12 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import {
-    startGame,
-    togglePlayerReady,
-    useGame,
-    GameProvider,
-} from '../../../state/game';
-import { $player } from '../../../state/player';
+import { gameEvents, useGame, GameProvider } from '../../../state/game';
+import { $participant } from '../../../state/player';
 import { SessionLobby } from '../../../chorus';
 
 export const Lobby: React.FC = () => {
     const game = useGame();
-    const player = useUnit($player);
+    const participant = useUnit($participant);
 
     if (!game) return null;
 
@@ -23,11 +18,11 @@ export const Lobby: React.FC = () => {
                     name: game.players[key].name,
                     ready: game.players[key].ready,
                 }))}
-                currentParticipantId={player?.id}
+                currentParticipantId={participant?.id}
                 onToggleReady={(participantId) =>
-                    togglePlayerReady(participantId)
+                    gameEvents.toggleParticipantReady(participantId)
                 }
-                onStart={() => startGame()}
+                onStart={() => gameEvents.startSession()}
                 canStart={
                     !Object.keys(game.players).some(
                         (pk) => !game.players[pk].ready

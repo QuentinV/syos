@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useUnit } from 'effector-react';
-import { setDisplayedCards } from '../../../../state/game';
+import { gameEvents } from '../../../../state/game';
 import cardsMapping from '../../../../cards_mapping.json';
-import { $player } from '../../../../state/player';
+import { $participant } from '../../../../state/player';
 import { usePlayerTurn, useTurn } from '../../../../state/gameHooks';
 import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
@@ -10,7 +10,7 @@ import { getRandomCards } from '../../../../utils/getRandomCards';
 import { TurnEnded } from '../TurnEnded';
 
 export const Storyteller: React.FC = () => {
-    const player = useUnit($player);
+    const participant = useUnit($participant);
     const turn = useTurn();
     const playerTurn = usePlayerTurn();
 
@@ -21,11 +21,14 @@ export const Storyteller: React.FC = () => {
                 ...getRandomCards(cardsMapping.landscape, 3),
                 ...getRandomCards(cardsMapping.animals, 3),
             ];
-            setDisplayedCards({ playerId: player!.id, cardIndexes: r });
+            gameEvents.setDisplayedCards({
+                playerId: participant!.id,
+                cardIndexes: r,
+            });
         }
     }, [playerTurn?.displayedCards]);
 
-    if (!player || !turn || !playerTurn) return null;
+    if (!participant || !turn || !playerTurn) return null;
 
     const renderContent = () => {
         switch (turn.status) {

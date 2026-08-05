@@ -5,7 +5,7 @@ import { fork } from 'effector';
 import { $game, $peerId } from '../../state/game';
 import { Provider } from 'effector-react';
 import { GameStatus, GameTurnStatus, PlayerRole } from '../../state/types';
-import { $player } from '../../state/player';
+import { $participant } from '../../state/player';
 
 interface GamePageWrapperProps extends GamePageProps {
     id: string;
@@ -82,7 +82,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                     status,
                 },
             ],
-            [$player, { id: '123', name: 'P123' }],
+            [$participant, { id: '123', name: 'P123' }],
             [$peerId, 'PEER ID'],
         ],
     });

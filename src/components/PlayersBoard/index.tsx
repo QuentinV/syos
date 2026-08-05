@@ -3,7 +3,7 @@ import { usePlayersTurn } from '../../state/gameHooks';
 import './styles.css';
 import { PlayerRole } from '../../state/types';
 import { useUnit } from 'effector-react';
-import { $player } from '../../state/player';
+import { $participant } from '../../state/player';
 
 interface PlayersBoardProps {
     markStoryteller?: boolean;
@@ -13,7 +13,7 @@ export const PlayersBoard: React.FC<PlayersBoardProps> = ({
     markStoryteller,
 }) => {
     const playersTurns = usePlayersTurn();
-    const player = useUnit($player);
+    const participant = useUnit($participant);
     return (
         <div className="flex flex-column gap-2 mb-3">
             {playersTurns.map((p) => (
@@ -31,7 +31,7 @@ export const PlayersBoard: React.FC<PlayersBoardProps> = ({
                         <i className="pi pi-circle-fill text-primary" />
                     )}
                     {(!markStoryteller || p.role === PlayerRole.gremlin) &&
-                        p.playerId === player?.id && (
+                        p.playerId === participant?.id && (
                             <i className="pi pi-circle-fill" />
                         )}
                 </div>

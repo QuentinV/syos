@@ -3,14 +3,14 @@ import { GameCard } from '../../../../components/GameCard';
 import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { useUnit } from 'effector-react';
-import { $player } from '../../../../state/player';
-import { setTimeEstimate } from '../../../../state/game';
+import { $participant } from '../../../../state/player';
+import { gameEvents } from '../../../../state/game';
 import { usePlayerTurn } from '../../../../state/gameHooks';
 
 const estimateCards = [-1, 1, 2, 3, 5, 8, 10, 13, 21, 34];
 
 export const PEstimate: React.FC = () => {
-    const player = useUnit($player);
+    const player = useUnit($participant);
     const playerTurn = usePlayerTurn();
 
     if (!player?.id) return null;
@@ -41,7 +41,7 @@ export const PEstimate: React.FC = () => {
                             onClick={() =>
                                 playerTurn?.estimateVisibleCards ===
                                     undefined &&
-                                setTimeEstimate({
+                                gameEvents.setTimeEstimate({
                                     playerId: player.id,
                                     estimate: k,
                                 })

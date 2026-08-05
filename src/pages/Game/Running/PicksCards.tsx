@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import { usePlayerTurn, useStorytellerTurn } from '../../../state/gameHooks';
 import { GameCards } from '../../../components/GameCards';
-import { selectCard, updatePlayersTurn } from '../../../state/game';
+import { gameEvents } from '../../../state/game';
 import { useUnit } from 'effector-react';
-import { $player } from '../../../state/player';
+import { $participant } from '../../../state/player';
 import { Countdown } from '../../../chorus';
 import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {
     const playerTurn = usePlayerTurn();
     const [cardsVisible, setCardsVisible] = useState<boolean>(true);
-    const player = useUnit($player);
+    const participant = useUnit($participant);
     const storytellerTurn = useStorytellerTurn();
 
-    if (!player || !playerTurn) return null;
+    if (!participant || !playerTurn) return null;
 
     const onSelectCard = (index: number) => {
-        selectCard({ cardIndex: index, playerId: player!.id });
+        gameEvents.selectCard({ cardIndex: index, playerId: participant!.id });
         if (playerTurn.selectedCards?.length === 3) {
-            updatePlayersTurn({
-                [player.id]: {
-                    playerId: player!.id,
+            gameEvents.updateTurnPlayers({
+                [participant.id]: {
+                    playerId: participant!.id,
                     selectedCardsTime: Date.now(),
                 },
             });

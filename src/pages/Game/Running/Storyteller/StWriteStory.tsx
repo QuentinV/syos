@@ -7,15 +7,15 @@ import {
 import { GameCards } from '../../../../components/GameCards';
 import { Countdown } from '../../../../chorus';
 import { useUnit } from 'effector-react';
-import { $player } from '../../../../state/player';
+import { $participant } from '../../../../state/player';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
 import { PlayersStatus } from '../PlayersStatus';
-import { updatePlayersTurn } from '../../../../state/game';
+import { gameEvents } from '../../../../state/game';
 
 export const StWriteStory: React.FC = () => {
-    const player = useUnit($player);
+    const player = useUnit($participant);
     const turn = useTurn();
     const playerTurn = usePlayerTurn();
     const previousStory = usePreviousStory();
@@ -26,7 +26,7 @@ export const StWriteStory: React.FC = () => {
     if (!player || !playerTurn) return null;
 
     const onStoryWritten = () =>
-        updatePlayersTurn({
+        gameEvents.updateTurnPlayers({
             [player.id]: {
                 playerId: player.id,
                 story:

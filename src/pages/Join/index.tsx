@@ -1,13 +1,13 @@
 import { useUnit } from 'effector-react';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
-import { $player } from '../../state/player';
+import { $participant } from '../../state/player';
 import { joinFx } from '../../state/game';
 import { JoinSession } from '../../chorus';
 
 export const JoinPage: React.FC = () => {
     const { gameId, peerId } = useParams();
-    const player = useUnit($player);
+    const participant = useUnit($participant);
 
     useEffect(() => {
         if (!peerId || !gameId) {
@@ -22,7 +22,7 @@ export const JoinPage: React.FC = () => {
         <JoinSession
             sessionId={gameId}
             peerId={peerId}
-            participantName={player?.name}
+            participantName={participant?.name}
         />
     );
 };

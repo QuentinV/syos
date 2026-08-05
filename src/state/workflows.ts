@@ -1,45 +1,28 @@
-import { stopGame, updatePlayersTurn, workflows } from './game';
+import { gameEvents, workflows } from './game';
 import {
     Game,
     GamePlayersTurn,
     GameTurn,
-    GameTurnStatus,
     PlayerRole,
     PlayerTurn,
 } from './types';
-import { $player } from './player';
+import { $participant } from './player';
 
-// Derive the workflow context from game state + local player
+// Derive the workflow context from game state + local participant
 const deriveContext = (game: Game | null) => {
-    const player = $player.getState();
+    const participant = $participant.getState();
     const turn: GameTurn | undefined = game?.turns?.[game?.turns?.length - 1];
     const playerTurn: PlayerTurn | undefined =
-        turn?.players?.[player?.id ?? ''];
+        turn?.players?.[participant?.id ?? ''];
     return {
         game,
         turn,
         playerTurn,
-        player,
+        participant,
     };
 };
 
-// Workflow status contract: the current turn's status lives at
-// game.turns[last].status, so getStatus/setStatus map it explicitly.
-const getStatus = (game: Game | null) =>
-    game?.turns?.[game?.turns?.length - 1]?.status;
-
-const setStatus = (game: Game | null, status: string) => {
-    if (!game) return null;
-    const turn = game?.turns?.[game?.turns?.length - 1];
-    if (!turn) return game;
-    if (turn.status === (status as GameTurnStatus)) return game; // idempotent
-    turn.status = status as GameTurnStatus;
-    return { ...game };
-};
-
 workflows({
-    getStatus,
-    setStatus,
     transitions: [
         {
             // storyteller selected all necessary cards, moving to next stage
@@ -133,7 +116,7 @@ workflows({
                     return prev;
                 }, {} as GamePlayersTurn);
 
-                return () => updatePlayersTurn(update);
+                return () => gameEvents.updateTurnPlayers(update);
             },
             next: 'turnEnded',
         },
@@ -142,7 +125,7 @@ workflows({
             context: deriveContext,
             filter: ({ game }) => game.turns.length >= 10,
             logic: () => {
-                stopGame();
+                gameEvents.endSession();
             },
         },
     ],

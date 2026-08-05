@@ -1,14 +1,6 @@
-import { createEvent } from 'effector';
-import {
-    Game,
-    GamePlayersTurn,
-    GameTurn,
-    Player,
-    PlayerRole,
-    PlayerTurn,
-} from './types';
-import { createChorus, logDebugMessage } from '../chorus';
+import { createChorus, logDebugMessage, TurnState } from '../chorus';
 import { computeGameChecksum } from './checksum';
+import { GameTurnStatus, PlayerRole, PlayerTurn } from './types';
 
 export { computeGameChecksum } from './checksum';
 
@@ -28,7 +20,7 @@ export const {
     usePeerId,
     workflows,
     Provider: GameProvider,
-} = chorus.createSession<Game | null>({
+} = chorus.createTurnSession<GameTurnStatus, PlayerTurn>({
     name: 'games',
     defaultValue: null,
     checksum: computeGameChecksum,
@@ -37,115 +29,118 @@ export const {
     onMessage: (direction, message) => {
         logDebugMessage({ direction, message });
     },
-});
-
-export const updateGame = createEvent<Game>();
-export const togglePlayerReady = createEvent<string>();
-export const startGame = createEvent<void>();
-export const stopGame = createEvent<void>();
-export const newTurn = createEvent<GameTurn | undefined>();
-export const newPlayerTurn = createEvent<Player>();
-export const setDisplayedCards = createEvent<{
-    playerId: string;
-    cardIndexes: number[];
-}>();
-export const selectCard = createEvent<{
-    playerId: string;
-    cardIndex: number;
-}>();
-export const updatePlayersTurn = createEvent<GamePlayersTurn>();
-export const setTimeEstimate = createEvent<{
-    playerId: string;
-    estimate: number;
-}>();
-
-const changePlayerTurn = (
-    game: Game | null,
-    playerId: string,
-    update: (turn: PlayerTurn) => void
-) => {
-    if (!game) return null;
-    const playerTurn =
-        game?.turns?.[game?.turns?.length - 1]?.players?.[playerId];
-    if (!playerTurn) return game;
-    update(playerTurn);
-    return { ...game };
-};
-
-gameDS
-    .on('updateGame', updateGame, (_, state) => ({ ...state }))
-    .on('togglePlayerReady', togglePlayerReady, (game, playerId) => {
-        if (!game) return null;
-        const player = game.players[playerId];
-        if (!player) return game;
-        player.ready = !player.ready;
-        return { ...game };
-    })
-    .on('startGame', startGame, (game) =>
-        game ? { ...game, status: 'running' } : null
-    )
-    .on('stopGame', stopGame, (game) =>
-        game ? { ...game, status: 'finished' } : null
-    )
-    .on('newTurn', newTurn, (game, turn) =>
-        game && turn
-            ? {
-                  ...game,
-                  turns: [...game.turns, turn],
-              }
-            : game
-    )
-    .on('newPlayerTurn', newPlayerTurn, (game, player) => {
-        if (!game) return null;
-        if (game.turns[game.turns.length - 1]?.players?.[player.id])
-            return game;
-        const turn = game.turns[game.turns.length - 1];
-        turn.players[player.id] = {
-            playerId: player.id,
-            role: Object.keys(turn.players).some(
+    api: {
+        // Add a player to the current turn with a role (storyteller/gremlin)
+        newPlayerTurn: (
+            game: TurnState<GameTurnStatus, PlayerTurn>,
+            player: { id: string }
+        ) => {
+            if (!game) return null;
+            const lastIndex = game.turns.length - 1;
+            if (lastIndex < 0) return game;
+            const turn = game.turns[lastIndex];
+            if (turn.players[player.id]) return game;
+            const hasStoryteller = Object.keys(turn.players).some(
                 (k) => turn.players[k].role === PlayerRole.storyteller
-            )
-                ? PlayerRole.gremlin
-                : PlayerRole.storyteller,
-            score: 0,
-        };
-        return { ...game };
-    })
-    .on('setDisplayedCards', setDisplayedCards, (game, state) =>
-        changePlayerTurn(game, state.playerId, (playerTurn) => {
-            playerTurn.displayedCards = state.cardIndexes;
-            playerTurn.displayedCardsTime = Date.now();
-        })
-    )
-    .on('selectCard', selectCard, (game, state) =>
-        changePlayerTurn(game, state.playerId, (playerTurn) => {
-            playerTurn.selectedCards = [
-                ...new Set([
-                    ...(playerTurn.selectedCards ?? []),
-                    state.cardIndex,
-                ]),
-            ];
-        })
-    )
-    .on('setTimeEstimate', setTimeEstimate, (game, state) =>
-        changePlayerTurn(game, state.playerId, (playerTurn) => {
-            playerTurn.estimateVisibleCards = state.estimate;
-        })
-    )
-    .on('updatePlayersTurn', updatePlayersTurn, (game, playersTurn) => {
-        if (!game) return null;
-
-        let changed = false;
-        Object.keys(playersTurn).forEach((pk) => {
-            const playerTurn =
-                game?.turns?.[game?.turns?.length - 1]?.players?.[pk];
-            if (!playerTurn) return;
-            const merged = { ...playerTurn, ...playersTurn[pk] };
-            if (JSON.stringify(playerTurn) !== JSON.stringify(merged)) {
-                changed = true;
-                game.turns[game.turns.length - 1].players[pk] = merged;
-            }
-        });
-
-        return changed ? { ...game } : game;
-    });
+            );
+            const updatedTurn = {
+                ...turn,
+                players: {
+                    ...turn.players,
+                    [player.id]: {
+                        playerId: player.id,
+                        role: hasStoryteller
+                            ? PlayerRole.gremlin
+                            : PlayerRole.storyteller,
+                        score: 0,
+                    },
+                },
+            };
+            return {
+                ...game,
+                turns: [...game.turns.slice(0, lastIndex), updatedTurn],
+            };
+        },
+        setDisplayedCards: (
+            game: TurnState<GameTurnStatus, PlayerTurn>,
+            state: { playerId: string; cardIndexes: number[] }
+        ) => {
+            if (!game) return null;
+            const lastIndex = game.turns.length - 1;
+            if (lastIndex < 0) return game;
+            const turn = game.turns[lastIndex];
+            const playerTurn = turn.players[state.playerId];
+            if (!playerTurn) return game;
+            const updatedTurn = {
+                ...turn,
+                players: {
+                    ...turn.players,
+                    [state.playerId]: {
+                        ...playerTurn,
+                        displayedCards: state.cardIndexes,
+                        displayedCardsTime: Date.now(),
+                    },
+                },
+            };
+            return {
+                ...game,
+                turns: [...game.turns.slice(0, lastIndex), updatedTurn],
+            };
+        },
+        selectCard: (
+            game: TurnState<GameTurnStatus, PlayerTurn>,
+            state: { playerId: string; cardIndex: number }
+        ) => {
+            if (!game) return null;
+            const lastIndex = game.turns.length - 1;
+            if (lastIndex < 0) return game;
+            const turn = game.turns[lastIndex];
+            const playerTurn = turn.players[state.playerId];
+            if (!playerTurn) return game;
+            const updatedTurn = {
+                ...turn,
+                players: {
+                    ...turn.players,
+                    [state.playerId]: {
+                        ...playerTurn,
+                        selectedCards: [
+                            ...new Set([
+                                ...(playerTurn.selectedCards ?? []),
+                                state.cardIndex,
+                            ]),
+                        ],
+                    },
+                },
+            };
+            return {
+                ...game,
+                turns: [...game.turns.slice(0, lastIndex), updatedTurn],
+            };
+        },
+        setTimeEstimate: (
+            game: TurnState<GameTurnStatus, PlayerTurn>,
+            state: { playerId: string; estimate: number }
+        ) => {
+            if (!game) return null;
+            const lastIndex = game.turns.length - 1;
+            if (lastIndex < 0) return game;
+            const turn = game.turns[lastIndex];
+            const playerTurn = turn.players[state.playerId];
+            if (!playerTurn) return game;
+            const updatedTurn = {
+                ...turn,
+                players: {
+                    ...turn.players,
+                    [state.playerId]: {
+                        ...playerTurn,
+                        estimateVisibleCards: state.estimate,
+                    },
+                },
+            };
+            return {
+                ...game,
+                turns: [...game.turns.slice(0, lastIndex), updatedTurn],
+            };
+        },
+    },
+});

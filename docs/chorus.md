@@ -301,6 +301,141 @@ import { JoinSession } from 'chorus';
 | `peerId`           | `string` | The host peer ID             |
 | `participantName?` | `string` | The local participant's name |
 
+## Turn Layer (Opt-in)
+
+Chorus ships with an optional **turn layer** for turn-based collaborative apps (storytelling, scrum planning, etc.). It wraps `createSession` with turn-session semantics while remaining fully generic over the app-specific turn status values and per-player data.
+
+### Generic types
+
+```typescript
+interface Participant {
+    id: string;
+    name: string;
+    ready: boolean;
+}
+
+interface Turn<TStatus extends string, TTurnData> {
+    status: TStatus; // app-specific turn status
+    players: { [playerId: string]: TTurnData }; // app-specific per-player data
+}
+
+type SessionStatus = 'lobby' | 'running' | 'finished'; // fixed enum
+
+interface TurnSessionState<TStatus extends string, TTurnData> {
+    id: string;
+    players: { [playerId: string]: Participant };
+    turns: Turn<TStatus, TTurnData>[];
+    status: SessionStatus;
+    createdAt: number;
+}
+```
+
+### createTurnSession
+
+```typescript
+const session = chorus.createTurnSession<MyTurnStatus, MyPlayerTurn>({
+    name: 'my-turn-session',
+    defaultValue: null,
+    checksum: computeTurnSessionChecksum,   // optional divergence detection
+    api: {
+        // app-specific P2P-synced reducers
+        vote: (state, payload) => { ... },
+    },
+});
+```
+
+`createTurnSession` returns the same session API as `createSession`, plus these **generic turn events**:
+
+| Event                    | Payload                              | Description                                  |
+| ------------------------ | ------------------------------------ | -------------------------------------------- |
+| `updateState`            | `TurnSessionState`                   | Replace the whole session state              |
+| `toggleParticipantReady` | `string` (participant id)            | Toggle a participant's ready flag            |
+| `startSession`           | —                                    | Advance session status to `'running'`        |
+| `endSession`             | —                                    | Advance session status to `'finished'`       |
+| `addTurn`                | `Turn<TStatus, TTurnData>`           | Append a turn to the session                 |
+| `joinParticipant`        | `Participant`                        | Add a participant (no-op if already present) |
+| `updateTurnPlayers`      | `{ [playerId]: Partial<TTurnData> }` | Merge partial updates into the current turn  |
+
+### Turn-aware workflows
+
+Unlike `createSession`, the default `getStatus`/`setStatus` in `createTurnSession` target the **current turn's status** rather than a top-level `status` field. The top-level session status remains the fixed `'lobby' | 'running' | 'finished'` enum (managed by `startSession`/`endSession`).
+
+```typescript
+session.workflows({
+    transitions: [
+        {
+            from: 'discuss',
+            filter: ({ state }) => allVoted(state),
+            next: 'revealed',
+        },
+    ],
+});
+```
+
+### createParticipantStore
+
+A generic local participant store (the "active participant" of the session), persisted in localStorage:
+
+```typescript
+import { createParticipantStore } from 'chorus';
+
+const { $participant, setParticipantName } = createParticipantStore('player');
+```
+
+### computeTurnSessionChecksum
+
+A generic checksum for turn-based states — hashes the session id, session status, turn count, each turn's status, and sorted participant keys:
+
+```typescript
+import { computeTurnSessionChecksum } from 'chorus';
+
+const session = chorus.createTurnSession<MyStatus, MyTurnData>({
+    name: 'my-session',
+    defaultValue: null,
+    checksum: computeTurnSessionChecksum,
+});
+```
+
+### Example: Scrum Planning
+
+```typescript
+type ScrumStatus = 'discuss' | 'vote' | 'revealed';
+
+interface ScrumPlayerTurn {
+    playerId: string;
+    vote?: number;
+}
+
+const session = chorus.createTurnSession<ScrumStatus, ScrumPlayerTurn>({
+    name: 'scrum',
+    defaultValue: {
+        id: 'scrum-1',
+        players: {},
+        turns: [],
+        status: 'lobby',
+        createdAt: Date.now(),
+    },
+    api: {
+        vote: (state, { playerId, vote }) => { ... },
+    },
+});
+
+// Join participants
+session.events['joinParticipant']({ id: 'dev-1', name: 'Alice', ready: false });
+
+// Start the session
+session.events['startSession']();
+
+// Add a planning round
+session.events['addTurn']({
+    status: 'discuss',
+    players: { 'dev-1': { playerId: 'dev-1' } },
+});
+
+// Vote
+session.events['vote']({ playerId: 'dev-1', vote: 5 });
+```
+
 ## Storage Adapters
 
 | Adapter        | Description                                                       |
@@ -347,6 +482,11 @@ src/chorus/
 │   ├── connection.ts     ← ChorusConnection (PeerJS transport)
 │   ├── session.ts        ← ChorusSession (effector store + P2P reducers)
 │   └── storage.ts        ← storage adapters
+├── turn/                 ← optional turn layer (opt-in)
+│   ├── types.ts          ← Participant, Turn, TurnSessionState, SessionStatus
+│   ├── createTurnSession.ts ← createTurnSession factory
+│   ├── participant.ts    ← createParticipantStore
+│   └── checksum.ts       ← computeTurnSessionChecksum
 ├── eventLog.ts           ← append-only event log
 ├── workflow.ts           ← generic workflow engine
 ├── debug.ts              ← debug stores

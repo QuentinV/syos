@@ -6,20 +6,20 @@ import {
     useStorytellerTurn,
     useTurn,
 } from '../../../../state/gameHooks';
-import { $player } from '../../../../state/player';
+import { $participant } from '../../../../state/player';
 import { getRandomCards } from '../../../../utils/getRandomCards';
-import { setDisplayedCards } from '../../../../state/game';
+import { gameEvents } from '../../../../state/game';
 import { PEstimate } from './PEstimate';
 import { TurnEnded } from '../TurnEnded';
 import { PicksCards } from '../PicksCards';
 
 export const Player: React.FC = () => {
-    const player = useUnit($player);
+    const participant = useUnit($participant);
     const turn = useTurn();
     const playerTurn = usePlayerTurn();
     const storytellerTurn = useStorytellerTurn();
 
-    if (!player || !turn || !playerTurn || !storytellerTurn) return null;
+    if (!participant || !turn || !playerTurn || !storytellerTurn) return null;
 
     useEffect(() => {
         if (
@@ -44,7 +44,10 @@ export const Player: React.FC = () => {
                     storytellerTurn.selectedCards
                 ),
             ].sort(() => Math.random() - 0.5);
-            setDisplayedCards({ playerId: player!.id, cardIndexes: r });
+            gameEvents.setDisplayedCards({
+                playerId: participant!.id,
+                cardIndexes: r,
+            });
         }
     }, [playerTurn?.displayedCards, storytellerTurn.selectedCardsTime]);
 

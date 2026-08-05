@@ -9,6 +9,7 @@ import { createHooks } from '../react';
 import { createWorkflowEngine } from '../workflow';
 import { debug as debugApi, logDebugMessage } from '../debug';
 import { ChorusSessionContext } from '../context';
+import { createTurnSessionFactory } from '../turn';
 import {
     appendToEventLog,
     getEventsSinceClock,
@@ -344,8 +345,11 @@ export function createChorus(options: ChorusOptions = {}) {
         };
     }
 
+    const createTurnSession = createTurnSessionFactory(createSession);
+
     return {
         createSession,
+        createTurnSession,
         debug: debugApi,
     };
 }

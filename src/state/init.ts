@@ -1,26 +1,28 @@
-import { createEffect, sample, attach, createEvent } from 'effector';
+import { createEffect, sample, attach } from 'effector';
 import './workflows';
-import { $game, gameDS, joinFx, newTurn, startGame, updateGame } from './game';
-import { $player } from './player';
+import { $game, gameEvents, joinFx } from './game';
+import { $participant } from './player';
 import { v4 as uuid } from 'uuid';
 import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
 
 export const newGameFx = attach({
-    source: { $player },
-    effect: createEffect(({ $player }: { $player: Player | null }) => {
-        const id = uuid();
-        const game: Game = {
-            id,
-            createdAt: new Date().getTime(),
-            status: 'lobby',
-            players: {},
-            turns: [],
-        };
-        if ($player) {
-            game.players = { [$player.id]: $player };
+    source: { $participant },
+    effect: createEffect(
+        ({ $participant }: { $participant: Player | null }) => {
+            const id = uuid();
+            const game: Game = {
+                id,
+                createdAt: new Date().getTime(),
+                status: 'lobby',
+                players: {},
+                turns: [],
+            };
+            if ($participant) {
+                game.players = { [$participant.id]: $participant };
+            }
+            return game;
         }
-        return game;
-    }),
+    ),
 });
 
 export const newTurnFx = attach({
@@ -53,39 +55,40 @@ export const newTurnFx = attach({
 
 sample({
     source: newGameFx.doneData,
-    target: updateGame,
+    target: gameEvents.updateState,
 });
 
 sample({
     source: newTurnFx.doneData,
-    target: newTurn,
+    target: gameEvents.addTurn,
 });
 
 sample({
-    source: startGame,
+    source: gameEvents.startSession,
     target: newTurnFx,
-});
-
-const joined = createEvent<Player | null>();
-gameDS.on('joined', joined, (game, player: Player | null) => {
-    if (!game || !player) {
-        return;
-    }
-    game.players[player.id] = player;
-    return { ...game };
 });
 
 sample({
     clock: $game,
-    source: $player,
-    filter: (player, game) => {
-        return game !== null && player !== null && !game.players[player.id];
+    source: $participant,
+    filter: (participant, game) => {
+        return (
+            game !== null &&
+            participant !== null &&
+            !game.players[participant.id]
+        );
     },
-    fn: (player, game) => ({ player, gameId: game!.id }),
+    fn: (participant, game) => ({ participant, gameId: game!.id }),
     target: createEffect(
-        ({ player, gameId }: { player: Player | null; gameId: string }) => {
-            if (player) {
-                joined(player);
+        ({
+            participant,
+            gameId,
+        }: {
+            participant: Player | null;
+            gameId: string;
+        }) => {
+            if (participant) {
+                gameEvents.joinParticipant(participant);
             }
             location.href = `${document.location.origin}/syos#/game/${gameId}`;
         }

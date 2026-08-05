@@ -1,33 +1,19 @@
-export interface Game {
-    id: string;
-    players: { [playerId: string]: Player };
-    turns: GameTurn[];
-    createdAt: number;
+import { Participant, SessionStatus, Turn, TurnSessionState } from '../chorus';
+
+export type { Participant as Player };
+
+export interface Game extends TurnSessionState<GameTurnStatus, PlayerTurn> {
     peerId?: string;
-    status: GameStatus;
-}
-
-export interface Player {
-    id: string;
-    name: string;
-    ready: boolean;
-}
-
-export interface GameTurn {
-    status: GameTurnStatus;
-    players: GamePlayersTurn;
 }
 
 export type GamePlayersTurn = { [playerId: string]: PlayerTurn };
 
-export type GameStatus = 'lobby' | 'running' | 'finished';
+export type GameStatus = SessionStatus;
+
+export type GameTurn = Turn<GameTurnStatus, PlayerTurn>;
 
 export type GameTurnStatus =
-    | 'stPicksCards'
-    | 'stWriteStory'
-    | 'pEstimate'
-    | 'pPicksCards'
-    | 'turnEnded';
+    'stPicksCards' | 'stWriteStory' | 'pEstimate' | 'pPicksCards' | 'turnEnded';
 
 export enum PlayerRole {
     storyteller = 'storyteller',

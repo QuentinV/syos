@@ -7,6 +7,16 @@ export { createWorkflowEngine } from './workflow';
 export { debug, logDebugMessage } from './debug';
 export { ChorusSessionContext, useChorusSession } from './context';
 export type { ChorusSessionContextValue } from './context';
+export { createParticipantStore, computeTurnSessionChecksum } from './turn';
+export type {
+    Participant,
+    SessionStatus,
+    Turn,
+    TurnSessionApi,
+    TurnSessionConfig,
+    TurnSessionState,
+    TurnState,
+} from './turn';
 export { QRCode } from './components/QRCode';
 export type { QRCodeProps } from './components/QRCode';
 export { Countdown } from './components/Countdown';

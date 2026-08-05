@@ -1,6 +1,6 @@
 import { useUnit } from 'effector-react';
 import { $game, useGame } from './game';
-import { $player } from './player';
+import { $participant } from './player';
 import { GameTurn, Player, PlayerRole, PlayerTurn } from './types';
 
 export const useGameTurnStatus = () => {
@@ -10,8 +10,8 @@ export const useGameTurnStatus = () => {
 
 export const usePlayerTurn = (): PlayerTurn | undefined => {
     const turn = useTurn();
-    const player = useUnit($player);
-    return turn?.players?.[player?.id ?? ''];
+    const participant = useUnit($participant);
+    return turn?.players?.[participant?.id ?? ''];
 };
 
 export const useStorytellerTurn = (): PlayerTurn | undefined => {
