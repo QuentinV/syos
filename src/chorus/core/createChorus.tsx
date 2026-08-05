@@ -21,7 +21,7 @@ import {
     Message,
     SessionConfig,
     StateWithId,
-    WorkflowTransition,
+    WorkflowConfig,
 } from '../types';
 
 const DEBUG = false;
@@ -69,19 +69,8 @@ export function createChorus(options: ChorusOptions = {}) {
         );
         const initObject = createEvent<string>();
         const setPeerId = createEvent<string>();
-        const setStatus = createEvent<string>();
         const events = dsStore.getUnits();
         const localEvents = dsStore.getLocalUnits();
-
-        // Auto-register setStatus as a P2P-synced reducer if provided
-        if (config.setStatus) {
-            dsStore.on('setStatus', setStatus, config.setStatus);
-        }
-
-        // Default getStatus: read `status` field from state
-        const getStatus =
-            config.getStatus ??
-            ((state: State) => (state as any)?.status as string | undefined);
 
         // Wrapped processMessage: buffers and reorders messages by Lamport clock
         const rawProcessMessage = async (
@@ -309,18 +298,38 @@ export function createChorus(options: ChorusOptions = {}) {
             usePeerId: hooks.usePeerId,
             joinFx,
             events,
-            setStatus,
             Provider,
             getJoinUrl,
             startHeartbeat: () => connection.startHeartbeat(getState),
             stopHeartbeat: () => connection.stopHeartbeat(),
             checkPeerHealth: () => connection.checkPeerHealth(getState),
-            workflows: (transitions: WorkflowTransition<State>[]) => {
+            workflows: (config: WorkflowConfig<State>) => {
+                // Default getStatus: read `status` field from state
+                const getStatus =
+                    config.getStatus ??
+                    ((state: State) =>
+                        (state as any)?.status as string | undefined);
+
+                // setStatus event — registered lazily on first workflows() call
+                const setStatus = createEvent<string>();
+
+                // Default setStatus: idempotent reducer writing `status` field
+                const setStatusReducer =
+                    config.setStatus ??
+                    ((state: State, status: string) => {
+                        if (!state) return state;
+                        if ((state as any)?.status === status) return state;
+                        return { ...(state as any), status } as State;
+                    });
+
+                // Register setStatus as a P2P-synced reducer
+                dsStore.on('setStatus', setStatus, setStatusReducer);
+
                 createWorkflowEngine({
                     $state: $store,
                     getStatus,
                     setStatus,
-                    transitions,
+                    transitions: config.transitions,
                 });
             },
             /** @internal Exposed for testing only */

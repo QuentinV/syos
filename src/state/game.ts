@@ -3,7 +3,6 @@ import {
     Game,
     GamePlayersTurn,
     GameTurn,
-    GameTurnStatus,
     Player,
     PlayerRole,
     PlayerTurn,
@@ -27,22 +26,12 @@ export const {
     useStore: useGame,
     init: initGame,
     usePeerId,
-    setStatus,
     workflows,
     Provider: GameProvider,
 } = chorus.createSession<Game | null>({
     name: 'games',
     defaultValue: null,
     checksum: computeGameChecksum,
-    getStatus: (game) => game?.turns?.[game.turns.length - 1]?.status,
-    setStatus: (game, status) => {
-        if (!game) return null;
-        const turn = game?.turns?.[game?.turns?.length - 1];
-        if (!turn) return game;
-        if (turn.status === (status as GameTurnStatus)) return game; // idempotent
-        turn.status = status as GameTurnStatus;
-        return { ...game };
-    },
     getJoinUrl: (sessionId, peerId) =>
         `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
     onMessage: (direction, message) => {
@@ -64,7 +53,6 @@ export const selectCard = createEvent<{
     playerId: string;
     cardIndex: number;
 }>();
-export const setGameTurnStatus = createEvent<GameTurnStatus>();
 export const updatePlayersTurn = createEvent<GamePlayersTurn>();
 export const setTimeEstimate = createEvent<{
     playerId: string;
@@ -144,14 +132,6 @@ gameDS
             playerTurn.estimateVisibleCards = state.estimate;
         })
     )
-    .on('setGameTurnStatus', setGameTurnStatus, (game, status) => {
-        if (!game) return null;
-        const turn = game?.turns?.[game?.turns?.length - 1];
-        if (!turn) return game;
-        if (turn.status === status) return game; // idempotent: no change, no broadcast
-        turn.status = status;
-        return { ...game };
-    })
     .on('updatePlayersTurn', updatePlayersTurn, (game, playersTurn) => {
         if (!game) return null;
 

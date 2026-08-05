@@ -62,7 +62,6 @@ describe('Chorus — createSession', () => {
         expect(typeof session.useStore).toBe('function');
         expect(typeof session.usePeerId).toBe('function');
         expect(typeof session.workflows).toBe('function');
-        expect(typeof session.setStatus).toBe('function');
     });
 
     it('should register reducers via api and fire events', () => {
@@ -98,20 +97,17 @@ describe('Chorus — workflows (generic engine)', () => {
                     return { ...state, count: state.count + by };
                 },
             },
-            setStatus: (state, status) => {
-                if (!state) return null;
-                if (state.status === status) return state;
-                return { ...state, status };
-            },
         });
 
-        session.workflows([
-            {
-                from: 'idle',
-                filter: ({ state }) => state.count >= 3,
-                next: 'counting',
-            },
-        ]);
+        session.workflows({
+            transitions: [
+                {
+                    from: 'idle',
+                    filter: ({ state }) => state.count >= 3,
+                    next: 'counting',
+                },
+            ],
+        });
 
         session.events['increment'](1);
         session.events['increment'](1);
@@ -132,27 +128,88 @@ describe('Chorus — workflows (generic engine)', () => {
                     return { ...state, count: state.count + by };
                 },
             },
-            setStatus: (state, status) => {
-                if (!state) return null;
-                if (state.status === status) return state;
-                return { ...state, status };
-            },
         });
 
-        session.workflows([
-            {
-                from: 'idle',
-                context: (state) => ({
-                    state,
-                    isEven: (state?.count ?? 0) % 2 === 0,
-                }),
-                filter: ({ isEven }) => isEven,
-                next: 'even',
-            },
-        ]);
+        session.workflows({
+            transitions: [
+                {
+                    from: 'idle',
+                    context: (state) => ({
+                        state,
+                        isEven: (state?.count ?? 0) % 2 === 0,
+                    }),
+                    filter: ({ isEven }) => isEven,
+                    next: 'even',
+                },
+            ],
+        });
 
         session.events['increment'](2);
         expect(session.$state.getState()?.status).toBe('even');
+    });
+
+    it('should use default setStatus writing state.status when not provided', () => {
+        const chorus = createChorus({ storage: 'memory' });
+        const session = chorus.createSession<CounterState>({
+            name: 'counter',
+            defaultValue: { id: 'counter-1', count: 0, status: 'idle' },
+            api: {
+                increment: (state: CounterState, by: number) => {
+                    if (!state) return null;
+                    return { ...state, count: state.count + by };
+                },
+            },
+        });
+
+        session.workflows({
+            transitions: [
+                {
+                    from: 'idle',
+                    filter: ({ state }) => state.count >= 1,
+                    next: 'counting',
+                },
+            ],
+        });
+
+        session.events['increment'](1);
+        expect(session.$state.getState()?.status).toBe('counting');
+    });
+
+    it('should support custom getStatus/setStatus mapping', () => {
+        const chorus = createChorus({ storage: 'memory' });
+        const session = chorus.createSession<CounterState>({
+            name: 'counter',
+            defaultValue: {
+                id: 'counter-1',
+                count: 0,
+                phase: 'idle',
+            } as CounterState,
+            api: {
+                increment: (state: CounterState, by: number) => {
+                    if (!state) return null;
+                    return { ...state, count: state.count + by };
+                },
+            },
+        });
+
+        session.workflows({
+            getStatus: (state) => (state as any)?.phase,
+            setStatus: (state, status) => {
+                if (!state) return null;
+                if ((state as any).phase === status) return state;
+                return { ...(state as any), phase: status } as CounterState;
+            },
+            transitions: [
+                {
+                    from: 'idle',
+                    filter: ({ state }) => state.count >= 1,
+                    next: 'counting',
+                },
+            ],
+        });
+
+        session.events['increment'](1);
+        expect((session.$state.getState() as any)?.phase).toBe('counting');
     });
 });
 

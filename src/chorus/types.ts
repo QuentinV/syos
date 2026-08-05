@@ -66,10 +66,22 @@ export interface SessionConfig<State extends StateWithId> {
     onMessage?: (direction: 'in' | 'out', message: Message) => void;
     /** Build the join URL for a session. Defaults to `${origin}/join/${sessionId}/${peerId}`. */
     getJoinUrl?: (sessionId: string, peerId: string) => string;
-    /** Derive the current status from state. Used by the workflow engine. Defaults to (state) => (state as any)?.status. */
+}
+
+// -- Workflow config
+export interface WorkflowConfig<State extends StateWithId> {
+    /**
+     * Derive the current status from state. Used by the workflow engine.
+     * Defaults to (state) => (state as any)?.status.
+     */
     getStatus?: (state: State) => string | undefined;
-    /** Write the status to state. Auto-registers setStatus as a P2P-synced reducer. */
+    /**
+     * Write the status to state. Auto-registers setStatus as a P2P-synced reducer.
+     * Defaults to an idempotent reducer writing (state as any).status.
+     */
     setStatus?: (state: State, status: string) => State | void;
+    /** The workflow transitions to register. */
+    transitions: WorkflowTransition<State>[];
 }
 
 // -- Workflow
@@ -117,8 +129,6 @@ export interface ChorusSessionApi<State extends StateWithId> {
     usePeerId: () => string | null;
     joinFx: Effect<{ objectId: string; peerId: string }, string, Error>;
     events: { [key: string]: EventCallable<any> };
-    /** Event to advance the session status. Wire it to your state via session.store.on('setStatus', ...). */
-    setStatus: EventCallable<string>;
     /** React context provider supplying { sessionId, peerId, getJoinUrl } to Chorus components. */
     Provider: React.FC<{ children?: React.ReactNode }>;
     /** Build the join URL for this session. */
@@ -126,7 +136,7 @@ export interface ChorusSessionApi<State extends StateWithId> {
     startHeartbeat: () => void;
     stopHeartbeat: () => void;
     checkPeerHealth: () => string[];
-    workflows: (transitions: WorkflowTransition<State>[]) => void;
+    workflows: (config: WorkflowConfig<State>) => void;
     /** @internal Exposed for testing only */
     _test: {
         processMessage: ProcessMessageType;
