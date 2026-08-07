@@ -11,15 +11,15 @@ export const useGameTurnStatus = () => {
 export const usePlayerTurn = (): PlayerTurn | undefined => {
     const turn = useTurn();
     const participant = useUnit($participant);
-    return turn?.players?.[participant?.id ?? ''];
+    return turn?.participants?.[participant?.id ?? ''];
 };
 
 export const useStorytellerTurn = (): PlayerTurn | undefined => {
     const turn = useTurn();
-    return turn?.players
-        ? turn.players[
-              Object.keys(turn.players).find(
-                  (key) => turn.players[key].role === 'storyteller'
+    return turn?.participants
+        ? turn.participants[
+              Object.keys(turn.participants).find(
+                  (key) => turn.participants[key].role === 'storyteller'
               ) ?? ''
           ]
         : undefined;
@@ -38,9 +38,9 @@ export const usePreviousTurn = (): GameTurn | undefined => {
 export const usePreviousStory = (): string | undefined => {
     const turn = usePreviousTurn();
     if (!turn) return;
-    return turn.players[
-        Object.keys(turn.players).find(
-            (k) => turn.players[k].role === 'storyteller'
+    return turn.participants[
+        Object.keys(turn.participants).find(
+            (k) => turn.participants[k].role === 'storyteller'
         ) ?? ''
     ].story;
 };
@@ -54,9 +54,9 @@ export const usePlayersTurn = (): ExtendedPlayerTurn[] => {
     const turn = useTurn();
     return !turn
         ? []
-        : Object.keys(turn.players).map((k) => ({
-              ...turn.players[k],
-              player: game?.players?.[turn.players[k]?.playerId],
+        : Object.keys(turn.participants).map((k) => ({
+              ...turn.participants[k],
+              player: game?.participants?.[turn.participants[k]?.playerId],
           }));
 };
 

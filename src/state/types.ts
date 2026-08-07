@@ -6,7 +6,7 @@ export interface Game extends TurnSessionState<GameTurnStatus, PlayerTurn> {
     peerId?: string;
 }
 
-export type GamePlayersTurn = { [playerId: string]: PlayerTurn };
+export type GameParticipantsTurn = { [participantId: string]: PlayerTurn };
 
 export type GameStatus = SessionStatus;
 

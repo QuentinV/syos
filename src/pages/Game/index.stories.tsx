@@ -45,7 +45,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                     turns: [
                         {
                             status: turnStatus,
-                            players: {
+                            participants: {
                                 '123': {
                                     playerId: '123',
                                     role: playerRole,
@@ -74,7 +74,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
                             },
                         },
                     ],
-                    players: {
+                    participants: {
                         '123': { name: 'P 123' },
                         '456': { name: 'P 456 ', ready: true },
                     },

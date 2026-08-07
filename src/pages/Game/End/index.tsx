@@ -19,13 +19,15 @@ export const End: React.FC = () => {
                 <div className="ml-3">
                     {game?.turns?.map((t) => (
                         <div>
-                            {Object.keys(t?.players ?? {})
+                            {Object.keys(t?.participants ?? {})
                                 .filter(
                                     (pk) =>
-                                        t?.players?.[pk ?? '']?.role ===
+                                        t?.participants?.[pk ?? '']?.role ===
                                         PlayerRole.storyteller
                                 )
-                                ?.map((pk) => t?.players?.[pk ?? '']?.story)
+                                ?.map(
+                                    (pk) => t?.participants?.[pk ?? '']?.story
+                                )
                                 ?.filter((s) => !!s)
                                 ?.join('.')}
                             .

@@ -303,7 +303,7 @@ import { JoinSession } from 'chorus';
 
 ## Turn Layer (Opt-in)
 
-Chorus ships with an optional **turn layer** for turn-based collaborative apps (storytelling, scrum planning, etc.). It wraps `createSession` with turn-session semantics while remaining fully generic over the app-specific turn status values and per-player data.
+Chorus ships with an optional **turn layer** for turn-based collaborative apps (storytelling, scrum planning, etc.). It wraps `createSession` with turn-session semantics while remaining fully generic over the app-specific turn status values and per-participant data.
 
 ### Generic types
 
@@ -316,14 +316,14 @@ interface Participant {
 
 interface Turn<TStatus extends string, TTurnData> {
     status: TStatus; // app-specific turn status
-    players: { [playerId: string]: TTurnData }; // app-specific per-player data
+    participants: { [participantId: string]: TTurnData }; // app-specific per-participant data
 }
 
 type SessionStatus = 'lobby' | 'running' | 'finished'; // fixed enum
 
 interface TurnSessionState<TStatus extends string, TTurnData> {
     id: string;
-    players: { [playerId: string]: Participant };
+    participants: { [participantId: string]: Participant };
     turns: Turn<TStatus, TTurnData>[];
     status: SessionStatus;
     createdAt: number;
@@ -346,15 +346,15 @@ const session = chorus.createTurnSession<MyTurnStatus, MyPlayerTurn>({
 
 `createTurnSession` returns the same session API as `createSession`, plus these **generic turn events**:
 
-| Event                    | Payload                              | Description                                  |
-| ------------------------ | ------------------------------------ | -------------------------------------------- |
-| `updateState`            | `TurnSessionState`                   | Replace the whole session state              |
-| `toggleParticipantReady` | `string` (participant id)            | Toggle a participant's ready flag            |
-| `startSession`           | —                                    | Advance session status to `'running'`        |
-| `endSession`             | —                                    | Advance session status to `'finished'`       |
-| `addTurn`                | `Turn<TStatus, TTurnData>`           | Append a turn to the session                 |
-| `joinParticipant`        | `Participant`                        | Add a participant (no-op if already present) |
-| `updateTurnPlayers`      | `{ [playerId]: Partial<TTurnData> }` | Merge partial updates into the current turn  |
+| Event                    | Payload                                   | Description                                  |
+| ------------------------ | ----------------------------------------- | -------------------------------------------- |
+| `updateState`            | `TurnSessionState`                        | Replace the whole session state              |
+| `toggleParticipantReady` | `string` (participant id)                 | Toggle a participant's ready flag            |
+| `startSession`           | —                                         | Advance session status to `'running'`        |
+| `endSession`             | —                                         | Advance session status to `'finished'`       |
+| `addTurn`                | `Turn<TStatus, TTurnData>`                | Append a turn to the session                 |
+| `joinParticipant`        | `Participant`                             | Add a participant (no-op if already present) |
+| `updateTurnParticipants` | `{ [participantId]: Partial<TTurnData> }` | Merge partial updates into the current turn  |
 
 ### Turn-aware workflows
 
@@ -410,7 +410,7 @@ const session = chorus.createTurnSession<ScrumStatus, ScrumPlayerTurn>({
     name: 'scrum',
     defaultValue: {
         id: 'scrum-1',
-        players: {},
+        participants: {},
         turns: [],
         status: 'lobby',
         createdAt: Date.now(),
@@ -429,7 +429,7 @@ session.events['startSession']();
 // Add a planning round
 session.events['addTurn']({
     status: 'discuss',
-    players: { 'dev-1': { playerId: 'dev-1' } },
+    participants: { 'dev-1': { playerId: 'dev-1' } },
 });
 
 // Vote

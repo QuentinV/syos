@@ -39,53 +39,54 @@ const workflows: FlowTransition[] = [
     {
         from: 'pEstimate',
         filter: ({ turn }) =>
-            Object.keys(turn?.players ?? {}).every(
+            Object.keys(turn?.participants ?? {}).every(
                 (pk) =>
-                    turn?.players?.[pk].role === PlayerRole.storyteller ||
-                    !!turn?.players?.[pk]?.estimateVisibleCards
+                    turn?.participants?.[pk].role === PlayerRole.storyteller ||
+                    !!turn?.participants?.[pk]?.estimateVisibleCards
             ),
         next: 'pPicksCards',
     },
     {
         from: 'pPicksCards',
         filter: ({ turn }) =>
-            Object.keys(turn?.players ?? {}).every(
+            Object.keys(turn?.participants ?? {}).every(
                 (pk) =>
-                    turn?.players?.[pk].role === PlayerRole.storyteller ||
-                    !!turn?.players?.[pk]?.selectedCardsTime
+                    turn?.participants?.[pk].role === PlayerRole.storyteller ||
+                    !!turn?.participants?.[pk]?.selectedCardsTime
             ),
         logic: ({ game }) => {
             const gameTurn = game.turns[game.turns.length - 1];
-            const players = gameTurn.players;
-            const playersKeys = Object.keys(players);
+            const participants = gameTurn.participants;
+            const playersKeys = Object.keys(participants);
             const storyteller =
-                players[
+                participants[
                     playersKeys.find(
-                        (pk) => players[pk].role === PlayerRole.storyteller
+                        (pk) => participants[pk].role === PlayerRole.storyteller
                     ) ?? ''
                 ];
 
             const playersVoted = playersKeys.filter(
-                (k) => players[k].estimateVisibleCards !== -1
+                (k) => participants[k].estimateVisibleCards !== -1
             );
 
             const timeoutSelectCards =
                 playersVoted.reduce(
-                    (prev, pk) => players[pk].estimateVisibleCards ?? 0 + prev,
+                    (prev, pk) =>
+                        participants[pk].estimateVisibleCards ?? 0 + prev,
                     0
                 ) / playersVoted.length;
 
             const playersCorrect = playersKeys.filter(
                 (pk) =>
                     storyteller.selectedCards!.filter(
-                        (c) => players[pk].selectedCards?.includes(c) ?? 0
+                        (c) => participants[pk].selectedCards?.includes(c) ?? 0
                     ).length === 3
             );
 
             const update = playersKeys.reduce(
                 (prev, pk) => {
-                    const player = players[pk];
-                    const playerTurn = players[player.playerId];
+                    const player = participants[pk];
+                    const playerTurn = participants[player.playerId];
 
                     const speed =
                         player.role === PlayerRole.gremlin
@@ -143,7 +144,7 @@ function createMockContext(
     const game = overrides.game ?? createMockGame({ status: 'running' });
     const turn = overrides.turn ?? {
         status: 'stPicksCards' as GameTurnStatus,
-        players: {},
+        participants: {},
     };
     const playerTurn = overrides.playerTurn ?? {
         playerId: 'player-0',
@@ -159,9 +160,9 @@ function createMockContext(
         game.turns[game.turns.length - 1] = turn;
     }
 
-    // Ensure the playerTurn is in the turn's players
-    if (!turn.players[player.id]) {
-        turn.players[player.id] = playerTurn;
+    // Ensure the playerTurn is in the turn's participants
+    if (!turn.participants[player.id]) {
+        turn.participants[player.id] = playerTurn;
     }
 
     return { game, turn, playerTurn, player };
@@ -213,7 +214,7 @@ describe('Workflow Transitions', () => {
 
         it('should transition when storyteller has written a story', () => {
             const context = createMockContext({
-                turn: { status: 'stWriteStory', players: {} },
+                turn: { status: 'stWriteStory', participants: {} },
                 playerTurn: {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -227,7 +228,7 @@ describe('Workflow Transitions', () => {
 
         it('should NOT transition when story is empty', () => {
             const context = createMockContext({
-                turn: { status: 'stWriteStory', players: {} },
+                turn: { status: 'stWriteStory', participants: {} },
                 playerTurn: {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -245,7 +246,7 @@ describe('Workflow Transitions', () => {
             const context = createMockContext({
                 turn: {
                     status: 'pEstimate',
-                    players: {
+                    participants: {
                         'player-0': {
                             playerId: 'player-0',
                             role: PlayerRole.storyteller,
@@ -274,7 +275,7 @@ describe('Workflow Transitions', () => {
             const context = createMockContext({
                 turn: {
                     status: 'pEstimate',
-                    players: {
+                    participants: {
                         'player-0': {
                             playerId: 'player-0',
                             role: PlayerRole.storyteller,
@@ -302,7 +303,7 @@ describe('Workflow Transitions', () => {
             const context = createMockContext({
                 turn: {
                     status: 'pEstimate',
-                    players: {
+                    participants: {
                         'player-0': {
                             playerId: 'player-0',
                             role: PlayerRole.storyteller,
@@ -323,7 +324,7 @@ describe('Workflow Transitions', () => {
             const context = createMockContext({
                 turn: {
                     status: 'pPicksCards',
-                    players: {
+                    participants: {
                         'player-0': {
                             playerId: 'player-0',
                             role: PlayerRole.storyteller,
@@ -355,7 +356,7 @@ describe('Workflow Transitions', () => {
             const context = createMockContext({
                 turn: {
                     status: 'pPicksCards',
-                    players: {
+                    participants: {
                         'player-0': {
                             playerId: 'player-0',
                             role: PlayerRole.storyteller,
@@ -384,7 +385,7 @@ describe('Workflow Transitions', () => {
             const game = createMockGame({ status: 'running' });
             const turn: GameTurn = {
                 status: 'pPicksCards',
-                players: {
+                participants: {
                     'player-0': {
                         playerId: 'player-0',
                         role: PlayerRole.storyteller,
@@ -437,7 +438,7 @@ describe('Workflow Transitions', () => {
             for (let i = 0; i < 10; i++) {
                 game.turns.push({
                     status: 'turnEnded',
-                    players: {},
+                    participants: {},
                 });
             }
             const context = createMockContext({ game });
@@ -449,7 +450,7 @@ describe('Workflow Transitions', () => {
             for (let i = 0; i < 5; i++) {
                 game.turns.push({
                     status: 'turnEnded',
-                    players: {},
+                    participants: {},
                 });
             }
             const context = createMockContext({ game });

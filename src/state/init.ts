@@ -3,7 +3,13 @@ import './workflows';
 import { $game, gameEvents, joinFx } from './game';
 import { $participant } from './player';
 import { v4 as uuid } from 'uuid';
-import { Game, GamePlayersTurn, GameTurn, Player, PlayerRole } from './types';
+import {
+    Game,
+    GameParticipantsTurn,
+    GameTurn,
+    Player,
+    PlayerRole,
+} from './types';
 
 export const newGameFx = attach({
     source: { $participant },
@@ -14,11 +20,11 @@ export const newGameFx = attach({
                 id,
                 createdAt: new Date().getTime(),
                 status: 'lobby',
-                players: {},
+                participants: {},
                 turns: [],
             };
             if ($participant) {
-                game.players = { [$participant.id]: $participant };
+                game.participants = { [$participant.id]: $participant };
             }
             return game;
         }
@@ -29,25 +35,28 @@ export const newTurnFx = attach({
     source: $game,
     effect: createEffect((game: Game | null): GameTurn | undefined => {
         if (!game) return;
-        const pkeys = Object.keys(game.players);
+        const pkeys = Object.keys(game.participants);
         const randomIndex = Math.floor(Math.random() * pkeys.length);
         const turn: GameTurn = {
             status: 'stPicksCards',
-            players: Object.keys(game.players).reduce((prev, pkey, i) => {
-                const previousScore =
-                    game.turns[game.turns.length - 1]?.players?.[pkey]?.score ??
-                    0;
+            participants: Object.keys(game.participants).reduce(
+                (prev, pkey, i) => {
+                    const previousScore =
+                        game.turns[game.turns.length - 1]?.participants?.[pkey]
+                            ?.score ?? 0;
 
-                prev[pkey] = {
-                    playerId: pkey,
-                    score: previousScore,
-                    role:
-                        randomIndex === i
-                            ? PlayerRole.storyteller
-                            : PlayerRole.gremlin,
-                };
-                return prev;
-            }, {} as GamePlayersTurn),
+                    prev[pkey] = {
+                        playerId: pkey,
+                        score: previousScore,
+                        role:
+                            randomIndex === i
+                                ? PlayerRole.storyteller
+                                : PlayerRole.gremlin,
+                    };
+                    return prev;
+                },
+                {} as GameParticipantsTurn
+            ),
         };
         return turn;
     }),
@@ -75,7 +84,7 @@ sample({
         return (
             game !== null &&
             participant !== null &&
-            !game.players[participant.id]
+            !game.participants[participant.id]
         );
     },
     fn: (participant, game) => ({ participant, gameId: game!.id }),

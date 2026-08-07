@@ -1,7 +1,7 @@
 import { gameEvents, workflows } from './game';
 import {
     Game,
-    GamePlayersTurn,
+    GameParticipantsTurn,
     GameTurn,
     PlayerRole,
     PlayerTurn,
@@ -13,7 +13,7 @@ const deriveContext = (game: Game | null) => {
     const participant = $participant.getState();
     const turn: GameTurn | undefined = game?.turns?.[game?.turns?.length - 1];
     const playerTurn: PlayerTurn | undefined =
-        turn?.players?.[participant?.id ?? ''];
+        turn?.participants?.[participant?.id ?? ''];
     return {
         game,
         turn,
@@ -42,10 +42,11 @@ workflows({
             from: 'pEstimate',
             context: deriveContext,
             filter: ({ turn }) =>
-                Object.keys(turn?.players ?? {}).every(
+                Object.keys(turn?.participants ?? {}).every(
                     (pk) =>
-                        turn?.players?.[pk].role === PlayerRole.storyteller ||
-                        !!turn?.players?.[pk]?.estimateVisibleCards
+                        turn?.participants?.[pk].role ===
+                            PlayerRole.storyteller ||
+                        !!turn?.participants?.[pk]?.estimateVisibleCards
                 ),
             next: 'pPicksCards',
         },
@@ -53,14 +54,15 @@ workflows({
             from: 'pPicksCards',
             context: deriveContext,
             filter: ({ turn }) =>
-                Object.keys(turn?.players ?? {}).every(
+                Object.keys(turn?.participants ?? {}).every(
                     (pk) =>
-                        turn?.players?.[pk].role === PlayerRole.storyteller ||
-                        !!turn?.players?.[pk]?.selectedCardsTime
+                        turn?.participants?.[pk].role ===
+                            PlayerRole.storyteller ||
+                        !!turn?.participants?.[pk]?.selectedCardsTime
                 ),
             logic: ({ game }) => {
                 const gameTurn = game.turns[game.turns.length - 1];
-                const players = gameTurn.players;
+                const players = gameTurn.participants;
                 const playersKeys = Object.keys(players);
                 const storyteller =
                     players[
@@ -114,9 +116,9 @@ workflows({
                     };
 
                     return prev;
-                }, {} as GamePlayersTurn);
+                }, {} as GameParticipantsTurn);
 
-                return () => gameEvents.updateTurnPlayers(update);
+                return () => gameEvents.updateTurnParticipants(update);
             },
             next: 'turnEnded',
         },

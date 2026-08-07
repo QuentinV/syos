@@ -16,7 +16,7 @@ function togglePlayerReadyReducer(
     playerId: string
 ): Game | null {
     if (!game) return null;
-    game.players[playerId].ready = !game.players[playerId].ready;
+    game.participants[playerId].ready = !game.participants[playerId].ready;
     return { ...game };
 }
 
@@ -45,11 +45,11 @@ function newPlayerTurnReducer(
 ): Game | null {
     if (!game) return null;
     const turn = game.turns[game.turns.length - 1];
-    if (!turn || turn.players[player.id]) return game;
-    const hasStoryteller = Object.keys(turn.players).some(
-        (k) => turn.players[k].role === PlayerRole.storyteller
+    if (!turn || turn.participants[player.id]) return game;
+    const hasStoryteller = Object.keys(turn.participants).some(
+        (k) => turn.participants[k].role === PlayerRole.storyteller
     );
-    turn.players[player.id] = {
+    turn.participants[player.id] = {
         playerId: player.id,
         role: hasStoryteller ? PlayerRole.gremlin : PlayerRole.storyteller,
         score: 0,
@@ -63,7 +63,7 @@ function setDisplayedCardsReducer(
 ): Game | null {
     if (!game) return null;
     const turn = game.turns[game.turns.length - 1];
-    const playerTurn = turn?.players?.[payload.playerId];
+    const playerTurn = turn?.participants?.[payload.playerId];
     if (!playerTurn) return game;
     playerTurn.displayedCards = payload.cardIndexes;
     playerTurn.displayedCardsTime = Date.now();
@@ -76,7 +76,7 @@ function selectCardReducer(
 ): Game | null {
     if (!game) return null;
     const turn = game.turns[game.turns.length - 1];
-    const playerTurn = turn?.players?.[payload.playerId];
+    const playerTurn = turn?.participants?.[payload.playerId];
     if (!playerTurn) return game;
     playerTurn.selectedCards = [
         ...new Set([...(playerTurn.selectedCards ?? []), payload.cardIndex]),
@@ -90,7 +90,7 @@ function setTimeEstimateReducer(
 ): Game | null {
     if (!game) return null;
     const turn = game.turns[game.turns.length - 1];
-    const playerTurn = turn?.players?.[payload.playerId];
+    const playerTurn = turn?.participants?.[payload.playerId];
     if (!playerTurn) return game;
     playerTurn.estimateVisibleCards = payload.estimate;
     return { ...game };
@@ -113,9 +113,10 @@ function updatePlayersTurnReducer(
 ): Game | null {
     if (!game) return null;
     Object.keys(playersTurn).forEach((pk) => {
-        const playerTurn = game.turns[game.turns.length - 1]?.players?.[pk];
+        const playerTurn =
+            game.turns[game.turns.length - 1]?.participants?.[pk];
         if (!playerTurn) return;
-        game.turns[game.turns.length - 1].players[pk] = {
+        game.turns[game.turns.length - 1].participants[pk] = {
             ...playerTurn,
             ...playersTurn[pk],
         };
@@ -133,19 +134,19 @@ describe('Game Reducers', () => {
     describe('togglePlayerReady', () => {
         it('should toggle a player from not ready to ready', () => {
             const result = togglePlayerReadyReducer(game, 'player-0');
-            expect(result!.players['player-0'].ready).toBe(true);
+            expect(result!.participants['player-0'].ready).toBe(true);
         });
 
         it('should toggle a player from ready to not ready', () => {
-            game.players['player-0'].ready = true;
+            game.participants['player-0'].ready = true;
             const result = togglePlayerReadyReducer(game, 'player-0');
-            expect(result!.players['player-0'].ready).toBe(false);
+            expect(result!.participants['player-0'].ready).toBe(false);
         });
 
         it('should not affect other players', () => {
             const result = togglePlayerReadyReducer(game, 'player-0');
-            expect(result!.players['player-1'].ready).toBe(false);
-            expect(result!.players['player-2'].ready).toBe(false);
+            expect(result!.participants['player-1'].ready).toBe(false);
+            expect(result!.participants['player-2'].ready).toBe(false);
         });
 
         it('should return null if game is null', () => {
@@ -175,7 +176,7 @@ describe('Game Reducers', () => {
         it('should add a new turn to the game', () => {
             const turn: GameTurn = {
                 status: 'stPicksCards',
-                players: {},
+                participants: {},
             };
             const result = newTurnReducer(game, turn);
             expect(result!.turns).toHaveLength(1);
@@ -183,8 +184,14 @@ describe('Game Reducers', () => {
         });
 
         it('should append multiple turns', () => {
-            const turn1: GameTurn = { status: 'stPicksCards', players: {} };
-            const turn2: GameTurn = { status: 'stWriteStory', players: {} };
+            const turn1: GameTurn = {
+                status: 'stPicksCards',
+                participants: {},
+            };
+            const turn2: GameTurn = {
+                status: 'stWriteStory',
+                participants: {},
+            };
             const r1 = newTurnReducer(game, turn1);
             const r2 = newTurnReducer(r1, turn2);
             expect(r2!.turns).toHaveLength(2);
@@ -198,30 +205,39 @@ describe('Game Reducers', () => {
 
     describe('newPlayerTurn', () => {
         it('should assign storyteller role to the first player', () => {
-            const turn: GameTurn = { status: 'stPicksCards', players: {} };
+            const turn: GameTurn = {
+                status: 'stPicksCards',
+                participants: {},
+            };
             const withTurn = newTurnReducer(game, turn);
             const result = newPlayerTurnReducer(withTurn, { id: 'player-0' });
-            expect(result!.turns[0].players['player-0'].role).toBe(
+            expect(result!.turns[0].participants['player-0'].role).toBe(
                 PlayerRole.storyteller
             );
         });
 
         it('should assign gremlin role to subsequent players', () => {
-            const turn: GameTurn = { status: 'stPicksCards', players: {} };
+            const turn: GameTurn = {
+                status: 'stPicksCards',
+                participants: {},
+            };
             const withTurn = newTurnReducer(game, turn);
             const r1 = newPlayerTurnReducer(withTurn, { id: 'player-0' });
             const r2 = newPlayerTurnReducer(r1, { id: 'player-1' });
-            expect(r2!.turns[0].players['player-1'].role).toBe(
+            expect(r2!.turns[0].participants['player-1'].role).toBe(
                 PlayerRole.gremlin
             );
         });
 
         it('should not add duplicate player', () => {
-            const turn: GameTurn = { status: 'stPicksCards', players: {} };
+            const turn: GameTurn = {
+                status: 'stPicksCards',
+                participants: {},
+            };
             const withTurn = newTurnReducer(game, turn);
             const r1 = newPlayerTurnReducer(withTurn, { id: 'player-0' });
             const r2 = newPlayerTurnReducer(r1, { id: 'player-0' });
-            expect(Object.keys(r2!.turns[0].players)).toHaveLength(1);
+            expect(Object.keys(r2!.turns[0].participants)).toHaveLength(1);
         });
     });
 
@@ -229,7 +245,7 @@ describe('Game Reducers', () => {
         it('should set displayed cards and timestamp', () => {
             const turn: GameTurn = {
                 status: 'stPicksCards',
-                players: {
+                participants: {
                     'player-0': {
                         playerId: 'player-0',
                         role: PlayerRole.storyteller,
@@ -243,11 +259,11 @@ describe('Game Reducers', () => {
                 playerId: 'player-0',
                 cardIndexes: [1, 2, 3],
             });
-            expect(result!.turns[0].players['player-0'].displayedCards).toEqual(
-                [1, 2, 3]
-            );
             expect(
-                result!.turns[0].players['player-0'].displayedCardsTime
+                result!.turns[0].participants['player-0'].displayedCards
+            ).toEqual([1, 2, 3]);
+            expect(
+                result!.turns[0].participants['player-0'].displayedCardsTime
             ).toBeGreaterThanOrEqual(before);
         });
     });
@@ -256,7 +272,7 @@ describe('Game Reducers', () => {
         it('should add a card to selectedCards', () => {
             const turn: GameTurn = {
                 status: 'stPicksCards',
-                players: {
+                participants: {
                     'player-0': {
                         playerId: 'player-0',
                         role: PlayerRole.storyteller,
@@ -269,13 +285,15 @@ describe('Game Reducers', () => {
                 playerId: 'player-0',
                 cardIndex: 5,
             });
-            expect(r1!.turns[0].players['player-0'].selectedCards).toEqual([5]);
+            expect(r1!.turns[0].participants['player-0'].selectedCards).toEqual(
+                [5]
+            );
         });
 
         it('should not add duplicate cards', () => {
             const turn: GameTurn = {
                 status: 'stPicksCards',
-                players: {
+                participants: {
                     'player-0': {
                         playerId: 'player-0',
                         role: PlayerRole.storyteller,
@@ -292,7 +310,9 @@ describe('Game Reducers', () => {
                 playerId: 'player-0',
                 cardIndex: 5,
             });
-            expect(r2!.turns[0].players['player-0'].selectedCards).toEqual([5]);
+            expect(r2!.turns[0].participants['player-0'].selectedCards).toEqual(
+                [5]
+            );
         });
     });
 
@@ -300,7 +320,7 @@ describe('Game Reducers', () => {
         it('should set the estimate for a player', () => {
             const turn: GameTurn = {
                 status: 'pEstimate',
-                players: {
+                participants: {
                     'player-1': {
                         playerId: 'player-1',
                         role: PlayerRole.gremlin,
@@ -314,7 +334,7 @@ describe('Game Reducers', () => {
                 estimate: 5,
             });
             expect(
-                result!.turns[0].players['player-1'].estimateVisibleCards
+                result!.turns[0].participants['player-1'].estimateVisibleCards
             ).toBe(5);
         });
     });
@@ -323,7 +343,7 @@ describe('Game Reducers', () => {
         it('should update the current turn status', () => {
             const turn: GameTurn = {
                 status: 'stPicksCards',
-                players: {},
+                participants: {},
             };
             const withTurn = newTurnReducer(game, turn);
             const result = setGameTurnStatusReducer(withTurn, 'stWriteStory');
@@ -340,7 +360,7 @@ describe('Game Reducers', () => {
         it('should update multiple player turns', () => {
             const turn: GameTurn = {
                 status: 'turnEnded',
-                players: {
+                participants: {
                     'player-0': {
                         playerId: 'player-0',
                         role: PlayerRole.storyteller,
@@ -358,10 +378,10 @@ describe('Game Reducers', () => {
                 'player-0': { score: 50, speed: 0.5 },
                 'player-1': { score: 30, speed: 0.8 },
             });
-            expect(result!.turns[0].players['player-0'].score).toBe(50);
-            expect(result!.turns[0].players['player-0'].speed).toBe(0.5);
-            expect(result!.turns[0].players['player-1'].score).toBe(30);
-            expect(result!.turns[0].players['player-1'].speed).toBe(0.8);
+            expect(result!.turns[0].participants['player-0'].score).toBe(50);
+            expect(result!.turns[0].participants['player-0'].speed).toBe(0.5);
+            expect(result!.turns[0].participants['player-1'].score).toBe(30);
+            expect(result!.turns[0].participants['player-1'].speed).toBe(0.8);
         });
     });
 });

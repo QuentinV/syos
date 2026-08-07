@@ -39,14 +39,14 @@ export const {
             const lastIndex = game.turns.length - 1;
             if (lastIndex < 0) return game;
             const turn = game.turns[lastIndex];
-            if (turn.players[player.id]) return game;
-            const hasStoryteller = Object.keys(turn.players).some(
-                (k) => turn.players[k].role === PlayerRole.storyteller
+            if (turn.participants[player.id]) return game;
+            const hasStoryteller = Object.keys(turn.participants).some(
+                (k) => turn.participants[k].role === PlayerRole.storyteller
             );
             const updatedTurn = {
                 ...turn,
-                players: {
-                    ...turn.players,
+                participants: {
+                    ...turn.participants,
                     [player.id]: {
                         playerId: player.id,
                         role: hasStoryteller
@@ -69,12 +69,12 @@ export const {
             const lastIndex = game.turns.length - 1;
             if (lastIndex < 0) return game;
             const turn = game.turns[lastIndex];
-            const playerTurn = turn.players[state.playerId];
+            const playerTurn = turn.participants[state.playerId];
             if (!playerTurn) return game;
             const updatedTurn = {
                 ...turn,
-                players: {
-                    ...turn.players,
+                participants: {
+                    ...turn.participants,
                     [state.playerId]: {
                         ...playerTurn,
                         displayedCards: state.cardIndexes,
@@ -95,12 +95,12 @@ export const {
             const lastIndex = game.turns.length - 1;
             if (lastIndex < 0) return game;
             const turn = game.turns[lastIndex];
-            const playerTurn = turn.players[state.playerId];
+            const playerTurn = turn.participants[state.playerId];
             if (!playerTurn) return game;
             const updatedTurn = {
                 ...turn,
-                players: {
-                    ...turn.players,
+                participants: {
+                    ...turn.participants,
                     [state.playerId]: {
                         ...playerTurn,
                         selectedCards: [
@@ -125,12 +125,12 @@ export const {
             const lastIndex = game.turns.length - 1;
             if (lastIndex < 0) return game;
             const turn = game.turns[lastIndex];
-            const playerTurn = turn.players[state.playerId];
+            const playerTurn = turn.participants[state.playerId];
             if (!playerTurn) return game;
             const updatedTurn = {
                 ...turn,
-                players: {
-                    ...turn.players,
+                participants: {
+                    ...turn.participants,
                     [state.playerId]: {
                         ...playerTurn,
                         estimateVisibleCards: state.estimate,

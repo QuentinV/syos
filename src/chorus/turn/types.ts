@@ -14,10 +14,10 @@ export interface Participant {
     ready: boolean;
 }
 
-/** A single turn. `TStatus` is the app-specific turn status; `TTurnData` is the per-player data. */
+/** A single turn. `TStatus` is the app-specific turn status; `TTurnData` is the per-participant data. */
 export interface Turn<TStatus extends string, TTurnData> {
     status: TStatus;
-    players: { [playerId: string]: TTurnData };
+    participants: { [participantId: string]: TTurnData };
 }
 
 /** Global session lifecycle status (fixed enum). */
@@ -26,7 +26,7 @@ export type SessionStatus = 'lobby' | 'running' | 'finished';
 /** The full state of a turn-based session. */
 export interface TurnSessionState<TStatus extends string, TTurnData> {
     id: string;
-    players: { [playerId: string]: Participant };
+    participants: { [participantId: string]: Participant };
     turns: Turn<TStatus, TTurnData>[];
     status: SessionStatus;
     createdAt: number;

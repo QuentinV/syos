@@ -14,7 +14,7 @@ function evaluateWorkflows(peer: MockPeer<Game>): void {
     const turn = state.turns[state.turns.length - 1];
     if (!turn) return;
     const playerId = peerIdToPlayerId(peer.peerId);
-    const playerTurn = turn.players[playerId];
+    const playerTurn = turn.participants[playerId];
     if (!playerTurn) return;
 
     const context = {
@@ -42,10 +42,10 @@ function evaluateWorkflows(peer: MockPeer<Game>): void {
     // pEstimate → pPicksCards
     if (
         turn.status === 'pEstimate' &&
-        Object.keys(turn.players).every(
+        Object.keys(turn.participants).every(
             (pk) =>
-                turn.players[pk].role === PlayerRole.storyteller ||
-                !!turn.players[pk]?.estimateVisibleCards
+                turn.participants[pk].role === PlayerRole.storyteller ||
+                !!turn.participants[pk]?.estimateVisibleCards
         )
     ) {
         turn.status = 'pPicksCards';
@@ -55,10 +55,10 @@ function evaluateWorkflows(peer: MockPeer<Game>): void {
     // pPicksCards → turnEnded
     if (
         turn.status === 'pPicksCards' &&
-        Object.keys(turn.players).every(
+        Object.keys(turn.participants).every(
             (pk) =>
-                turn.players[pk].role === PlayerRole.storyteller ||
-                !!turn.players[pk]?.selectedCardsTime
+                turn.participants[pk].role === PlayerRole.storyteller ||
+                !!turn.participants[pk]?.selectedCardsTime
         )
     ) {
         turn.status = 'turnEnded';
@@ -92,8 +92,8 @@ function applyEvent(
         case 'selectCard': {
             const { playerId, cardIndex } = payload;
             const turn = state.turns[state.turns.length - 1];
-            if (!turn || !turn.players[playerId]) return;
-            const playerTurn = turn.players[playerId];
+            if (!turn || !turn.participants[playerId]) return;
+            const playerTurn = turn.participants[playerId];
             playerTurn.selectedCards = [
                 ...new Set([...(playerTurn.selectedCards ?? []), cardIndex]),
             ];
@@ -103,17 +103,17 @@ function applyEvent(
         case 'setDisplayedCards': {
             const { playerId, cardIndexes } = payload;
             const turn = state.turns[state.turns.length - 1];
-            if (!turn || !turn.players[playerId]) return;
-            turn.players[playerId].displayedCards = cardIndexes;
-            turn.players[playerId].displayedCardsTime = Date.now();
+            if (!turn || !turn.participants[playerId]) return;
+            turn.participants[playerId].displayedCards = cardIndexes;
+            turn.participants[playerId].displayedCardsTime = Date.now();
             peer.setState({ ...state });
             break;
         }
         case 'setTimeEstimate': {
             const { playerId, estimate } = payload;
             const turn = state.turns[state.turns.length - 1];
-            if (!turn || !turn.players[playerId]) return;
-            turn.players[playerId].estimateVisibleCards = estimate;
+            if (!turn || !turn.participants[playerId]) return;
+            turn.participants[playerId].estimateVisibleCards = estimate;
             peer.setState({ ...state });
             break;
         }
@@ -125,12 +125,15 @@ function applyEvent(
             peer.setState({ ...state });
             break;
         }
-        case 'updateTurnPlayers': {
+        case 'updateTurnParticipants': {
             const turn = state.turns[state.turns.length - 1];
             if (!turn) return;
             Object.keys(payload).forEach((pk) => {
-                if (turn.players[pk]) {
-                    turn.players[pk] = { ...turn.players[pk], ...payload[pk] };
+                if (turn.participants[pk]) {
+                    turn.participants[pk] = {
+                        ...turn.participants[pk],
+                        ...payload[pk],
+                    };
                 }
             });
             peer.setState({ ...state });
@@ -199,7 +202,7 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'pEstimate',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -252,7 +255,7 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'stPicksCards',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -285,22 +288,22 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
         alice.broadcast(secondPick);
 
         // Both peers should have selectedCards = [1, 2]
-        const aliceTurn = alice.getState()!.turns[0].players['player-0'];
+        const aliceTurn = alice.getState()!.turns[0].participants['player-0'];
         expect(aliceTurn.selectedCards).toEqual([1, 2]);
 
-        const bobTurn = bob.getState()!.turns[0].players['player-0'];
+        const bobTurn = bob.getState()!.turns[0].participants['player-0'];
         expect(bobTurn.selectedCards).toEqual([1, 2]);
     });
 
     it('should converge when events arrive out of order across peers', () => {
         // Causal ordering: setStatus should be applied before
-        // updateTurnPlayers because the score update depends on the turn
+        // updateTurnParticipants because the score update depends on the turn
         // having ended. The Lamport clock ensures this order.
         const initialState = createMockGameWithPlayers(3).game;
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'pPicksCards',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -331,7 +334,7 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
 
         // Alice emits two events in order:
         // 1. setStatus('turnEnded') — turn status change
-        // 2. updateTurnPlayers(...) — score calculation
+        // 2. updateTurnParticipants(...) — score calculation
         const statusEvent = {
             type: 'event',
             data: {
@@ -342,7 +345,7 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
         const scoreEvent = {
             type: 'event',
             data: {
-                eventName: 'updateTurnPlayers',
+                eventName: 'updateTurnParticipants',
                 payload: {
                     'player-0': { score: 100, speed: 0.5 },
                     'player-1': { score: 80, speed: 0.8 },
@@ -361,8 +364,8 @@ describe('Issue 1: Event Ordering (Multi-Source)', () => {
 
         expect(aliceState!.turns[0].status).toBe('turnEnded');
         expect(bobState!.turns[0].status).toBe('turnEnded');
-        expect(aliceState!.turns[0].players['player-0'].score).toBe(100);
-        expect(bobState!.turns[0].players['player-0'].score).toBe(100);
+        expect(aliceState!.turns[0].participants['player-0'].score).toBe(100);
+        expect(bobState!.turns[0].participants['player-0'].score).toBe(100);
     });
 });
 
@@ -372,7 +375,7 @@ describe('Issue 2: Reconnection & State Reconciliation', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'stPicksCards',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -423,7 +426,7 @@ describe('Issue 3: Workflow — Storyteller Disconnect', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'pEstimate',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -491,7 +494,7 @@ describe('Issue 4: State Divergence Detection', () => {
         const state2 = createMockGameWithPlayers(3).game;
 
         // Corrupt state2: mark a player ready
-        state2.players['player-0'].ready = true;
+        state2.participants['player-0'].ready = true;
 
         const checksum1 = computeGameChecksum(state1);
         const checksum2 = computeGameChecksum(state2);
@@ -516,7 +519,8 @@ describe('Issue 4: State Divergence Detection', () => {
         const before = computeGameChecksum(state);
 
         // Simulate a game event: toggle player ready
-        state.players['player-0'].ready = !state.players['player-0'].ready;
+        state.participants['player-0'].ready =
+            !state.participants['player-0'].ready;
         const after = computeGameChecksum(state);
 
         expect(before).not.toEqual(after);
@@ -527,7 +531,7 @@ describe('Issue 4: State Divergence Detection', () => {
         state.status = 'running';
         state.turns.push({
             status: 'stPicksCards',
-            players: {},
+            participants: {},
         });
 
         const before = computeGameChecksum(state);
@@ -598,7 +602,7 @@ describe('Issue 7: Clock Sync on Reconnect', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'stPicksCards',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -668,7 +672,7 @@ describe('Issue 8: catchUpResponse Clock Update', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'stPicksCards',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -804,7 +808,7 @@ describe('Issue 9: Concurrent State Modification', () => {
         initialState.status = 'running';
         const turn: GameTurn = {
             status: 'turnEnded',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -830,7 +834,7 @@ describe('Issue 9: Concurrent State Modification', () => {
         const scoreUpdate1 = {
             type: 'event',
             data: {
-                eventName: 'updateTurnPlayers',
+                eventName: 'updateTurnParticipants',
                 payload: {
                     'player-0': { score: 100 },
                     'player-1': { score: 60 },
@@ -840,7 +844,7 @@ describe('Issue 9: Concurrent State Modification', () => {
         const scoreUpdate2 = {
             type: 'event',
             data: {
-                eventName: 'updateTurnPlayers',
+                eventName: 'updateTurnParticipants',
                 payload: {
                     'player-1': { score: 70 },
                     'player-2': { score: 50 },
@@ -904,7 +908,7 @@ describe('Fix A: Checksum from New State', () => {
         initialState.status = 'running';
         initialState.turns.push({
             status: 'stPicksCards',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -957,7 +961,7 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         game.status = 'running';
         game.turns.push({
             status: 'pEstimate',
-            players: {
+            participants: {
                 'player-0': {
                     playerId: 'player-0',
                     role: PlayerRole.storyteller,
@@ -998,8 +1002,8 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
             case 'setTimeEstimate': {
                 const { playerId, estimate } = payload;
                 const turn = state.turns[state.turns.length - 1];
-                if (!turn || !turn.players[playerId]) return;
-                turn.players[playerId].estimateVisibleCards = estimate;
+                if (!turn || !turn.participants[playerId]) return;
+                turn.participants[playerId].estimateVisibleCards = estimate;
                 peer.setState({ ...state });
                 break;
             }
@@ -1011,10 +1015,10 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         if (
             turn &&
             turn.status === 'pEstimate' &&
-            Object.keys(turn.players).every(
+            Object.keys(turn.participants).every(
                 (pk) =>
-                    turn.players[pk].role === PlayerRole.storyteller ||
-                    !!turn.players[pk]?.estimateVisibleCards
+                    turn.participants[pk].role === PlayerRole.storyteller ||
+                    !!turn.participants[pk]?.estimateVisibleCards
             )
         ) {
             turn.status = 'pPicksCards';
@@ -1034,7 +1038,7 @@ describe('Fix B: Workflow Cascade No False Positive', () => {
         bob.onMessage = (message) => workflowAwareApplyEvent(bob, message);
 
         // Remove player-2's estimate so the cascade is not yet triggered
-        bob.getState()!.turns[0].players['player-2'].estimateVisibleCards =
+        bob.getState()!.turns[0].participants['player-2'].estimateVisibleCards =
             undefined;
         bob.setState({ ...bob.getState()! });
 

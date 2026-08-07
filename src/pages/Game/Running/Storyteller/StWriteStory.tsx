@@ -26,7 +26,7 @@ export const StWriteStory: React.FC = () => {
     if (!player || !playerTurn) return null;
 
     const onStoryWritten = () =>
-        gameEvents.updateTurnPlayers({
+        gameEvents.updateTurnParticipants({
             [player.id]: {
                 playerId: player.id,
                 story:

@@ -36,7 +36,7 @@ interface ScrumPlayerTurn {
 
 type ScrumState = {
     id: string;
-    players: { [playerId: string]: import('../index').Participant };
+    participants: { [participantId: string]: import('../index').Participant };
     turns: import('../index').Turn<ScrumStatus, ScrumPlayerTurn>[];
     status: import('../index').SessionStatus;
     createdAt: number;
@@ -49,7 +49,7 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
             name: 'scrum',
             defaultValue: {
                 id: 'scrum-1',
-                players: {},
+                participants: {},
                 turns: [],
                 status: 'lobby',
                 createdAt: Date.now(),
@@ -62,7 +62,7 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
         expect(session.events['endSession']).toBeDefined();
         expect(session.events['addTurn']).toBeDefined();
         expect(session.events['joinParticipant']).toBeDefined();
-        expect(session.events['updateTurnPlayers']).toBeDefined();
+        expect(session.events['updateTurnParticipants']).toBeDefined();
     });
 
     it('should join participants, start the session, add a turn, and vote', () => {
@@ -71,7 +71,7 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
             name: 'scrum',
             defaultValue: {
                 id: 'scrum-1',
-                players: {},
+                participants: {},
                 turns: [],
                 status: 'lobby',
                 createdAt: Date.now(),
@@ -88,12 +88,12 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
                     const lastIndex = state.turns.length - 1;
                     if (lastIndex < 0) return state;
                     const turn = state.turns[lastIndex];
-                    const playerTurn = turn.players[payload.playerId];
+                    const playerTurn = turn.participants[payload.playerId];
                     if (!playerTurn) return state;
                     const updatedTurn = {
                         ...turn,
-                        players: {
-                            ...turn.players,
+                        participants: {
+                            ...turn.participants,
                             [payload.playerId]: {
                                 ...playerTurn,
                                 vote: payload.vote,
@@ -125,7 +125,7 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
         });
 
         let state = session.$state.getState();
-        expect(Object.keys(state!.players)).toEqual(['dev-1', 'dev-2']);
+        expect(Object.keys(state!.participants)).toEqual(['dev-1', 'dev-2']);
 
         // Toggle ready + start session
         session.events['toggleParticipantReady']('dev-1');
@@ -135,10 +135,10 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
         state = session.$state.getState();
         expect(state!.status).toBe('running');
 
-        // Add a turn (scrum planning round) with per-player slots
+        // Add a turn (scrum planning round) with per-participant slots
         session.events['addTurn']({
             status: 'discuss',
-            players: {
+            participants: {
                 'dev-1': { playerId: 'dev-1' },
                 'dev-2': { playerId: 'dev-2' },
             },
@@ -150,7 +150,7 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
         state = session.$state.getState();
         expect(state!.turns).toHaveLength(1);
         expect(state!.turns[0].status).toBe('discuss');
-        expect(state!.turns[0].players['dev-1'].vote).toBe(5);
+        expect(state!.turns[0].participants['dev-1'].vote).toBe(5);
     });
 
     it('should keep session status fixed enum while turn status is generic', () => {
@@ -159,7 +159,7 @@ describe('Chorus — createTurnSession (Scrum Planning example)', () => {
             name: 'scrum',
             defaultValue: {
                 id: 'scrum-1',
-                players: {},
+                participants: {},
                 turns: [],
                 status: 'lobby',
                 createdAt: Date.now(),

@@ -47,9 +47,9 @@ export interface TurnSessionApi<
         addTurn: EventCallable<Turn<TStatus, TTurnData> | undefined>;
         /** Add a participant to the session (no-op if already present). */
         joinParticipant: EventCallable<Participant>;
-        /** Merge partial updates into the current turn's per-player data. */
-        updateTurnPlayers: EventCallable<{
-            [playerId: string]: Partial<TTurnData>;
+        /** Merge partial updates into the current turn's per-participant data. */
+        updateTurnParticipants: EventCallable<{
+            [participantId: string]: Partial<TTurnData>;
         }>;
     } & { [K in keyof Api]: EventCallable<any> } & {
         [key: string]: EventCallable<any>;
@@ -74,7 +74,7 @@ export interface TurnSessionApi<
  * The turn layer is opt-in: it wraps the generic `createSession` with
  * turn-session semantics (participants, turns, current-turn status workflow),
  * while remaining fully generic over the app-specific turn status values
- * and per-player data.
+ * and per-participant data.
  */
 export function createTurnSessionFactory(
     createSession: <S extends StateWithId>(
@@ -96,15 +96,15 @@ export function createTurnSessionFactory(
 
             toggleParticipantReady: (state, participantId: string) => {
                 if (!state) return null;
-                const player = state.players[participantId];
-                if (!player) return state;
+                const participant = state.participants[participantId];
+                if (!participant) return state;
                 return {
                     ...state,
-                    players: {
-                        ...state.players,
+                    participants: {
+                        ...state.participants,
                         [participantId]: {
-                            ...player,
-                            ready: !player.ready,
+                            ...participant,
+                            ready: !participant.ready,
                         },
                     },
                 };
@@ -123,37 +123,40 @@ export function createTurnSessionFactory(
 
             joinParticipant: (state, participant: Participant) => {
                 if (!state || !participant) return state;
-                if (state.players[participant.id]) return state;
+                if (state.participants[participant.id]) return state;
                 return {
                     ...state,
-                    players: {
-                        ...state.players,
+                    participants: {
+                        ...state.participants,
                         [participant.id]: participant,
                     },
                 };
             },
 
-            updateTurnPlayers: (state, updates) => {
+            updateTurnParticipants: (state, updates) => {
                 if (!state) return null;
                 const lastIndex = state.turns.length - 1;
                 if (lastIndex < 0) return state;
 
                 let changed = false;
                 const turn = state.turns[lastIndex];
-                const players = { ...turn.players };
+                const participants = { ...turn.participants };
 
                 Object.keys(updates).forEach((pk) => {
-                    const playerTurn = players[pk];
-                    if (!playerTurn) return;
-                    const merged = { ...playerTurn, ...updates[pk] };
-                    if (JSON.stringify(playerTurn) !== JSON.stringify(merged)) {
+                    const participantTurn = participants[pk];
+                    if (!participantTurn) return;
+                    const merged = { ...participantTurn, ...updates[pk] };
+                    if (
+                        JSON.stringify(participantTurn) !==
+                        JSON.stringify(merged)
+                    ) {
                         changed = true;
-                        players[pk] = merged as TTurnData;
+                        participants[pk] = merged as TTurnData;
                     }
                 });
 
                 if (!changed) return state;
-                const updatedTurn = { ...turn, players };
+                const updatedTurn = { ...turn, participants };
                 return {
                     ...state,
                     turns: [...state.turns.slice(0, lastIndex), updatedTurn],

@@ -13,10 +13,10 @@ export const Lobby: React.FC = () => {
     return (
         <GameProvider>
             <SessionLobby
-                participants={Object.keys(game.players).map((key) => ({
-                    id: game.players[key].id,
-                    name: game.players[key].name,
-                    ready: game.players[key].ready,
+                participants={Object.keys(game.participants).map((key) => ({
+                    id: game.participants[key].id,
+                    name: game.participants[key].name,
+                    ready: game.participants[key].ready,
                 }))}
                 currentParticipantId={participant?.id}
                 onToggleReady={(participantId) =>
@@ -24,8 +24,8 @@ export const Lobby: React.FC = () => {
                 }
                 onStart={() => gameEvents.startSession()}
                 canStart={
-                    !Object.keys(game.players).some(
-                        (pk) => !game.players[pk].ready
+                    !Object.keys(game.participants).some(
+                        (pk) => !game.participants[pk].ready
                     )
                 }
             />

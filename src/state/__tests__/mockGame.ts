@@ -6,7 +6,7 @@ import { Game, Player } from '../types';
 export function createMockGame(overrides: Partial<Game> = {}): Game {
     return {
         id: 'test-game-id',
-        players: {},
+        participants: {},
         turns: [],
         createdAt: Date.now(),
         status: 'lobby',
@@ -42,12 +42,12 @@ export function createMockGameWithPlayers(playerCount: number): {
         players.push(createMockPlayer(`player-${i}`));
     }
     const game = createMockGame({
-        players: players.reduce(
+        participants: players.reduce(
             (acc, p) => {
                 acc[p.id] = p;
                 return acc;
             },
-            {} as { [playerId: string]: Player }
+            {} as { [participantId: string]: Player }
         ),
     });
     return { game, players };

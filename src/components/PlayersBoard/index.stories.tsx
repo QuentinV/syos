@@ -24,7 +24,7 @@ const meta = {
                             turns: [
                                 {
                                     status: 'stPicksCards',
-                                    players: {
+                                    participants: {
                                         '123': {
                                             playerId: '123',
                                             role: PlayerRole.storyteller,
@@ -38,7 +38,7 @@ const meta = {
                                     },
                                 },
                             ],
-                            players: {
+                            participants: {
                                 '123': { name: 'P 123' },
                                 '456': { name: 'P 456 ', ready: true },
                             },

@@ -18,7 +18,7 @@ const sampleMessages: DebugMessage[] = [
         payload: {
             id: 'game-123',
             status: 'lobby',
-            players: { abc: { id: 'abc', name: 'Alice', ready: false } },
+            participants: { abc: { id: 'abc', name: 'Alice', ready: false } },
             turns: [],
             createdAt: Date.now(),
         },
@@ -28,7 +28,7 @@ const sampleMessages: DebugMessage[] = [
         direction: 'out',
         timestamp: Date.now() - 3000,
         type: 'event',
-        eventName: 'togglePlayerReady',
+        eventName: 'toggleParticipantReady',
         clock: 2,
         peerId: 'my-peer-id',
         checksum: 'game-id|lobby|0|abc:1',
