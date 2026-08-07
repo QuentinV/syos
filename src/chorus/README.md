@@ -132,6 +132,74 @@ const MyComponent = () => {
 
 `useChorusSession` throws if used outside a session `Provider`.
 
+### Context hooks
+
+Chorus provides a set of React hooks that read directly from the session context, removing the need to manually call `useChorusSession()` + `useUnit()`:
+
+```tsx
+import { useSessionState, useSessionId, useSessionPeerId } from 'chorus';
+
+const MyComponent = () => {
+    const state = useSessionState<MyState>();
+    const sessionId = useSessionId();
+    const peerId = useSessionPeerId();
+    return (
+        <div>
+            {sessionId} / {peerId} / {JSON.stringify(state)}
+        </div>
+    );
+};
+```
+
+| Hook                 | Returns          | Description                   |
+| -------------------- | ---------------- | ----------------------------- |
+| `useSessionState<T>` | `T`              | The session state store value |
+| `useSessionId`       | `string \| null` | The active session id         |
+| `useSessionPeerId`   | `string \| null` | This peer's id                |
+
+All context hooks throw if used outside a session `Provider`.
+
+### Turn hooks
+
+For turn-based sessions, Chorus provides generic hooks that read the current/previous turns and participant data from the session state:
+
+```tsx
+import { useTurn, usePreviousTurn, useTurnStatus } from 'chorus';
+
+const MyComponent = () => {
+    const turn = useTurn<MyStatus, MyTurnData>();
+    const previousTurn = usePreviousTurn<MyStatus, MyTurnData>();
+    const status = useTurnStatus<MyStatus>();
+    return <div>{status}</div>;
+};
+```
+
+```tsx
+import {
+    useParticipantTurn,
+    useTurnParticipants,
+    useTurnParticipantByPredicate,
+} from 'chorus';
+
+const MyComponent = ({ participantId }) => {
+    const myTurn = useParticipantTurn<MyTurnData>(participantId);
+    const allTurns = useTurnParticipants<MyTurnData>();
+    const hostTurn = useTurnParticipantByPredicate<MyTurnData>(
+        (turn) => turn.isHost
+    );
+    return <div>{myTurn?.score}</div>;
+};
+```
+
+| Hook                                   | Returns                   | Description                                     |
+| -------------------------------------- | ------------------------- | ----------------------------------------------- |
+| `useTurn<T, D>()`                      | `Turn<T, D> \| undefined` | The current (last) turn                         |
+| `usePreviousTurn<T, D>()`              | `Turn<T, D> \| undefined` | The previous (second-to-last) turn              |
+| `useTurnStatus<T>()`                   | `T \| null`               | The current turn's status                       |
+| `useParticipantTurn<D>(participantId)` | `D \| undefined`          | A participant's turn data in the current turn   |
+| `useTurnParticipants<D>()`             | `{ [id]: D }`             | All participants' turn data in the current turn |
+| `useTurnParticipantByPredicate<D>(fn)` | `D \| undefined`          | Find a participant's turn data by predicate     |
+
 ## Registering Reducers
 
 ```typescript
@@ -502,7 +570,8 @@ src/chorus/
 │   ├── types.ts          ← Participant, Turn, TurnSessionState, SessionStatus
 │   ├── createTurnSession.ts ← createTurnSession factory
 │   ├── participant.ts    ← createParticipantStore
-│   └── checksum.ts       ← computeTurnSessionChecksum
+│   ├── checksum.ts       ← computeTurnSessionChecksum
+│   └── hooks.ts          ← useTurn, useTurnStatus, useParticipantTurn, ...
 ├── eventLog.ts           ← append-only event log
 ├── workflow.ts           ← generic workflow engine
 ├── debug.ts              ← debug stores

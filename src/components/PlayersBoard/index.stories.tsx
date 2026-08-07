@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { PlayersBoard } from '.';
 import { fork } from 'effector';
-import { $game } from '../../state/game';
+import { GameProvider, $game, $peerId } from '../../state/game';
 import { Provider } from 'effector-react';
 import { PlayerRole } from '../../state/types';
 
@@ -46,11 +46,14 @@ const meta = {
                             status: 'running',
                         },
                     ],
+                    [$peerId, 'PEER ID'],
                 ],
             });
             return (
                 <Provider value={scope}>
-                    <Story />
+                    <GameProvider>
+                        <Story />
+                    </GameProvider>
                 </Provider>
             );
         },

@@ -5,9 +5,24 @@ export { createStorage } from './core/storage';
 export { createHooks } from './react';
 export { createWorkflowEngine } from './workflow';
 export { debug, logDebugMessage } from './debug';
-export { ChorusSessionContext, useChorusSession } from './context';
+export {
+    ChorusSessionContext,
+    useChorusSession,
+    useSessionState,
+    useSessionId,
+    useSessionPeerId,
+} from './context';
 export type { ChorusSessionContextValue } from './context';
-export { createParticipantStore, computeTurnSessionChecksum } from './turn';
+export {
+    createParticipantStore,
+    computeTurnSessionChecksum,
+    useTurn,
+    usePreviousTurn,
+    useTurnStatus,
+    useParticipantTurn,
+    useTurnParticipants,
+    useTurnParticipantByPredicate,
+} from './turn';
 export type {
     Participant,
     SessionStatus,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { gameEvents, useGame, GameProvider } from '../../../state/game';
+import { gameEvents, useGame } from '../../../state/game';
 import { $participant } from '../../../state/player';
 import { SessionLobby } from '../../../chorus';
 
@@ -11,24 +11,22 @@ export const Lobby: React.FC = () => {
     if (!game) return null;
 
     return (
-        <GameProvider>
-            <SessionLobby
-                participants={Object.keys(game.participants).map((key) => ({
-                    id: game.participants[key].id,
-                    name: game.participants[key].name,
-                    ready: game.participants[key].ready,
-                }))}
-                currentParticipantId={participant?.id}
-                onToggleReady={(participantId) =>
-                    gameEvents.toggleParticipantReady(participantId)
-                }
-                onStart={() => gameEvents.startSession()}
-                canStart={
-                    !Object.keys(game.participants).some(
-                        (pk) => !game.participants[pk].ready
-                    )
-                }
-            />
-        </GameProvider>
+        <SessionLobby
+            participants={Object.keys(game.participants).map((key) => ({
+                id: game.participants[key].id,
+                name: game.participants[key].name,
+                ready: game.participants[key].ready,
+            }))}
+            currentParticipantId={participant?.id}
+            onToggleReady={(participantId) =>
+                gameEvents.toggleParticipantReady(participantId)
+            }
+            onStart={() => gameEvents.startSession()}
+            canStart={
+                !Object.keys(game.participants).some(
+                    (pk) => !game.participants[pk].ready
+                )
+            }
+        />
     );
 };

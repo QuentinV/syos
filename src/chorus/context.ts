@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import { EventCallable, Store } from 'effector';
+import { useUnit } from 'effector-react';
 
 export interface ChorusSessionContextValue {
     sessionId: string;
@@ -25,4 +26,31 @@ export const useChorusSession = (): ChorusSessionContextValue => {
         );
     }
     return ctx;
+};
+
+/**
+ * Read the session state store from the session context.
+ * Must be used within a session Provider.
+ */
+export const useSessionState = <State = any>(): State => {
+    const { $store } = useChorusSession();
+    return useUnit($store);
+};
+
+/**
+ * Read the active session id from the session context.
+ * Must be used within a session Provider.
+ */
+export const useSessionId = (): string | null => {
+    const { $id } = useChorusSession();
+    return useUnit($id);
+};
+
+/**
+ * Read this peer's id from the session context.
+ * Must be used within a session Provider.
+ */
+export const useSessionPeerId = (): string | null => {
+    const { $peerId } = useChorusSession();
+    return useUnit($peerId);
 };

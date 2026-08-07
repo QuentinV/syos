@@ -1,10 +1,9 @@
 import React from 'react';
-import { useUnit } from 'effector-react';
-import { DebugPanel } from '../../chorus';
-import { $game } from '../../state/game';
+import { DebugPanel, useSessionState } from '../../chorus';
+import { Game } from '../../state/types';
 
 export const GameDebugPanel: React.FC = () => {
-    const game = useUnit($game);
+    const game = useSessionState<Game>();
 
     return <DebugPanel state={game} />;
 };
