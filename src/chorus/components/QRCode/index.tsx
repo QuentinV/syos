@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUnit } from 'effector-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useChorusSession } from '../../context';
 import './styles.css';
@@ -16,7 +17,9 @@ export const QRCode: React.FC<QRCodeProps> = ({
     title,
     className,
 }) => {
-    const { sessionId, peerId, getJoinUrl } = useChorusSession();
+    const { sessionId, getJoinUrl, $peerId } = useChorusSession();
+    const peerId = useUnit($peerId);
+    if (!peerId) return null;
     const url = getJoinUrl(sessionId, peerId);
 
     return (

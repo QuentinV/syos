@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUnit } from 'effector-react';
 import { useChorusSession } from '../../context';
 import { QRCode } from '../QRCode';
 import './styles.css';
@@ -24,7 +25,8 @@ export const SessionLobby: React.FC<SessionLobbyProps> = ({
     onStart,
     canStart,
 }) => {
-    const { sessionId, peerId } = useChorusSession();
+    const { sessionId, $peerId } = useChorusSession();
+    const peerId = useUnit($peerId);
 
     return (
         <div className="chorus-lobby">

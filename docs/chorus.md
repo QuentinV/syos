@@ -73,6 +73,8 @@ const MyComponent = () => {
 
 Chorus components like `QRCode` and `SessionLobby` need to know the active session (`sessionId`, `peerId`) and how to build a join URL. Instead of prop drilling, the session provides a React context via its `Provider` component.
 
+The context value exposes the session's **stable references** — the effector stores (`$store`, `$id`, `$peerId`) and the mapped events. Because effector stores and events are stable object references (their identity never changes, only their values), the context value itself stays stable: consumers read live values with `useUnit(ctx.$store)` and only re-render when the specific store they subscribe to changes.
+
 ### Configure getJoinUrl
 
 Provide a `getJoinUrl` function in the session config to customize how join URLs are built. It defaults to `${origin}/join/${sessionId}/${peerId}`.
@@ -100,15 +102,29 @@ const MyLobby = ({ participants, ... }) => (
 
 The `Provider` reads from the `$id` and `$peerId` stores (not the full `$state`), so it only re-renders when the session id or peer id changes — not on every state mutation, keeping the component tree stable during gameplay.
 
+### Context value
+
+| Property     | Type                               | Description                                               |
+| ------------ | ---------------------------------- | --------------------------------------------------------- |
+| `sessionId`  | `string`                           | The active session id (value of `$id`)                    |
+| `getJoinUrl` | `(sessionId, peerId) => string`    | Build the join URL for this session                       |
+| `checksum?`  | `(state) => string`                | Optional checksum function for divergence detection       |
+| `$store`     | `Store<any>`                       | The session state store — read with `useUnit(ctx.$store)` |
+| `$id`        | `Store<string \| null>`            | The active session id store                               |
+| `$peerId`    | `Store<string \| null>`            | This peer's ID store                                      |
+| `events`     | `{ [key: string]: EventCallable }` | Mapped effector events from `api`                         |
+
 ### useChorusSession
 
 Any component can read the session context directly:
 
 ```tsx
+import { useUnit } from 'effector-react';
 import { useChorusSession } from 'chorus';
 
 const MyComponent = () => {
-    const { sessionId, peerId, getJoinUrl } = useChorusSession();
+    const { sessionId, getJoinUrl, $peerId } = useChorusSession();
+    const peerId = useUnit($peerId);
     const url = getJoinUrl(sessionId, peerId);
     return <a href={url}>{url}</a>;
 };

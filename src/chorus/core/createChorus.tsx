@@ -284,9 +284,12 @@ export function createChorus(options: ChorusOptions = {}) {
                 <ChorusSessionContext.Provider
                     value={{
                         sessionId,
-                        peerId,
                         getJoinUrl,
                         checksum: config.checksum,
+                        $store,
+                        $id,
+                        $peerId,
+                        events,
                     }}
                 >
                     {children}

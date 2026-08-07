@@ -96,7 +96,8 @@ export interface DebugPanelProps {
 const StateTab: React.FC<DebugPanelProps> = ({ state }) => {
     const clock = useUnit(debug.$clock);
     const checksum = useUnit(debug.$checksum);
-    const { peerId, checksum: computeChecksum } = useChorusSession();
+    const { checksum: computeChecksum, $peerId } = useChorusSession();
+    const peerId = useUnit($peerId);
     const liveChecksum =
         state && computeChecksum ? computeChecksum(state) : undefined;
 

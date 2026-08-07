@@ -1,9 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { createStore } from 'effector';
 import { SessionLobby } from '.';
 import { ChorusSessionContext } from '../../context';
 
 const getJoinUrl = (sessionId: string, peerId: string) =>
     `https://example.com/join/${sessionId}/${peerId}`;
+
+const $peerId = createStore<string | null>('peer-abc');
 
 const meta = {
     title: 'chorus/components/SessionLobby',
@@ -17,8 +20,11 @@ const meta = {
             <ChorusSessionContext.Provider
                 value={{
                     sessionId: 'session-123',
-                    peerId: 'peer-abc',
                     getJoinUrl,
+                    $store: createStore(null),
+                    $id: createStore<string | null>('session-123'),
+                    $peerId,
+                    events: {},
                 }}
             >
                 <Story />

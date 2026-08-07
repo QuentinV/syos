@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DebugPanel } from '.';
-import { fork } from 'effector';
+import { createStore, fork } from 'effector';
 import { Provider } from 'effector-react';
 import { debug } from '../../debug';
 import { ChorusSessionContext } from '../../context';
@@ -66,6 +66,7 @@ const meta = {
     decorators: [
         (Story, context) => {
             const { parameters } = context;
+            const $peerId = createStore<string | null>('my-peer-id-xyz');
             const scope = fork({
                 values: [
                     [debug.$panelOpen, parameters.open ?? false],
@@ -82,11 +83,14 @@ const meta = {
                     <ChorusSessionContext.Provider
                         value={{
                             sessionId: 'game-123',
-                            peerId: 'my-peer-id-xyz',
                             getJoinUrl: (sessionId, peerId) =>
                                 `/game/${sessionId}/join/${peerId}`,
                             checksum: (state: any) =>
                                 `game-123|running|stPicksCards:2|abc:1,def:1`,
+                            $store: createStore(null),
+                            $id: createStore<string | null>('game-123'),
+                            $peerId,
+                            events: {},
                         }}
                     >
                         <Story />
