@@ -10,6 +10,7 @@ import { ToastContext } from './context';
 import { GamePage } from './pages/Game';
 import { JoinPage } from './pages/Join';
 import { GameDebugPanel } from './components/GameDebugPanel';
+import { GameProvider } from './state/game';
 
 export const App = () => {
     const toast = useRef<Toast>(null);
@@ -32,7 +33,9 @@ export const App = () => {
                     </Routes>
                 </HashRouter>
                 <Toast ref={toast} position="top-right" className="w-25rem" />
-                <GameDebugPanel />
+                <GameProvider>
+                    <GameDebugPanel />
+                </GameProvider>
             </ToastContext.Provider>
         </>
     );

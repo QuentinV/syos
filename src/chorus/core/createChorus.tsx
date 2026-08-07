@@ -282,7 +282,12 @@ export function createChorus(options: ChorusOptions = {}) {
             if (!sessionId || !peerId) return null;
             return (
                 <ChorusSessionContext.Provider
-                    value={{ sessionId, peerId, getJoinUrl }}
+                    value={{
+                        sessionId,
+                        peerId,
+                        getJoinUrl,
+                        checksum: config.checksum,
+                    }}
                 >
                     {children}
                 </ChorusSessionContext.Provider>

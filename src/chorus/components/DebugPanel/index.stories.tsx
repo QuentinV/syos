@@ -3,6 +3,7 @@ import { DebugPanel } from '.';
 import { fork } from 'effector';
 import { Provider } from 'effector-react';
 import { debug } from '../../debug';
+import { ChorusSessionContext } from '../../context';
 import { DebugMessage } from '../../types';
 
 const sampleMessages: DebugMessage[] = [
@@ -78,7 +79,18 @@ const meta = {
             });
             return (
                 <Provider value={scope}>
-                    <Story />
+                    <ChorusSessionContext.Provider
+                        value={{
+                            sessionId: 'game-123',
+                            peerId: 'my-peer-id-xyz',
+                            getJoinUrl: (sessionId, peerId) =>
+                                `/game/${sessionId}/join/${peerId}`,
+                            checksum: (state: any) =>
+                                `game-123|running|stPicksCards:2|abc:1,def:1`,
+                        }}
+                    >
+                        <Story />
+                    </ChorusSessionContext.Provider>
                 </Provider>
             );
         },
@@ -91,8 +103,6 @@ type Story = StoryObj<typeof meta>;
 export const Closed: Story = {
     args: {
         state: { id: 'game-123', status: 'running' },
-        peerId: 'my-peer-id-xyz',
-        liveChecksum: 'game-123|running|stPicksCards:2|abc:1,def:1',
     },
     parameters: { open: false },
 };
@@ -100,8 +110,6 @@ export const Closed: Story = {
 export const Open: Story = {
     args: {
         state: { id: 'game-123', status: 'running' },
-        peerId: 'my-peer-id-xyz',
-        liveChecksum: 'game-123|running|stPicksCards:2|abc:1,def:1',
     },
     parameters: { open: true },
 };
@@ -109,8 +117,6 @@ export const Open: Story = {
 export const EmptyMessages: Story = {
     args: {
         state: { id: 'game-123', status: 'running' },
-        peerId: 'my-peer-id-xyz',
-        liveChecksum: 'game-123|running|stPicksCards:2|abc:1,def:1',
     },
     parameters: { open: true, messages: [] },
 };

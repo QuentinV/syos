@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { MockPeer, createPeers } from '../../chorus/__tests__/mockPeer';
 import { createMockGameWithPlayers } from './mockGame';
 import { Game, GameTurn, PlayerRole } from '../types';
-import { computeGameChecksum } from '../checksum';
+import { computeTurnSessionChecksum as computeGameChecksum } from '../../chorus';
 
 /**
  * Simulate the workflow transition check (mirrors the logic in workflows.ts).

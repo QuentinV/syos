@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useUnit } from 'effector-react';
 import { debug } from '../../debug';
+import { useChorusSession } from '../../context';
 import { DebugMessage } from '../../types';
 import './styles.css';
 
@@ -90,17 +91,14 @@ const DebugMessageRow: React.FC<{
 
 export interface DebugPanelProps {
     state?: any;
-    peerId?: string | null;
-    liveChecksum?: string;
 }
 
-const StateTab: React.FC<DebugPanelProps> = ({
-    state,
-    peerId,
-    liveChecksum,
-}) => {
+const StateTab: React.FC<DebugPanelProps> = ({ state }) => {
     const clock = useUnit(debug.$clock);
     const checksum = useUnit(debug.$checksum);
+    const { peerId, checksum: computeChecksum } = useChorusSession();
+    const liveChecksum =
+        state && computeChecksum ? computeChecksum(state) : undefined;
 
     return (
         <div>

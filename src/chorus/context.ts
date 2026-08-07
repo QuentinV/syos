@@ -4,6 +4,7 @@ export interface ChorusSessionContextValue {
     sessionId: string;
     peerId: string;
     getJoinUrl: (sessionId: string, peerId: string) => string;
+    checksum?: (state: any) => string;
 }
 
 export const ChorusSessionContext =
