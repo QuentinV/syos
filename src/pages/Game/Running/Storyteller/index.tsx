@@ -6,12 +6,12 @@ import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 import { TurnEnded } from '../TurnEnded';
-import { useActiveParticipant, useTurn } from '../../../../chorus';
+import { useLocalParticipantTurn, useTurn } from '../../../../chorus';
 
 export const Storyteller: React.FC = () => {
     const participant = useUnit($participant);
     const turn = useTurn();
-    const playerTurn = useActiveParticipant();
+    const playerTurn = useLocalParticipantTurn();
 
     useEffect(() => {
         if (!playerTurn?.displayedCards?.length) {

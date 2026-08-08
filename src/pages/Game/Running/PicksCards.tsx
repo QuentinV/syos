@@ -3,11 +3,11 @@ import { $participant, gameEvents } from '../../../state/game';
 import { useStorytellerTurn } from '../../../state/gameHooks';
 import { GameCards } from '../../../components/GameCards';
 import { useUnit } from 'effector-react';
-import { Countdown, useActiveParticipant } from '../../../chorus';
+import { Countdown, useLocalParticipantTurn } from '../../../chorus';
 import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {
-    const playerTurn = useActiveParticipant();
+    const playerTurn = useLocalParticipantTurn();
     const [cardsVisible, setCardsVisible] = useState<boolean>(true);
     const participant = useUnit($participant);
     const storytellerTurn = useStorytellerTurn();

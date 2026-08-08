@@ -205,9 +205,9 @@ const MyComponent = () => {
 | `useParticipantTurn(participantId)` | `D \| undefined`          | A participant's turn data in the current turn                                         |
 | `useTurnParticipants()`             | `{ [id]: D }`             | All participants' turn data in the current turn                                       |
 | `useTurnParticipantByPredicate(fn)` | `D \| undefined`          | Find a participant's turn data by predicate                                           |
-| `useActiveParticipant()`            | `D \| undefined`          | The local participant's turn data (requires `participantStore` in the session config) |
+| `useLocalParticipantTurn()`         | `D \| undefined`          | The local participant's turn data (requires `participantStore` in the session config) |
 
-`useActiveParticipant` reads the local participant from the `participantStore` passed in the session config and returns their turn data:
+`useLocalParticipantTurn` reads the local participant from the `participantStore` passed in the session config and returns their turn data:
 
 ```tsx
 const session = chorus.createTurnSession<MyStatus, MyTurnData>({
@@ -218,7 +218,7 @@ const session = chorus.createTurnSession<MyStatus, MyTurnData>({
 });
 
 const MyComponent = () => {
-    const myTurn = session.useActiveParticipant();
+    const myTurn = session.useLocalParticipantTurn();
     return <div>{myTurn?.score}</div>;
 };
 ```

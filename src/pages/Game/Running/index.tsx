@@ -3,11 +3,11 @@ import { useGame } from '../../../state/game';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
 import { PlayersBoard } from '../../../components/PlayersBoard';
-import { useActiveParticipant } from '../../../chorus';
+import { useLocalParticipantTurn } from '../../../chorus';
 
 export const Running: React.FC = () => {
     const game = useGame();
-    const playerTurn = useActiveParticipant();
+    const playerTurn = useLocalParticipantTurn();
 
     if (!game || !playerTurn) return null;
 

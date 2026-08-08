@@ -20,7 +20,7 @@ export interface ChorusTurnHooks<
         predicate: (participantTurn: TTurnData) => boolean
     ) => TTurnData | undefined;
     /** The local participant's turn data in the current turn. Requires `participantStore` in the session config. */
-    useActiveParticipant: () => TTurnData | undefined;
+    useLocalParticipantTurn: () => TTurnData | undefined;
     /** The local participant ({ id, name, ready }). Requires `participantStore` in the session config. */
     useLocalParticipant: () => Participant | undefined;
 }
@@ -36,7 +36,7 @@ export const defaultTurnHooks: ChorusTurnHooks = {
     useParticipantTurn: () => undefined,
     useTurnParticipants: () => ({}),
     useTurnParticipantByPredicate: () => undefined,
-    useActiveParticipant: () => undefined,
+    useLocalParticipantTurn: () => undefined,
     useLocalParticipant: () => undefined,
 };
 
@@ -127,9 +127,9 @@ export const useTurnParticipantByPredicate = <TTurnData = any>(
  * Requires `participantStore` in the session config.
  * Must be used within a turn session Provider.
  */
-export const useActiveParticipant = <TTurnData = any>():
+export const useLocalParticipantTurn = <TTurnData = any>():
     TTurnData | undefined =>
-    useChorusTurn<string, TTurnData>().useActiveParticipant();
+    useChorusTurn<string, TTurnData>().useLocalParticipantTurn();
 
 /**
  * Read the local participant ({ id, name, ready }) from the turn session context.

@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { $participant, gameEvents } from '../../../../state/game';
 import { usePreviousStory } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
-import { Countdown, useActiveParticipant, useTurn } from '../../../../chorus';
+import {
+    Countdown,
+    useLocalParticipantTurn,
+    useTurn,
+} from '../../../../chorus';
 import { useUnit } from 'effector-react';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputTextarea } from 'primereact/inputtextarea';
@@ -12,7 +16,7 @@ import { PlayersStatus } from '../PlayersStatus';
 export const StWriteStory: React.FC = () => {
     const player = useUnit($participant);
     const turn = useTurn();
-    const playerTurn = useActiveParticipant();
+    const playerTurn = useLocalParticipantTurn();
     const previousStory = usePreviousStory();
     const [storyValue, setStoryValue] = useState<string>(
         playerTurn?.story ?? ''

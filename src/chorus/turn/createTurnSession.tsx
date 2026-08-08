@@ -40,7 +40,7 @@ export interface TurnSessionConfig<
      * Storage key for the local participant store. When provided, a
      * participant store is created internally and exposed on the session
      * API as `$participant` / `setParticipantName`, enabling the
-     * `useActiveParticipant` hook.
+     * `useLocalParticipantTurn` hook.
      */
     participantStorageKey?: string;
 }
@@ -199,7 +199,7 @@ export function createTurnSessionFactory(
         // -- Typed turn hooks: stable closures binding TStatus/TTurnData.
         // They're provided via the dedicated turn context and also returned
         // directly on the session API for convenience.
-        // Empty participant store fallback so useActiveParticipant works even
+        // Empty participant store fallback so useLocalParticipantTurn works even
         // without config.participantStorageKey (returns undefined turn).
         const emptyParticipantStore = createStore<Participant | null>(null);
 
@@ -213,7 +213,7 @@ export function createTurnSessionFactory(
             useTurnParticipantByPredicate: (
                 predicate: (participantTurn: TTurnData) => boolean
             ) => useTurnParticipantByPredicate<TTurnData>(predicate),
-            useActiveParticipant: () => {
+            useLocalParticipantTurn: () => {
                 const $participant =
                     participantStore?.$participant ?? emptyParticipantStore;
                 const participant = useUnit($participant);

@@ -22,7 +22,7 @@ export {
     useParticipantTurn,
     useTurnParticipants,
     useTurnParticipantByPredicate,
-    useActiveParticipant,
+    useLocalParticipantTurn,
     useLocalParticipant,
     ChorusTurnContext,
     defaultTurnHooks,

@@ -7,12 +7,12 @@ import { getRandomCards } from '../../../../utils/getRandomCards';
 import { PEstimate } from './PEstimate';
 import { TurnEnded } from '../TurnEnded';
 import { PicksCards } from '../PicksCards';
-import { useActiveParticipant, useTurn } from '../../../../chorus';
+import { useLocalParticipantTurn, useTurn } from '../../../../chorus';
 
 export const Player: React.FC = () => {
     const participant = useUnit($participant);
     const turn = useTurn();
-    const playerTurn = useActiveParticipant();
+    const playerTurn = useLocalParticipantTurn();
     const storytellerTurn = useStorytellerTurn();
 
     if (!participant || !turn || !playerTurn || !storytellerTurn) return null;
