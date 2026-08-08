@@ -46,6 +46,8 @@ export { DebugPanel } from './components/DebugPanel';
 export type { DebugPanelProps } from './components/DebugPanel';
 export { SessionLobby } from './components/SessionLobby';
 export type { SessionLobbyParticipant } from './components/SessionLobby';
+export { SessionPage } from './components/SessionPage';
+export type { SessionPageProps } from './components/SessionPage';
 export { JoinSession } from './components/JoinSession';
 export type { JoinSessionProps } from './components/JoinSession';
 export {

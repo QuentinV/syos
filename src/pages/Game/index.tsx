@@ -1,31 +1,30 @@
 import '../../state/init';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useParams } from 'react-router';
 import { initGame, GameProvider } from '../../state/game';
 import { Lobby } from './Lobby';
 import { End } from './End';
 import { Running } from './Running';
-import { useSessionState } from '../../chorus';
+import { SessionPage, useSessionState } from '../../chorus';
 
 export interface GamePageProps {
     id?: string;
     init?: boolean;
 }
 
-export const GamePage: React.FC<GamePageProps> = ({ id, init = true }) => {
+export const GamePage: React.FC<GamePageProps> = ({
+    id: idProp,
+    init = true,
+}) => {
     const { id: idParams } = useParams();
-    const i = id ?? idParams;
-
-    useEffect(() => {
-        if (init) {
-            initGame(i ?? '');
-        }
-    }, [i, init]);
+    const id = idProp ?? idParams;
 
     return (
-        <GameProvider>
-            <GameContent />
-        </GameProvider>
+        <SessionPage id={id} init={init} initSession={initGame}>
+            <GameProvider>
+                <GameContent />
+            </GameProvider>
+        </SessionPage>
     );
 };
 
