@@ -6,7 +6,6 @@ const chorus = createChorus({
 });
 
 export const {
-    joinFx,
     $peerId,
     $id: $gameId,
     $state: $game,
