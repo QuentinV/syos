@@ -2,7 +2,7 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { GamePage, GamePageProps } from '.';
 import { fork } from 'effector';
-import { $game, $peerId } from '../../state/game';
+import { $game, $gameId, $peerId } from '../../state/game';
 import { Provider } from 'effector-react';
 import { GameStatus, GameTurnStatus, PlayerRole } from '../../state/types';
 import { $participant } from '../../state/player';
@@ -84,6 +84,7 @@ const GamePageWrapper: React.FC<GamePageWrapperProps> = ({
             ],
             [$participant, { id: '123', name: 'P123' }],
             [$peerId, 'PEER ID'],
+            [$gameId, '123'],
         ],
     });
     return (

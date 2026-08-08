@@ -66,6 +66,8 @@ export interface SessionConfig<State extends StateWithId> {
     onMessage?: (direction: 'in' | 'out', message: Message) => void;
     /** Build the join URL for a session. Defaults to `${origin}/join/${sessionId}/${peerId}`. */
     getJoinUrl?: (sessionId: string, peerId: string) => string;
+    /** Extra values injected into the session context by the Provider. */
+    valueExtras?: Record<string, any>;
 }
 
 // -- Workflow config

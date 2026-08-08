@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import {
-    usePlayerTurn,
-    usePreviousStory,
-    useTurn,
-} from '../../../../state/gameHooks';
+import { useActiveParticipant, useTurn } from '../../../../state/game';
+import { usePreviousStory } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
 import { Countdown } from '../../../../chorus';
 import { useUnit } from 'effector-react';
@@ -17,7 +14,7 @@ import { gameEvents } from '../../../../state/game';
 export const StWriteStory: React.FC = () => {
     const player = useUnit($participant);
     const turn = useTurn();
-    const playerTurn = usePlayerTurn();
+    const playerTurn = useActiveParticipant();
     const previousStory = usePreviousStory();
     const [storyValue, setStoryValue] = useState<string>(
         playerTurn?.story ?? ''

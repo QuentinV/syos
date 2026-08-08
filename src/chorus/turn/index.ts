@@ -5,6 +5,7 @@ export type {
     TurnState,
 } from './createTurnSession';
 export { createParticipantStore } from './participant';
+export type { ParticipantStore } from './participant';
 export { computeTurnSessionChecksum } from './checksum';
 export {
     useTurn,

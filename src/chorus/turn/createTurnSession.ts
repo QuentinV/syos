@@ -1,4 +1,6 @@
-import { EventCallable } from 'effector';
+import { createStore, EventCallable, Store } from 'effector';
+import { useUnit } from 'effector-react';
+import { ChorusTurnHooks } from '../context';
 import {
     ChorusSessionApi,
     Reducers,
@@ -6,7 +8,16 @@ import {
     StateWithId,
     WorkflowConfig,
 } from '../types';
+import {
+    useTurn,
+    usePreviousTurn,
+    useTurnStatus,
+    useParticipantTurn,
+    useTurnParticipants,
+    useTurnParticipantByPredicate,
+} from './hooks';
 import { Participant, Turn, TurnSessionState } from './types';
+import { ParticipantStore } from './participant';
 
 export type TurnState<TStatus extends string, TTurnData> = TurnSessionState<
     TStatus,
@@ -24,16 +35,21 @@ export interface TurnSessionConfig<
     defaultValue: TurnState<TStatus, TTurnData>;
     /** App-specific P2P-synced reducers (merged with the generic turn reducers). */
     api?: Api;
+    /** The local participant store, enabling the `useActiveParticipant` hook. */
+    participantStore?: ParticipantStore;
 }
 
 export interface TurnSessionApi<
     TStatus extends string = string,
     TTurnData = any,
     Api extends Reducers<TurnState<TStatus, TTurnData>> = {},
-> extends Omit<
-    ChorusSessionApi<TurnState<TStatus, TTurnData>>,
-    'events' | 'workflows'
-> {
+>
+    extends
+        Omit<
+            ChorusSessionApi<TurnState<TStatus, TTurnData>>,
+            'events' | 'workflows'
+        >,
+        ChorusTurnHooks<TStatus, TTurnData> {
     events: {
         /** Replace the whole session state (e.g. after creating a new session). */
         updateState: EventCallable<TurnSessionState<TStatus, TTurnData>>;
@@ -164,8 +180,36 @@ export function createTurnSessionFactory(
             },
         };
 
+        // -- Typed turn hooks: stable closures binding TStatus/TTurnData.
+        // They're injected into the session context via valueExtras, so
+        // `useChorusSession()` exposes them fully typed, and are also
+        // returned directly on the session API for convenience.
+        // Empty participant store fallback so useActiveParticipant works even
+        // without config.participantStore (returns undefined turn).
+        const emptyParticipantStore = createStore<Participant | null>(null);
+
+        const turnHooks: ChorusTurnHooks<TStatus, TTurnData> = {
+            useTurn: () => useTurn<TStatus, TTurnData>(),
+            usePreviousTurn: () => usePreviousTurn<TStatus, TTurnData>(),
+            useTurnStatus: () => useTurnStatus<TStatus>(),
+            useParticipantTurn: (participantId: string) =>
+                useParticipantTurn<TTurnData>(participantId),
+            useTurnParticipants: () => useTurnParticipants<TTurnData>(),
+            useTurnParticipantByPredicate: (
+                predicate: (participantTurn: TTurnData) => boolean
+            ) => useTurnParticipantByPredicate<TTurnData>(predicate),
+            useActiveParticipant: () => {
+                const $participant =
+                    config.participantStore?.$participant ??
+                    emptyParticipantStore;
+                const participant = useUnit($participant);
+                return useParticipantTurn<TTurnData>(participant?.id ?? '');
+            },
+        };
+
         const session = createSession<State>({
             ...config,
+            valueExtras: turnHooks,
             api: {
                 ...genericApi,
                 ...(config.api ?? {}),
@@ -204,6 +248,7 @@ export function createTurnSessionFactory(
 
         return {
             ...session,
+            ...turnHooks,
             events: session.events as TurnSessionApi<
                 TStatus,
                 TTurnData,

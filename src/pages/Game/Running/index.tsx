@@ -1,16 +1,15 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { useGame } from '../../../state/game';
+import { useActiveParticipant, useGame } from '../../../state/game';
 import { $participant } from '../../../state/player';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
-import { usePlayerTurn } from '../../../state/gameHooks';
 import { PlayersBoard } from '../../../components/PlayersBoard';
 
 export const Running: React.FC = () => {
     const game = useGame();
     const participant = useUnit($participant);
-    const playerTurn = usePlayerTurn();
+    const playerTurn = useActiveParticipant();
 
     if (!game || !participant || !playerTurn) return null;
 

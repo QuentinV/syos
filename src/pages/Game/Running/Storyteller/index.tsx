@@ -3,7 +3,7 @@ import { useUnit } from 'effector-react';
 import { gameEvents } from '../../../../state/game';
 import cardsMapping from '../../../../cards_mapping.json';
 import { $participant } from '../../../../state/player';
-import { usePlayerTurn, useTurn } from '../../../../state/gameHooks';
+import { useActiveParticipant, useTurn } from '../../../../state/game';
 import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
 import { getRandomCards } from '../../../../utils/getRandomCards';
@@ -12,7 +12,7 @@ import { TurnEnded } from '../TurnEnded';
 export const Storyteller: React.FC = () => {
     const participant = useUnit($participant);
     const turn = useTurn();
-    const playerTurn = usePlayerTurn();
+    const playerTurn = useActiveParticipant();
 
     useEffect(() => {
         if (!playerTurn?.displayedCards?.length) {

@@ -1,6 +1,18 @@
-import { createEffect, createEvent, createStore, sample } from 'effector';
+import {
+    createEffect,
+    createEvent,
+    createStore,
+    EventCallable,
+    sample,
+    StoreWritable,
+} from 'effector';
 import { v4 as uuid } from 'uuid';
 import { Participant } from './types';
+
+export interface ParticipantStore {
+    $participant: StoreWritable<Participant | null>;
+    setParticipantName: EventCallable<string>;
+}
 
 /**
  * Create a generic local participant store.
@@ -8,7 +20,9 @@ import { Participant } from './types';
  * Persists the current participant (id, name) in localStorage under the
  * given storage key. This is the "active participant" of the session.
  */
-export function createParticipantStore(storageKey = 'player') {
+export function createParticipantStore(
+    storageKey = 'player'
+): ParticipantStore {
     const $participant = createStore<Participant | null>(null);
     const setParticipantName = createEvent<string>();
 

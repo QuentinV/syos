@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { usePlayerTurn, useStorytellerTurn } from '../../../state/gameHooks';
+import { useActiveParticipant } from '../../../state/game';
+import { useStorytellerTurn } from '../../../state/gameHooks';
 import { GameCards } from '../../../components/GameCards';
 import { gameEvents } from '../../../state/game';
 import { useUnit } from 'effector-react';
@@ -8,7 +9,7 @@ import { Countdown } from '../../../chorus';
 import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {
-    const playerTurn = usePlayerTurn();
+    const playerTurn = useActiveParticipant();
     const [cardsVisible, setCardsVisible] = useState<boolean>(true);
     const participant = useUnit($participant);
     const storytellerTurn = useStorytellerTurn();

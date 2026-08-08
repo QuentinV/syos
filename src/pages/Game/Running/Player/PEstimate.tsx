@@ -5,13 +5,13 @@ import { Button } from 'primereact/button';
 import { useUnit } from 'effector-react';
 import { $participant } from '../../../../state/player';
 import { gameEvents } from '../../../../state/game';
-import { usePlayerTurn } from '../../../../state/gameHooks';
+import { useActiveParticipant } from '../../../../state/game';
 
 const estimateCards = [-1, 1, 2, 3, 5, 8, 10, 13, 21, 34];
 
 export const PEstimate: React.FC = () => {
     const player = useUnit($participant);
-    const playerTurn = usePlayerTurn();
+    const playerTurn = useActiveParticipant();
 
     if (!player?.id) return null;
 

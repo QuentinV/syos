@@ -1,5 +1,5 @@
 import { createParticipantStore } from '../chorus';
 
-const { $participant, setParticipantName } = createParticipantStore('player');
+export const participantStore = createParticipantStore('player');
 
-export { $participant, setParticipantName };
+export const { $participant, setParticipantName } = participantStore;

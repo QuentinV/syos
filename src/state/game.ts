@@ -5,6 +5,7 @@ import {
     TurnState,
 } from '../chorus';
 import { GameTurnStatus, PlayerRole, PlayerTurn } from './types';
+import { participantStore } from './player';
 
 const chorus = createChorus({
     debug: true,
@@ -22,9 +23,17 @@ export const {
     usePeerId,
     workflows,
     Provider: GameProvider,
+    useTurn,
+    usePreviousTurn,
+    useTurnStatus,
+    useParticipantTurn,
+    useTurnParticipants,
+    useTurnParticipantByPredicate,
+    useActiveParticipant,
 } = chorus.createTurnSession<GameTurnStatus, PlayerTurn>({
     name: 'games',
     defaultValue: null,
+    participantStore,
     checksum: computeTurnSessionChecksum,
     getJoinUrl: (sessionId, peerId) =>
         `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
