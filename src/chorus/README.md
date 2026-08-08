@@ -369,7 +369,7 @@ A generic session lobby showing connected participants, ready status, and a join
 
 - **Session state** (via `useSessionState`): participants list, ready flags, and the "all ready" start condition.
 - **Session events** (via `useChorusSession`): `toggleParticipantReady` and `startSession`.
-- **Local participant** (via `useLocalParticipant`, requires `participantStorageKey` in the session config): to mark the local row "(you)" and gate the Ready/Start buttons.
+- **Local participant** (via `useLocalParticipant`): to mark the local row "(you)" and gate the Ready/Start buttons.
 
 ```tsx
 import { SessionLobby } from 'chorus';
@@ -377,7 +377,7 @@ import { SessionLobby } from 'chorus';
 const session = chorus.createTurnSession<MyStatus, MyTurnData>({
     name: 'my-session',
     defaultValue: null,
-    participantStorageKey: 'player', // enables currentParticipantId ("you") detection
+    participantStorageKey: 'player', // (default) enables currentParticipantId ("you") detection
     ...
 });
 

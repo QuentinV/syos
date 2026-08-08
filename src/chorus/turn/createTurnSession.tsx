@@ -38,8 +38,7 @@ export interface TurnSessionConfig<
     /** App-specific P2P-synced reducers (merged with the generic turn reducers). */
     api?: Api;
     /**
-     * Storage key for the local participant store. When provided, a
-     * participant store is created internally and exposed on the session
+     * Storage key for the local participant store. Default to "participant".
      * API as `$participant` / `setParticipantName`, enabling the
      * `useLocalParticipantTurn` hook.
      */
@@ -120,10 +119,12 @@ export function createTurnSessionFactory(
 
         config.checksum = config.checksum ?? computeTurnSessionChecksum;
 
-        // -- Local participant store (created internally when a storage key is provided)
-        const participantStore = config.participantStorageKey
-            ? createParticipantStore(config.participantStorageKey)
-            : undefined;
+        // -- Local participant store
+        config.participantStorageKey =
+            config.participantStorageKey ?? 'participant';
+        const participantStore = createParticipantStore(
+            config.participantStorageKey
+        );
 
         // -- Generic turn reducers (merged with the app-specific api)
         const genericApi: Reducers<State> = {
@@ -202,10 +203,6 @@ export function createTurnSessionFactory(
         // -- Typed turn hooks: stable closures binding TStatus/TTurnData.
         // They're provided via the dedicated turn context and also returned
         // directly on the session API for convenience.
-        // Empty participant store fallback so useLocalParticipantTurn works even
-        // without config.participantStorageKey (returns undefined turn).
-        const emptyParticipantStore = createStore<Participant | null>(null);
-
         const turnHooks: ChorusTurnHooks<TStatus, TTurnData> = {
             useTurn: () => useTurn<TStatus, TTurnData>(),
             usePreviousTurn: () => usePreviousTurn<TStatus, TTurnData>(),
@@ -217,14 +214,12 @@ export function createTurnSessionFactory(
                 predicate: (participantTurn: TTurnData) => boolean
             ) => useTurnParticipantByPredicate<TTurnData>(predicate),
             useLocalParticipantTurn: () => {
-                const $participant =
-                    participantStore?.$participant ?? emptyParticipantStore;
+                const $participant = participantStore?.$participant;
                 const participant = useUnit($participant);
                 return useParticipantTurn<TTurnData>(participant?.id ?? '');
             },
             useLocalParticipant: () => {
-                const $participant =
-                    participantStore?.$participant ?? emptyParticipantStore;
+                const $participant = participantStore?.$participant;
                 return useUnit($participant) ?? undefined;
             },
         };

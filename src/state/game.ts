@@ -19,7 +19,6 @@ export const {
 } = chorus.createTurnSession<GameTurnStatus, PlayerTurn>({
     name: 'games',
     defaultValue: null,
-    participantStorageKey: 'player',
     getJoinUrl: (sessionId, peerId) =>
         `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
     onMessage: (direction, message) => {
