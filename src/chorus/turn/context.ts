@@ -57,3 +57,73 @@ export const useChorusTurn = <
     }
     return ctx as ChorusTurnHooks<TStatus, TTurnData>;
 };
+
+// ============================================================
+// Direct shortcut hooks.
+//
+// These delegate to the typed closures stored in the turn context,
+// so they can be imported and called directly from any component
+// rendered within a turn session Provider — no need to destructure
+// the hooks off the session API or call `useChorusTurn()` yourself.
+// ============================================================
+
+/**
+ * Read the current (last) turn from the turn session context.
+ * Must be used within a turn session Provider.
+ */
+export const useTurn = <TStatus extends string = string, TTurnData = any>():
+    Turn<TStatus, TTurnData> | undefined =>
+    useChorusTurn<TStatus, TTurnData>().useTurn();
+
+/**
+ * Read the previous (second-to-last) turn from the turn session context.
+ * Must be used within a turn session Provider.
+ */
+export const usePreviousTurn = <
+    TStatus extends string = string,
+    TTurnData = any,
+>(): Turn<TStatus, TTurnData> | undefined =>
+    useChorusTurn<TStatus, TTurnData>().usePreviousTurn();
+
+/**
+ * Read the current turn's status from the turn session context.
+ * Must be used within a turn session Provider.
+ */
+export const useTurnStatus = <
+    TStatus extends string = string,
+>(): TStatus | null => useChorusTurn<TStatus, any>().useTurnStatus();
+
+/**
+ * Read a specific participant's turn data from the current turn.
+ * Must be used within a turn session Provider.
+ */
+export const useParticipantTurn = <TTurnData = any>(
+    participantId: string
+): TTurnData | undefined =>
+    useChorusTurn<string, TTurnData>().useParticipantTurn(participantId);
+
+/**
+ * Read all participants' turn data from the current turn.
+ * Must be used within a turn session Provider.
+ */
+export const useTurnParticipants = <TTurnData = any>(): {
+    [participantId: string]: TTurnData;
+} => useChorusTurn<string, TTurnData>().useTurnParticipants();
+
+/**
+ * Find a participant's turn data by predicate.
+ * Must be used within a turn session Provider.
+ */
+export const useTurnParticipantByPredicate = <TTurnData = any>(
+    predicate: (participantTurn: TTurnData) => boolean
+): TTurnData | undefined =>
+    useChorusTurn<string, TTurnData>().useTurnParticipantByPredicate(predicate);
+
+/**
+ * Read the local participant's turn data in the current turn.
+ * Requires `participantStore` in the session config.
+ * Must be used within a turn session Provider.
+ */
+export const useActiveParticipant = <TTurnData = any>():
+    TTurnData | undefined =>
+    useChorusTurn<string, TTurnData>().useActiveParticipant();

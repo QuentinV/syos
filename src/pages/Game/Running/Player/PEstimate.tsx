@@ -3,11 +3,8 @@ import { GameCard } from '../../../../components/GameCard';
 import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { useUnit } from 'effector-react';
-import {
-    $participant,
-    gameEvents,
-    useActiveParticipant,
-} from '../../../../state/game';
+import { $participant, gameEvents } from '../../../../state/game';
+import { useActiveParticipant } from '../../../../chorus';
 
 const estimateCards = [-1, 1, 2, 3, 5, 8, 10, 13, 21, 34];
 

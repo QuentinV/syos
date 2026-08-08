@@ -1,20 +1,15 @@
 import React from 'react';
-import { useUnit } from 'effector-react';
-import {
-    $participant,
-    useActiveParticipant,
-    useGame,
-} from '../../../state/game';
+import { useGame } from '../../../state/game';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
 import { PlayersBoard } from '../../../components/PlayersBoard';
+import { useActiveParticipant } from '../../../chorus';
 
 export const Running: React.FC = () => {
     const game = useGame();
-    const participant = useUnit($participant);
     const playerTurn = useActiveParticipant();
 
-    if (!game || !participant || !playerTurn) return null;
+    if (!game || !playerTurn) return null;
 
     const renderGameMode = () => {
         return playerTurn.role === 'storyteller' ? <Storyteller /> : <Player />;

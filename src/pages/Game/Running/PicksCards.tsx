@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
-import {
-    $participant,
-    gameEvents,
-    useActiveParticipant,
-} from '../../../state/game';
+import { $participant, gameEvents } from '../../../state/game';
 import { useStorytellerTurn } from '../../../state/gameHooks';
 import { GameCards } from '../../../components/GameCards';
 import { useUnit } from 'effector-react';
-import { Countdown } from '../../../chorus';
+import { Countdown, useActiveParticipant } from '../../../chorus';
 import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {

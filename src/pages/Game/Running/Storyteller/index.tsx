@@ -1,16 +1,12 @@
 import React, { useEffect } from 'react';
 import { useUnit } from 'effector-react';
 import cardsMapping from '../../../../cards_mapping.json';
-import {
-    $participant,
-    gameEvents,
-    useActiveParticipant,
-    useTurn,
-} from '../../../../state/game';
+import { $participant, gameEvents } from '../../../../state/game';
 import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 import { TurnEnded } from '../TurnEnded';
+import { useActiveParticipant, useTurn } from '../../../../chorus';
 
 export const Storyteller: React.FC = () => {
     const participant = useUnit($participant);

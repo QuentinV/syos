@@ -1,11 +1,11 @@
 import { useUnit } from 'effector-react';
+import { $game } from './game';
+import { Player, PlayerRole, PlayerTurn } from './types';
 import {
-    $game,
     usePreviousTurn,
     useTurnParticipantByPredicate,
     useTurnParticipants,
-} from './game';
-import { Player, PlayerRole, PlayerTurn } from './types';
+} from '../chorus';
 
 export const useStorytellerTurn = (): PlayerTurn | undefined =>
     useTurnParticipantByPredicate((p) => p.role === PlayerRole.storyteller);
