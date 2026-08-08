@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createStore } from 'effector';
 import { SessionLobby } from '.';
-import { ChorusSessionContext, defaultTurnHooks } from '../../context';
+import { ChorusSessionContext } from '../../context';
 
 const getJoinUrl = (sessionId: string, peerId: string) =>
     `https://example.com/join/${sessionId}/${peerId}`;
@@ -19,7 +19,6 @@ const meta = {
         (Story) => (
             <ChorusSessionContext.Provider
                 value={{
-                    ...defaultTurnHooks,
                     sessionId: 'session-123',
                     getJoinUrl,
                     $store: createStore(null),

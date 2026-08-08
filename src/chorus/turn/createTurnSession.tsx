@@ -1,6 +1,7 @@
 import { createStore, EventCallable, Store } from 'effector';
 import { useUnit } from 'effector-react';
-import { ChorusTurnHooks } from '../context';
+import React from 'react';
+import { ChorusTurnContext, ChorusTurnHooks } from './context';
 import {
     ChorusSessionApi,
     Reducers,
@@ -196,9 +197,8 @@ export function createTurnSessionFactory(
         };
 
         // -- Typed turn hooks: stable closures binding TStatus/TTurnData.
-        // They're injected into the session context via valueExtras, so
-        // `useChorusSession()` exposes them fully typed, and are also
-        // returned directly on the session API for convenience.
+        // They're provided via the dedicated turn context and also returned
+        // directly on the session API for convenience.
         // Empty participant store fallback so useActiveParticipant works even
         // without config.participantStorageKey (returns undefined turn).
         const emptyParticipantStore = createStore<Participant | null>(null);
@@ -223,7 +223,6 @@ export function createTurnSessionFactory(
 
         const session = createSession<State>({
             ...config,
-            valueExtras: turnHooks,
             api: {
                 ...genericApi,
                 ...(config.api ?? {}),
@@ -260,8 +259,25 @@ export function createTurnSessionFactory(
             });
         };
 
+        // -- Turn Provider: composes the session provider with the dedicated
+        // turn context. Only turn sessions supply the turn context, so hooks
+        // consumed via `useChorusTurn()` are available exclusively here.
+        const TurnProvider: React.FC<{ children?: React.ReactNode }> = ({
+            children,
+        }) =>
+            React.createElement(
+                session.Provider,
+                null,
+                React.createElement(
+                    ChorusTurnContext.Provider,
+                    { value: turnHooks },
+                    children
+                )
+            );
+
         return {
             ...session,
+            Provider: TurnProvider,
             ...turnHooks,
             events: session.events as TurnSessionApi<
                 TStatus,

@@ -3,7 +3,7 @@ import { DebugPanel } from '.';
 import { createStore, fork } from 'effector';
 import { Provider } from 'effector-react';
 import { debug } from '../../debug';
-import { ChorusSessionContext, defaultTurnHooks } from '../../context';
+import { ChorusSessionContext } from '../../context';
 import { DebugMessage } from '../../types';
 
 const sampleMessages: DebugMessage[] = [
@@ -82,7 +82,6 @@ const meta = {
                 <Provider value={scope}>
                     <ChorusSessionContext.Provider
                         value={{
-                            ...defaultTurnHooks,
                             sessionId: 'game-123',
                             getJoinUrl: (sessionId, peerId) =>
                                 `/game/${sessionId}/join/${peerId}`,

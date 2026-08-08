@@ -8,7 +8,7 @@ import { createStorage, Storage } from './storage';
 import { createHooks } from '../react';
 import { createWorkflowEngine } from '../workflow';
 import { debug as debugApi, logDebugMessage } from '../debug';
-import { ChorusSessionContext, defaultTurnHooks } from '../context';
+import { ChorusSessionContext } from '../context';
 import { createTurnSessionFactory } from '../turn';
 import {
     appendToEventLog,
@@ -283,8 +283,6 @@ export function createChorus(options: ChorusOptions = {}) {
             return (
                 <ChorusSessionContext.Provider
                     value={{
-                        ...defaultTurnHooks,
-                        ...config.valueExtras,
                         sessionId,
                         getJoinUrl,
                         checksum: config.checksum,

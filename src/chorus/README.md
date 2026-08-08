@@ -161,12 +161,12 @@ All context hooks throw if used outside a session `Provider`.
 
 ### Turn hooks
 
-For turn-based sessions, `createTurnSession` returns **typed hooks** — stable closures created once in the factory, so they capture `TStatus`/`TTurnData` and need no type parameters at call sites. They read from the session context, so they must be used within a session `Provider`.
+For turn-based sessions, `createTurnSession` returns **typed hooks** — stable closures created once in the factory, so they capture `TStatus`/`TTurnData` and need no type parameters at call sites. They must be used within a turn session `Provider` (the `Provider` returned by `createTurnSession`, which composes the session context with a dedicated turn context).
 
 ```tsx
 const session = chorus.createTurnSession<MyStatus, MyTurnData>({ ... });
 
-// Typed hooks returned by the session (also available via useChorusSession())
+// Typed hooks returned by the session
 const MyComponent = ({ participantId }) => {
     const turn = session.useTurn();
     const previousTurn = session.usePreviousTurn();
@@ -180,13 +180,13 @@ const MyComponent = ({ participantId }) => {
 };
 ```
 
-Because the hooks are injected into the session context, any component inside the `Provider` can also destructure them:
+Because the hooks are provided via a dedicated turn context, any component inside the turn session's `Provider` can also read them with `useChorusTurn`:
 
 ```tsx
-import { useChorusSession } from 'chorus';
+import { useChorusTurn } from 'chorus';
 
 const MyComponent = () => {
-    const { useTurn, useParticipantTurn } = useChorusSession<
+    const { useTurn, useParticipantTurn } = useChorusTurn<
         MyStatus,
         MyTurnData
     >();
@@ -194,6 +194,8 @@ const MyComponent = () => {
     return <div>{turn?.status}</div>;
 };
 ```
+
+> **Note:** `useChorusTurn` throws if used outside a turn session `Provider`. Plain `createSession` providers do not expose turn hooks — they live in the turn context only.
 
 | Hook                                | Returns                   | Description                                                                           |
 | ----------------------------------- | ------------------------- | ------------------------------------------------------------------------------------- |

@@ -15,6 +15,8 @@ export {
     useTurnParticipants,
     useTurnParticipantByPredicate,
 } from './hooks';
+export { ChorusTurnContext, defaultTurnHooks, useChorusTurn } from './context';
+export type { ChorusTurnHooks } from './context';
 export type {
     Participant,
     SessionStatus,
