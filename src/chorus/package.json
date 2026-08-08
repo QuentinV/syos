@@ -1,0 +1,45 @@
+{
+    "name": "chorus",
+    "version": "1.0.0",
+    "description": "Decentralized P2P state synchronization library built on effector + PeerJS",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json && vite build",
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "peerDependencies": {
+        "react": "^19.0.0",
+        "react-dom": "^19.0.0",
+        "effector": "^23.0.0",
+        "effector-react": "^23.0.0"
+    },
+    "dependencies": {
+        "peerjs": "^1.5.4",
+        "qrcode.react": "^4.2.0",
+        "uuid": "^11.1.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "effector": "^23.3.0",
+        "effector-react": "^23.3.0",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "typescript": "^5.8.3",
+        "vite": "^5.4.8",
+        "vitest": "^2.1.0"
+    }
+}
