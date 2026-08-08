@@ -21,7 +21,7 @@ export interface ParticipantStore {
  * given storage key. This is the "active participant" of the session.
  */
 export function createParticipantStore(
-    storageKey = 'player'
+    storageKey = 'participant'
 ): ParticipantStore {
     const $participant = createStore<Participant | null>(null);
     const setParticipantName = createEvent<string>();

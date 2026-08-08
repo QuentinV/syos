@@ -122,6 +122,15 @@ export interface DebugMessage {
     payload?: any;
 }
 
+export type JoinFxType = Effect<
+    {
+        objectId: string;
+        peerId: string;
+    },
+    string,
+    Error
+>;
+
 // -- Session API (returned by createSession)
 export interface ChorusSessionApi<State extends StateWithId> {
     store: ChorusSession<State>;
@@ -132,7 +141,7 @@ export interface ChorusSessionApi<State extends StateWithId> {
     $id: StoreWritable<string | null>;
     useStore: () => State;
     usePeerId: () => string | null;
-    joinFx: Effect<{ objectId: string; peerId: string }, string, Error>;
+    joinFx: JoinFxType;
     events: { [key: string]: EventCallable<any> };
     /** React context provider supplying { sessionId, peerId, getJoinUrl } to Chorus components. */
     Provider: React.FC<{ children?: React.ReactNode }>;

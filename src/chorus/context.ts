@@ -1,10 +1,12 @@
 import { createContext, useContext } from 'react';
 import { EventCallable, Store } from 'effector';
 import { useUnit } from 'effector-react';
+import { JoinFxType } from './types';
 
 export interface ChorusSessionContextValue {
     sessionId: string;
     getJoinUrl: (sessionId: string, peerId: string) => string;
+    joinFx: JoinFxType;
     checksum?: (state: any) => string;
     // Stable references — identity never changes, so the context value stays stable.
     // Consumers read live values via useUnit(ctx.$store) / useUnit(ctx.$id) / useUnit(ctx.$peerId).

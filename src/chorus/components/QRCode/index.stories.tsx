@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { createStore } from 'effector';
+import { createEffect, createStore } from 'effector';
 import { QRCode } from '.';
 import { ChorusSessionContext } from '../../context';
 
@@ -21,6 +21,9 @@ const meta = {
                 value={{
                     sessionId: 'session-123',
                     getJoinUrl,
+                    joinFx: createEffect(
+                        (a: { objectId: string; peerId: string }): string => ''
+                    ),
                     $store: createStore(null),
                     $id: createStore<string | null>('session-123'),
                     $peerId,

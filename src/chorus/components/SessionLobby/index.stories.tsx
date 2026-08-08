@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { createStore, createEvent } from 'effector';
+import { createStore, createEvent, createEffect } from 'effector';
 import { SessionLobby } from '.';
 import { ChorusSessionContext } from '../../context';
 import { ChorusTurnContext, defaultTurnHooks } from '../../turn';
@@ -34,6 +34,9 @@ const renderLobby = (
     const contextValue = {
         sessionId: 'session-123',
         getJoinUrl,
+        joinFx: createEffect(
+            (a: { objectId: string; peerId: string }): string => ''
+        ),
         $store,
         $id,
         $peerId,

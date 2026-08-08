@@ -19,6 +19,7 @@ import {
 import {
     ChorusOptions,
     ChorusSessionApi,
+    JoinFxType,
     Message,
     SessionConfig,
     StateWithId,
@@ -235,7 +236,7 @@ export function createChorus(options: ChorusOptions = {}) {
             }),
         });
 
-        const joinFx = createEffect(
+        const joinFx: JoinFxType = createEffect(
             async ({
                 objectId,
                 peerId,
@@ -285,6 +286,7 @@ export function createChorus(options: ChorusOptions = {}) {
                     value={{
                         sessionId,
                         getJoinUrl,
+                        joinFx,
                         checksum: config.checksum,
                         $store,
                         $id,

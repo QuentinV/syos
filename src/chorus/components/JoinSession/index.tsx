@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import './styles.css';
+import { useChorusSession } from '../../context';
 
 export interface JoinSessionProps {
-    sessionId: string;
-    peerId: string;
+    sessionId?: string;
+    peerId?: string;
     participantName?: string;
 }
 
@@ -12,6 +13,17 @@ export const JoinSession: React.FC<JoinSessionProps> = ({
     peerId,
     participantName,
 }) => {
+    const joinFx = useChorusSession().joinFx;
+
+    useEffect(() => {
+        if (!peerId || !sessionId) {
+            return;
+        }
+        joinFx({ objectId: sessionId, peerId });
+    }, [sessionId, peerId]);
+
+    if (!peerId || !sessionId) return null;
+
     return (
         <div className="chorus-join">
             <h2>Hello {participantName}</h2>

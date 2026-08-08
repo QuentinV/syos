@@ -1,10 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DebugPanel } from '.';
-import { createStore, fork } from 'effector';
+import { createEffect, createStore, fork } from 'effector';
 import { Provider } from 'effector-react';
 import { debug } from '../../debug';
 import { ChorusSessionContext } from '../../context';
-import { DebugMessage } from '../../types';
+import { DebugMessage, JoinFxType } from '../../types';
 
 const sampleMessages: DebugMessage[] = [
     {
@@ -87,6 +87,12 @@ const meta = {
                                 `/game/${sessionId}/join/${peerId}`,
                             checksum: (state: any) =>
                                 `game-123|running|stPicksCards:2|abc:1,def:1`,
+                            joinFx: createEffect(
+                                (a: {
+                                    objectId: string;
+                                    peerId: string;
+                                }): string => ''
+                            ),
                             $store: createStore(null),
                             $id: createStore<string | null>('game-123'),
                             $peerId,
