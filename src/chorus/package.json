@@ -2,6 +2,30 @@
     "name": "chorus",
     "version": "1.0.0",
     "description": "Decentralized P2P state synchronization library built on effector + PeerJS",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/QuentinV/syos.git"
+    },
+    "homepage": "https://github.com/QuentinV/syos/tree/main/src/chorus",
+    "bugs": {
+        "url": "https://github.com/QuentinV/syos/issues"
+    },
+    "keywords": [
+        "p2p",
+        "peer-to-peer",
+        "webrtc",
+        "state",
+        "synchronization",
+        "sync",
+        "effector",
+        "peerjs",
+        "react",
+        "realtime",
+        "collaborative",
+        "turn-based",
+        "serverless"
+    ],
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
