@@ -1,8 +1,8 @@
 {
-    "name": "chorus",
+    "name": "@quentinv/chorus",
     "version": "1.0.0",
     "description": "Decentralized P2P state synchronization library built on effector + PeerJS",
-    "author": "Quentin Vanhauteghem",
+    "author": "Quentin Van Hauteghem <quentin.vanhauteghem@gmail.com>",
     "license": "MIT",
     "engines": {
         "node": ">=18"

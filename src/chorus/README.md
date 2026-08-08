@@ -2,7 +2,7 @@
 
 > Decentralized, serverless P2P state synchronization for React, built on [effector](https://effector.dev) + [PeerJS](https://peerjs.com).
 
-[![npm version](https://img.shields.io/npm/v/chorus.svg)](https://www.npmjs.com/package/chorus)
+[![npm version](https://img.shields.io/npm/v/@quentinv/chorus.svg)](https://www.npmjs.com/package/@quentinv/chorus)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PeerJS](https://img.shields.io/badge/transport-WebRTC-blue.svg)](https://peerjs.com)
 
@@ -28,13 +28,13 @@ Chorus lets you create **synchronized state containers** ("sessions") that autom
 
 ```bash
 # yarn
-yarn add chorus
+yarn add @quentinv/chorus
 
 # npm
-npm install chorus
+npm install @quentinv/chorus
 
 # pnpm
-pnpm add chorus
+pnpm add @quentinv/chorus
 ```
 
 **Peer dependencies** (must be installed in your app):
@@ -48,7 +48,7 @@ yarn add react react-dom effector effector-react
 Chorus components ship with their own styles. Import the stylesheet once in your app entry point:
 
 ```tsx
-import 'chorus/style.css';
+import '@quentinv/chorus/style.css';
 ```
 
 > **Note:** The stylesheet is required for the components (`QRCode`, `Countdown`, `DebugPanel`, `SessionLobby`, `JoinSession`) to render correctly.
@@ -58,7 +58,7 @@ import 'chorus/style.css';
 ## Quick Start
 
 ```tsx
-import { createChorus } from 'chorus';
+import { createChorus } from '@quentinv/chorus';
 
 // 1. Create a Chorus instance
 const chorus = createChorus({
@@ -140,7 +140,11 @@ Chorus provides two families of hooks: **session context hooks** (available in a
 These read directly from the session context, so you don't need to manually call `useChorusSession()` + `useUnit()`.
 
 ```tsx
-import { useSessionState, useSessionId, useSessionPeerId } from 'chorus';
+import {
+    useSessionState,
+    useSessionId,
+    useSessionPeerId,
+} from '@quentinv/chorus';
 
 const MyComponent = () => {
     const state = useSessionState<MyState>();
@@ -170,7 +174,7 @@ For advanced use cases (e.g. reading the join URL or firing events), use `useCho
 
 ```tsx
 import { useUnit } from 'effector-react';
-import { useChorusSession } from 'chorus';
+import { useChorusSession } from '@quentinv/chorus';
 
 const ShareLink = () => {
     const { sessionId, getJoinUrl, $peerId, events } = useChorusSession();
@@ -224,7 +228,7 @@ const TurnView = ({ participantId }) => {
 You can also access the typed hooks from any component inside the turn `Provider` via `useChorusTurn`:
 
 ```tsx
-import { useChorusTurn } from 'chorus';
+import { useChorusTurn } from '@quentinv/chorus';
 
 const MyComponent = () => {
     const { useTurn, useParticipantTurn } = useChorusTurn<
@@ -247,7 +251,7 @@ Chorus ships with generic, UI-framework-agnostic React components for common P2P
 Renders a QR code for the active session's join URL. Reads `sessionId`, `peerId`, and `getJoinUrl` from the session context. Clicking the QR code copies the join URL to the clipboard.
 
 ```tsx
-import { QRCode } from 'chorus';
+import { QRCode } from '@quentinv/chorus';
 
 <QRCode bgColor="#1a1a1a" fgColor="#f59e0b" title="Join session QRCode" />;
 ```
@@ -264,7 +268,7 @@ import { QRCode } from 'chorus';
 A simple countdown timer with two visual styles.
 
 ```tsx
-import { Countdown } from 'chorus';
+import { Countdown } from '@quentinv/chorus';
 
 <Countdown limit={60} onComplete={() => handleTimeout()} style="knob" />;
 ```
@@ -280,7 +284,7 @@ import { Countdown } from 'chorus';
 A floating debug sidebar that displays P2P messages, Lamport clock, checksums, and the current session state. Reads directly from the Chorus debug stores.
 
 ```tsx
-import { DebugPanel } from 'chorus';
+import { DebugPanel } from '@quentinv/chorus';
 
 <DebugPanel state={myState} />;
 ```
@@ -296,7 +300,7 @@ import { DebugPanel } from 'chorus';
 A generic session lobby showing connected participants, ready status, and a join QR code. Takes **no props** — it reads everything from the turn-session context.
 
 ```tsx
-import { SessionLobby } from 'chorus';
+import { SessionLobby } from '@quentinv/chorus';
 
 const session = chorus.createTurnSession<MyStatus, MyTurnData>({
     name: 'my-session',
@@ -316,7 +320,7 @@ const MyLobby = () => (
 A thin wrapper that auto-initializes a session on mount. Useful for host pages that need to call `session.init(id)` when the page loads.
 
 ```tsx
-import { SessionPage } from 'chorus';
+import { SessionPage } from '@quentinv/chorus';
 
 <SessionPage id="session-123" initSession={(id) => session.init(id)}>
     <MyGame />
@@ -335,7 +339,7 @@ import { SessionPage } from 'chorus';
 A generic "connecting" screen shown while a participant joins a session via a P2P link.
 
 ```tsx
-import { JoinSession } from 'chorus';
+import { JoinSession } from '@quentinv/chorus';
 
 <JoinSession
     sessionId="session-123"
@@ -435,7 +439,7 @@ session.workflows({
 A generic local participant store (the "active participant" of the session), persisted in localStorage:
 
 ```typescript
-import { createParticipantStore } from 'chorus';
+import { createParticipantStore } from '@quentinv/chorus';
 
 const { $participant, setParticipantName } = createParticipantStore('player');
 ```
@@ -598,7 +602,7 @@ chorus.debug.setPanelOpen(true);
 ```
 
 ```tsx
-import { DebugPanel } from 'chorus';
+import { DebugPanel } from '@quentinv/chorus';
 
 <DebugPanel state={myState} />;
 ```
