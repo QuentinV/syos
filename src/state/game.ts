@@ -1,9 +1,4 @@
-import {
-    createChorus,
-    computeTurnSessionChecksum,
-    logDebugMessage,
-    TurnState,
-} from '../chorus';
+import { createChorus, logDebugMessage, TurnState } from '../chorus';
 import { GameTurnStatus, PlayerRole, PlayerTurn } from './types';
 
 const chorus = createChorus({
@@ -25,7 +20,6 @@ export const {
     name: 'games',
     defaultValue: null,
     participantStorageKey: 'player',
-    checksum: computeTurnSessionChecksum,
     getJoinUrl: (sessionId, peerId) =>
         `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
     onMessage: (direction, message) => {

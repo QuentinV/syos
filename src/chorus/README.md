@@ -451,7 +451,7 @@ interface TurnSessionState<TStatus extends string, TTurnData> {
 const session = chorus.createTurnSession<MyTurnStatus, MyPlayerTurn>({
     name: 'my-turn-session',
     defaultValue: null,
-    checksum: computeTurnSessionChecksum,   // optional divergence detection
+    checksum: computeTurnSessionChecksum,   // (default) divergence detection
     api: {
         // app-specific P2P-synced reducers
         vote: (state, payload) => { ... },
@@ -495,20 +495,6 @@ A generic local participant store (the "active participant" of the session), per
 import { createParticipantStore } from 'chorus';
 
 const { $participant, setParticipantName } = createParticipantStore('player');
-```
-
-### computeTurnSessionChecksum
-
-A generic checksum for turn-based states — hashes the session id, session status, turn count, each turn's status, and sorted participant keys:
-
-```typescript
-import { computeTurnSessionChecksum } from 'chorus';
-
-const session = chorus.createTurnSession<MyStatus, MyTurnData>({
-    name: 'my-session',
-    defaultValue: null,
-    checksum: computeTurnSessionChecksum,
-});
 ```
 
 ### Example: Scrum Planning

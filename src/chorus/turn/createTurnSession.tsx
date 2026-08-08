@@ -19,6 +19,7 @@ import {
 } from './hooks';
 import { Participant, Turn, TurnSessionState } from './types';
 import { createParticipantStore, ParticipantStore } from './participant';
+import { computeTurnSessionChecksum } from './checksum';
 
 export type TurnState<TStatus extends string, TTurnData> = TurnSessionState<
     TStatus,
@@ -116,6 +117,8 @@ export function createTurnSessionFactory(
         config: TurnSessionConfig<TStatus, TTurnData, Api>
     ): TurnSessionApi<TStatus, TTurnData, Api> {
         type State = TurnState<TStatus, TTurnData>;
+
+        config.checksum = config.checksum ?? computeTurnSessionChecksum;
 
         // -- Local participant store (created internally when a storage key is provided)
         const participantStore = config.participantStorageKey
