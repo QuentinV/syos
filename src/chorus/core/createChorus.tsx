@@ -340,6 +340,7 @@ export function createChorus(options: ChorusOptions = {}) {
                     $state: $store,
                     getStatus,
                     setStatus,
+                    context: config.context,
                     transitions: config.transitions,
                 });
             },

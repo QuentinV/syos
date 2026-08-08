@@ -1,4 +1,4 @@
-import { $participant, gameEvents, workflows } from './game';
+import { gameEvents, workflows } from './game';
 import {
     Game,
     GameParticipantsTurn,
@@ -7,17 +7,18 @@ import {
     PlayerTurn,
 } from './types';
 
-// Derive the workflow context from game state + local participant
+const getStorytellerTurn = (
+    turn: GameTurn | undefined
+): PlayerTurn | undefined =>
+    Object.values(turn?.participants ?? {}).find(
+        (p) => p.role === PlayerRole.storyteller
+    );
+
 const deriveContext = (game: Game | null) => {
-    const participant = $participant.getState();
     const turn: GameTurn | undefined = game?.turns?.[game?.turns?.length - 1];
-    const playerTurn: PlayerTurn | undefined =
-        turn?.participants?.[participant?.id ?? ''];
     return {
         game,
         turn,
-        playerTurn,
-        participant,
     };
 };
 
@@ -27,13 +28,14 @@ workflows({
         {
             // storyteller selected all necessary cards, moving to next stage
             from: 'stPicksCards',
-            filter: ({ playerTurn }) => playerTurn?.selectedCards?.length === 3,
+            filter: ({ turn }) =>
+                getStorytellerTurn(turn)?.selectedCards?.length === 3,
             next: 'stWriteStory',
         },
         {
             // storyteller wrote story, moving to next stage
             from: 'stWriteStory',
-            filter: ({ playerTurn }) => !!playerTurn?.story,
+            filter: ({ turn }) => !!getStorytellerTurn(turn)?.story,
             next: 'pEstimate',
         },
         {
