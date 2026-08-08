@@ -1,4 +1,4 @@
-import { useSessionState } from '../context';
+import { useSessionState } from '../core/context';
 import { Turn, TurnSessionState } from './types';
 
 /**

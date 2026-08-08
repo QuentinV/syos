@@ -1,6 +1,6 @@
 import { createEvent, createStore } from 'effector';
 import { v4 as uuid } from 'uuid';
-import { DebugMessage, Message } from './types';
+import { DebugMessage, Message } from '../core/types';
 
 const MAX_MESSAGES = 200;
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { useChorusSession } from '../../context';
+import { useChorusSession } from '../../core/context';
 import './styles.css';
 
 export interface QRCodeProps {

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createStore, createEvent, createEffect } from 'effector';
 import { SessionLobby } from '.';
-import { ChorusSessionContext } from '../../context';
+import { ChorusSessionContext } from '../../core/context';
 import { ChorusTurnContext, defaultTurnHooks } from '../../turn';
 import { TurnSessionState } from '../../turn';
 

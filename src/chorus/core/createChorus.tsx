@@ -5,16 +5,16 @@ import { DataConnection } from 'peerjs';
 import { ChorusConnection } from './connection';
 import { ChorusSession } from './session';
 import { createStorage, Storage } from './storage';
-import { createWorkflowEngine } from '../workflow';
-import { debug as debugApi, logDebugMessage } from '../debug';
-import { ChorusSessionContext } from '../context';
+import { createWorkflowEngine } from './workflow';
+import { debug as debugApi, logDebugMessage } from '../debug/debug';
+import { ChorusSessionContext } from './context';
 import { createTurnSessionFactory } from '../turn';
 import {
     appendToEventLog,
     getEventsSinceClock,
     getLatestClock,
     EventLogEntry,
-} from '../eventLog';
+} from '../debug/eventLog';
 import {
     ChorusOptions,
     ChorusSessionApi,
@@ -23,7 +23,7 @@ import {
     SessionConfig,
     StateWithId,
     WorkflowConfig,
-} from '../types';
+} from './types';
 
 const DEBUG = false;
 

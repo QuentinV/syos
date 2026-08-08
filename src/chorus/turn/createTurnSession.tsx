@@ -8,7 +8,7 @@ import {
     SessionConfig,
     StateWithId,
     WorkflowConfig,
-} from '../types';
+} from '../core/types';
 import {
     useTurn,
     usePreviousTurn,

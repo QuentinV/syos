@@ -1,6 +1,6 @@
 import { createEvent, EventCallable, StoreWritable } from 'effector';
 import { ChorusConnection } from './connection';
-import { Reducers, StateWithId } from '../types';
+import { Reducers, StateWithId } from './types';
 
 // -- ChorusSession: effector store wrapper with P2P sync
 export class ChorusSession<State extends StateWithId> {

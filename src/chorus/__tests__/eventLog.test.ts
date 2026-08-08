@@ -4,7 +4,7 @@ import {
     getEventsSinceClock,
     getLatestClock,
     clearEventLog,
-} from '../eventLog';
+} from '../debug/eventLog';
 
 beforeEach(() => {
     // No IndexedDB in node environment — eventLog should gracefully fail

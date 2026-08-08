@@ -8,7 +8,7 @@ import {
     clearDebugMessages,
     toggleDebugPanel,
     setDebugPanelOpen,
-} from '../debug';
+} from '../debug/debug';
 
 beforeEach(() => {
     clearDebugMessages();

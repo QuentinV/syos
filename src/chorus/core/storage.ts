@@ -1,4 +1,4 @@
-import { StorageAdapter } from '../types';
+import { StorageAdapter } from './types';
 
 // -- IndexedDB (stateless helpers, safe to keep module-level)
 function openDb(storename: string): Promise<IDBDatabase> {

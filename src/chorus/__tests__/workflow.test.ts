@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createStore, createEvent } from 'effector';
-import { createWorkflowEngine } from '../workflow';
+import { createWorkflowEngine } from '../core/workflow';
 
 type CounterState = { id: string; count: number; status: string } | null;
 

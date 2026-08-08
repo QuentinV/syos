@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { useChorusSession, useSessionState } from '../../context';
+import { useChorusSession, useSessionState } from '../../core/context';
 import { useLocalParticipant } from '../../turn';
 import { Participant, TurnSessionState } from '../../turn';
 import type { EventCallable } from 'effector';

@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useUnit } from 'effector-react';
-import { debug } from '../../debug';
-import { useChorusSession } from '../../context';
-import { DebugMessage } from '../../types';
+import { debug } from '../../debug/debug';
+import { useChorusSession } from '../../core/context';
+import { DebugMessage } from '../../core/types';
 import './styles.css';
 
 const formatTime = (timestamp: number): string => {

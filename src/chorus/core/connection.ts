@@ -7,7 +7,7 @@ import {
     PeerObjectData,
     PeersInfos,
     ProcessMessageType,
-} from '../types';
+} from './types';
 
 const DEBUG = false;
 

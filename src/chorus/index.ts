@@ -2,16 +2,16 @@ export { createChorus } from './core/createChorus';
 export { ChorusConnection } from './core/connection';
 export { ChorusSession } from './core/session';
 export { createStorage } from './core/storage';
-export { createWorkflowEngine } from './workflow';
-export { debug, logDebugMessage } from './debug';
+export { createWorkflowEngine } from './core/workflow';
+export { debug, logDebugMessage } from './debug/debug';
 export {
     ChorusSessionContext,
     useChorusSession,
     useSessionState,
     useSessionId,
     useSessionPeerId,
-} from './context';
-export type { ChorusSessionContextValue } from './context';
+} from './core/context';
+export type { ChorusSessionContextValue } from './core/context';
 export {
     createParticipantStore,
     computeTurnSessionChecksum,
@@ -54,8 +54,8 @@ export {
     getEventsSinceClock,
     getLatestClock,
     clearEventLog,
-} from './eventLog';
-export type { EventLogEntry } from './eventLog';
+} from './debug/eventLog';
+export type { EventLogEntry } from './debug/eventLog';
 export type {
     ChorusOptions,
     ChorusSessionApi,
@@ -73,4 +73,4 @@ export type {
     StorageAdapter,
     WorkflowContext,
     WorkflowTransition,
-} from './types';
+} from './core/types';

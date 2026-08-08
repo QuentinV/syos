@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createEffect, createStore } from 'effector';
 import { QRCode } from '.';
-import { ChorusSessionContext } from '../../context';
+import { ChorusSessionContext } from '../../core/context';
 
 const getJoinUrl = (sessionId: string, peerId: string) =>
     `https://example.com/join/${sessionId}/${peerId}`;

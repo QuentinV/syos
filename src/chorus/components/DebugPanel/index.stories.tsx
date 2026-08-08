@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DebugPanel } from '.';
 import { createEffect, createStore, fork } from 'effector';
 import { Provider } from 'effector-react';
-import { debug } from '../../debug';
-import { ChorusSessionContext } from '../../context';
-import { DebugMessage, JoinFxType } from '../../types';
+import { debug } from '../../debug/debug';
+import { ChorusSessionContext } from '../../core/context';
+import { DebugMessage, JoinFxType } from '../../core/types';
 
 const sampleMessages: DebugMessage[] = [
     {
