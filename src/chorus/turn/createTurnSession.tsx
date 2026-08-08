@@ -219,6 +219,11 @@ export function createTurnSessionFactory(
                 const participant = useUnit($participant);
                 return useParticipantTurn<TTurnData>(participant?.id ?? '');
             },
+            useLocalParticipant: () => {
+                const $participant =
+                    participantStore?.$participant ?? emptyParticipantStore;
+                return useUnit($participant) ?? undefined;
+            },
         };
 
         const session = createSession<State>({

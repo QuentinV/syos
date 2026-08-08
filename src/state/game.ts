@@ -11,7 +11,6 @@ const chorus = createChorus({
 });
 
 export const {
-    store: gameDS,
     joinFx,
     $peerId,
     $id: $gameId,
@@ -19,7 +18,6 @@ export const {
     events: gameEvents,
     useStore: useGame,
     init: initGame,
-    usePeerId,
     workflows,
     Provider: GameProvider,
     participantStore,

@@ -1,6 +1,9 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { useChorusSession } from '../../context';
+import { useChorusSession, useSessionState } from '../../context';
+import { useLocalParticipant } from '../../turn';
+import { Participant, TurnSessionState } from '../../turn';
+import type { EventCallable } from 'effector';
 import { QRCode } from '../QRCode';
 import './styles.css';
 
@@ -10,23 +13,36 @@ export interface SessionLobbyParticipant {
     ready: boolean;
 }
 
-export interface SessionLobbyProps {
-    participants: SessionLobbyParticipant[];
-    currentParticipantId?: string;
-    onToggleReady: (participantId: string) => void;
-    onStart: () => void;
-    canStart: boolean;
-}
-
-export const SessionLobby: React.FC<SessionLobbyProps> = ({
-    participants,
-    currentParticipantId,
-    onToggleReady,
-    onStart,
-    canStart,
-}) => {
-    const { sessionId, $peerId } = useChorusSession();
+export const SessionLobby: React.FC = () => {
+    const { sessionId, $peerId, events } = useChorusSession();
     const peerId = useUnit($peerId);
+    const state = useSessionState<TurnSessionState<string, any> | null>();
+    const localParticipant = useLocalParticipant();
+
+    const participants: SessionLobbyParticipant[] = state
+        ? Object.keys(state.participants).map((key) => ({
+              id: state.participants[key].id,
+              name: state.participants[key].name,
+              ready: state.participants[key].ready,
+          }))
+        : [];
+
+    const currentParticipantId = localParticipant?.id;
+    const canStart =
+        !!state &&
+        !Object.keys(state.participants).some(
+            (pk) => !state.participants[pk].ready
+        );
+    const onToggleReady = (participantId: string) => {
+        const toggleReady = events[
+            'toggleParticipantReady'
+        ] as EventCallable<string>;
+        toggleReady(participantId);
+    };
+    const onStart = () => {
+        const start = events['startSession'] as EventCallable<void>;
+        start();
+    };
 
     return (
         <div className="chorus-lobby">

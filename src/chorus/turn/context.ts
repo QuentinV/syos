@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { Turn } from './types';
+import { Participant, Turn } from './types';
 
 /**
  * Typed turn hooks exposed by turn-based sessions.
@@ -21,6 +21,8 @@ export interface ChorusTurnHooks<
     ) => TTurnData | undefined;
     /** The local participant's turn data in the current turn. Requires `participantStore` in the session config. */
     useActiveParticipant: () => TTurnData | undefined;
+    /** The local participant ({ id, name, ready }). Requires `participantStore` in the session config. */
+    useLocalParticipant: () => Participant | undefined;
 }
 
 /**
@@ -35,6 +37,7 @@ export const defaultTurnHooks: ChorusTurnHooks = {
     useTurnParticipants: () => ({}),
     useTurnParticipantByPredicate: () => undefined,
     useActiveParticipant: () => undefined,
+    useLocalParticipant: () => undefined,
 };
 
 /**
@@ -127,3 +130,11 @@ export const useTurnParticipantByPredicate = <TTurnData = any>(
 export const useActiveParticipant = <TTurnData = any>():
     TTurnData | undefined =>
     useChorusTurn<string, TTurnData>().useActiveParticipant();
+
+/**
+ * Read the local participant ({ id, name, ready }) from the turn session context.
+ * Requires `participantStore` in the session config.
+ * Must be used within a turn session Provider.
+ */
+export const useLocalParticipant = (): Participant | undefined =>
+    useChorusTurn().useLocalParticipant();

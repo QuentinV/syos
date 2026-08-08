@@ -1,76 +1,99 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { createStore } from 'effector';
+import { createStore, createEvent } from 'effector';
 import { SessionLobby } from '.';
 import { ChorusSessionContext } from '../../context';
+import { ChorusTurnContext, defaultTurnHooks } from '../../turn';
+import { TurnSessionState } from '../../turn';
 
 const getJoinUrl = (sessionId: string, peerId: string) =>
     `https://example.com/join/${sessionId}/${peerId}`;
 
 const $peerId = createStore<string | null>('peer-abc');
 
+const makeState = (
+    participants: { id: string; name: string; ready: boolean }[]
+): TurnSessionState<string, never> => ({
+    id: 'session-123',
+    participants: Object.fromEntries(participants.map((p) => [p.id, p])),
+    turns: [],
+    status: 'lobby',
+    createdAt: Date.now(),
+});
+
+const renderLobby = (
+    participants: { id: string; name: string; ready: boolean }[],
+    localParticipantId?: string
+) => {
+    const $store = createStore<TurnSessionState<string, never> | null>(
+        makeState(participants)
+    );
+    const $id = createStore<string | null>('session-123');
+    const toggleParticipantReady = createEvent<string>();
+    const startSession = createEvent<void>();
+
+    const contextValue = {
+        sessionId: 'session-123',
+        getJoinUrl,
+        $store,
+        $id,
+        $peerId,
+        events: { toggleParticipantReady, startSession },
+    };
+
+    const turnHooks = {
+        ...defaultTurnHooks,
+        useLocalParticipant: () =>
+            localParticipantId
+                ? { id: localParticipantId, name: 'You', ready: false }
+                : undefined,
+    };
+
+    return (
+        <ChorusSessionContext.Provider value={contextValue}>
+            <ChorusTurnContext.Provider value={turnHooks}>
+                <SessionLobby />
+            </ChorusTurnContext.Provider>
+        </ChorusSessionContext.Provider>
+    );
+};
+
 const meta = {
     title: 'chorus/components/SessionLobby',
-    parameters: {
-        layout: 'padded',
-    },
+    parameters: { layout: 'padded' },
     component: SessionLobby,
     tags: ['autodocs'],
-    decorators: [
-        (Story) => (
-            <ChorusSessionContext.Provider
-                value={{
-                    sessionId: 'session-123',
-                    getJoinUrl,
-                    $store: createStore(null),
-                    $id: createStore<string | null>('session-123'),
-                    $peerId,
-                    events: {},
-                }}
-            >
-                <Story />
-            </ChorusSessionContext.Provider>
-        ),
-    ],
 } satisfies Meta<typeof SessionLobby>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-    args: {
-        participants: [
-            { id: 'p1', name: 'Alice', ready: true },
-            { id: 'p2', name: 'Bob', ready: false },
-            { id: 'p3', name: 'Charlie', ready: false },
-        ],
-        currentParticipantId: 'p1',
-        onToggleReady: (id) => console.log('toggle ready', id),
-        onStart: () => console.log('start'),
-        canStart: false,
-    },
+    render: () =>
+        renderLobby(
+            [
+                { id: 'p1', name: 'Alice', ready: true },
+                { id: 'p2', name: 'Bob', ready: false },
+                { id: 'p3', name: 'Charlie', ready: false },
+            ],
+            'p1'
+        ),
 };
 
 export const CanStart: Story = {
-    args: {
-        participants: [
-            { id: 'p1', name: 'Alice', ready: true },
-            { id: 'p2', name: 'Bob', ready: true },
-        ],
-        currentParticipantId: 'p1',
-        onToggleReady: (id) => console.log('toggle ready', id),
-        onStart: () => console.log('start'),
-        canStart: true,
-    },
+    render: () =>
+        renderLobby(
+            [
+                { id: 'p1', name: 'Alice', ready: true },
+                { id: 'p2', name: 'Bob', ready: true },
+            ],
+            'p1'
+        ),
 };
 
 export const Observer: Story = {
-    args: {
-        participants: [
+    render: () =>
+        renderLobby([
             { id: 'p1', name: 'Alice', ready: true },
             { id: 'p2', name: 'Bob', ready: false },
-        ],
-        onToggleReady: (id) => console.log('toggle ready', id),
-        onStart: () => console.log('start'),
-        canStart: false,
-    },
+        ]),
 };

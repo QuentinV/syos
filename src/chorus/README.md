@@ -93,9 +93,9 @@ const session = chorus.createSession<MyState>({
 ```tsx
 import { SessionLobby } from 'chorus';
 
-const MyLobby = ({ participants, ... }) => (
+const MyLobby = () => (
     <session.Provider>
-        <SessionLobby participants={participants} ... />
+        <SessionLobby />
     </session.Provider>
 );
 ```
@@ -365,30 +365,36 @@ import { DebugPanel } from 'chorus';
 
 ### SessionLobby
 
-A generic session lobby showing connected participants, ready status, and a join QR code. Reads `sessionId` and `peerId` from the session context (see `session.Provider` below).
+A generic session lobby showing connected participants, ready status, and a join QR code. Takes **no props** — it reads everything from the turn-session context (see `session.Provider` below):
+
+- **Session state** (via `useSessionState`): participants list, ready flags, and the "all ready" start condition.
+- **Session events** (via `useChorusSession`): `toggleParticipantReady` and `startSession`.
+- **Local participant** (via `useLocalParticipant`, requires `participantStorageKey` in the session config): to mark the local row "(you)" and gate the Ready/Start buttons.
 
 ```tsx
 import { SessionLobby } from 'chorus';
 
-<SessionLobby
-    participants={[
-        { id: 'p1', name: 'Alice', ready: true },
-        { id: 'p2', name: 'Bob', ready: false },
-    ]}
-    currentParticipantId="p1"
-    onToggleReady={(id) => toggleReady(id)}
-    onStart={() => startSession()}
-    canStart={allParticipantsReady}
-/>;
+const session = chorus.createTurnSession<MyStatus, MyTurnData>({
+    name: 'my-session',
+    defaultValue: null,
+    participantStorageKey: 'player', // enables currentParticipantId ("you") detection
+    ...
+});
+
+const MyLobby = () => (
+    <session.Provider>
+        <SessionLobby />
+    </session.Provider>
+);
 ```
 
-| Prop                    | Type                              | Description                                     |
-| ----------------------- | --------------------------------- | ----------------------------------------------- |
-| `participants`          | `SessionLobbyParticipant[]`       | List of participants `{ id, name, ready }`      |
-| `currentParticipantId?` | `string`                          | The local participant's ID                      |
-| `onToggleReady`         | `(participantId: string) => void` | Called when the local participant toggles ready |
-| `onStart`               | `() => void`                      | Called when the host starts the session         |
-| `canStart`              | `boolean`                         | Whether the start button is enabled             |
+| Context dependency (no props) | Source                                     |
+| ----------------------------- | ------------------------------------------ |
+| `participants`                | `useSessionState` → `state.participants`   |
+| `currentParticipantId`        | `useLocalParticipant` → `participant.id`   |
+| `onToggleReady`               | `events.toggleParticipantReady`            |
+| `onStart`                     | `events.startSession`                      |
+| `canStart`                    | All participants' `ready` flags are `true` |
 
 ### JoinSession
 

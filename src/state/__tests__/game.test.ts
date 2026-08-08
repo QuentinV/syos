@@ -9,7 +9,7 @@ import {
 } from '../types';
 
 // Import the reducer functions directly by extracting the logic from game.ts
-// Since the reducers are defined inline in gameDS.on() calls, we extract them here for testing
+// Since the reducers are defined inline in store.on() calls, we extract them here for testing
 
 function togglePlayerReadyReducer(
     game: Game | null,

@@ -23,6 +23,7 @@ export {
     useTurnParticipants,
     useTurnParticipantByPredicate,
     useActiveParticipant,
+    useLocalParticipant,
     ChorusTurnContext,
     defaultTurnHooks,
     useChorusTurn,
@@ -44,10 +45,7 @@ export type { CountdownProps } from './components/Countdown';
 export { DebugPanel } from './components/DebugPanel';
 export type { DebugPanelProps } from './components/DebugPanel';
 export { SessionLobby } from './components/SessionLobby';
-export type {
-    SessionLobbyProps,
-    SessionLobbyParticipant,
-} from './components/SessionLobby';
+export type { SessionLobbyParticipant } from './components/SessionLobby';
 export { JoinSession } from './components/JoinSession';
 export type { JoinSessionProps } from './components/JoinSession';
 export {
