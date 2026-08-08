@@ -1,12 +1,11 @@
 import React from 'react';
-import { useGame } from '../../../state/game';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
 import { PlayersBoard } from '../../../components/PlayersBoard';
-import { useLocalParticipantTurn } from '../../../chorus';
+import { useLocalParticipantTurn, useSessionState } from '../../../chorus';
 
 export const Running: React.FC = () => {
-    const game = useGame();
+    const game = useSessionState();
     const playerTurn = useLocalParticipantTurn();
 
     if (!game || !playerTurn) return null;

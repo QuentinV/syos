@@ -1,10 +1,11 @@
 import '../../state/init';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
-import { initGame, useGame, GameProvider } from '../../state/game';
+import { initGame, GameProvider } from '../../state/game';
 import { Lobby } from './Lobby';
 import { End } from './End';
 import { Running } from './Running';
+import { useSessionState } from '../../chorus';
 
 export interface GamePageProps {
     id?: string;
@@ -29,7 +30,7 @@ export const GamePage: React.FC<GamePageProps> = ({ id, init = true }) => {
 };
 
 const GameContent: React.FC = () => {
-    const game = useGame();
+    const game = useSessionState();
 
     if (!game) return null;
 

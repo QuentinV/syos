@@ -10,7 +10,6 @@ export const {
     $id: $gameId,
     $state: $game,
     events: gameEvents,
-    useStore: useGame,
     init: initGame,
     workflows,
     Provider: GameProvider,

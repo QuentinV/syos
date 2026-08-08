@@ -1,12 +1,12 @@
 import React from 'react';
-import { useGame } from '../../../state/game';
 import { PlayersBoard } from '../../../components/PlayersBoard';
-import { PlayerRole } from '../../../state/types';
+import { GameTurn, PlayerRole } from '../../../state/types';
 import { Button } from 'primereact/button';
 import { newGameFx } from '../../../state/init';
+import { useSessionState } from '../../../chorus';
 
 export const End: React.FC = () => {
-    const game = useGame();
+    const game = useSessionState();
 
     if (!game) return null;
 
@@ -17,7 +17,7 @@ export const End: React.FC = () => {
             <div className="w-full">
                 <h2>Full story:</h2>
                 <div className="ml-3">
-                    {game?.turns?.map((t) => (
+                    {game?.turns?.map((t: GameTurn) => (
                         <div>
                             {Object.keys(t?.participants ?? {})
                                 .filter(
