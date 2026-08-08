@@ -2,7 +2,6 @@ export { createChorus } from './core/createChorus';
 export { ChorusConnection } from './core/connection';
 export { ChorusSession } from './core/session';
 export { createStorage } from './core/storage';
-export { createHooks } from './react';
 export { createWorkflowEngine } from './workflow';
 export { debug, logDebugMessage } from './debug';
 export {

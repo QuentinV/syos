@@ -5,7 +5,6 @@ import { DataConnection } from 'peerjs';
 import { ChorusConnection } from './connection';
 import { ChorusSession } from './session';
 import { createStorage, Storage } from './storage';
-import { createHooks } from '../react';
 import { createWorkflowEngine } from '../workflow';
 import { debug as debugApi, logDebugMessage } from '../debug';
 import { ChorusSessionContext } from '../context';
@@ -273,7 +272,10 @@ export function createChorus(options: ChorusOptions = {}) {
             }
         );
 
-        const hooks = createHooks({ $state: $store, $peerId });
+        const hooks = {
+            useStore: () => useUnit($store),
+            usePeerId: () => useUnit($peerId),
+        };
 
         const Provider: React.FC<{ children?: React.ReactNode }> = ({
             children,
