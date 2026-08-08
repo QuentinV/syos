@@ -31,6 +31,7 @@ export const StWriteStory: React.FC = () => {
                 story:
                     storyValue ||
                     'A wild sleepy player appeared but too lazy to write a story they ran away.',
+                selectedCardsTime: Date.now(),
             },
         });
 

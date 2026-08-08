@@ -15,8 +15,12 @@ export const PicksCards: React.FC = () => {
     if (!participant || !playerTurn) return null;
 
     const onSelectCard = (index: number) => {
+        const nextSelected = [
+            ...new Set([...(playerTurn.selectedCards ?? []), index]),
+        ];
         gameEvents.selectCard({ cardIndex: index, playerId: participant!.id });
-        if (playerTurn.selectedCards?.length === 3) {
+
+        if (nextSelected.length === 3) {
             gameEvents.updateTurnParticipants({
                 [participant.id]: {
                     playerId: participant!.id,
