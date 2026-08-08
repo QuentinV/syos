@@ -39,24 +39,6 @@ function newTurnReducer(
     };
 }
 
-function newPlayerTurnReducer(
-    game: Game | null,
-    player: { id: string }
-): Game | null {
-    if (!game) return null;
-    const turn = game.turns[game.turns.length - 1];
-    if (!turn || turn.participants[player.id]) return game;
-    const hasStoryteller = Object.keys(turn.participants).some(
-        (k) => turn.participants[k].role === PlayerRole.storyteller
-    );
-    turn.participants[player.id] = {
-        playerId: player.id,
-        role: hasStoryteller ? PlayerRole.gremlin : PlayerRole.storyteller,
-        score: 0,
-    };
-    return { ...game };
-}
-
 function setDisplayedCardsReducer(
     game: Game | null,
     payload: { playerId: string; cardIndexes: number[] }
@@ -200,44 +182,6 @@ describe('Game Reducers', () => {
         it('should return game unchanged if turn is undefined', () => {
             const result = newTurnReducer(game, undefined);
             expect(result).toBe(game);
-        });
-    });
-
-    describe('newPlayerTurn', () => {
-        it('should assign storyteller role to the first player', () => {
-            const turn: GameTurn = {
-                status: 'stPicksCards',
-                participants: {},
-            };
-            const withTurn = newTurnReducer(game, turn);
-            const result = newPlayerTurnReducer(withTurn, { id: 'player-0' });
-            expect(result!.turns[0].participants['player-0'].role).toBe(
-                PlayerRole.storyteller
-            );
-        });
-
-        it('should assign gremlin role to subsequent players', () => {
-            const turn: GameTurn = {
-                status: 'stPicksCards',
-                participants: {},
-            };
-            const withTurn = newTurnReducer(game, turn);
-            const r1 = newPlayerTurnReducer(withTurn, { id: 'player-0' });
-            const r2 = newPlayerTurnReducer(r1, { id: 'player-1' });
-            expect(r2!.turns[0].participants['player-1'].role).toBe(
-                PlayerRole.gremlin
-            );
-        });
-
-        it('should not add duplicate player', () => {
-            const turn: GameTurn = {
-                status: 'stPicksCards',
-                participants: {},
-            };
-            const withTurn = newTurnReducer(game, turn);
-            const r1 = newPlayerTurnReducer(withTurn, { id: 'player-0' });
-            const r2 = newPlayerTurnReducer(r1, { id: 'player-0' });
-            expect(Object.keys(r2!.turns[0].participants)).toHaveLength(1);
         });
     });
 

@@ -23,37 +23,6 @@ export const {
         logDebugMessage({ direction, message });
     },
     api: {
-        // Add a player to the current turn with a role (storyteller/gremlin)
-        newPlayerTurn: (
-            game: TurnState<GameTurnStatus, PlayerTurn>,
-            player: { id: string }
-        ) => {
-            if (!game) return null;
-            const lastIndex = game.turns.length - 1;
-            if (lastIndex < 0) return game;
-            const turn = game.turns[lastIndex];
-            if (turn.participants[player.id]) return game;
-            const hasStoryteller = Object.keys(turn.participants).some(
-                (k) => turn.participants[k].role === PlayerRole.storyteller
-            );
-            const updatedTurn = {
-                ...turn,
-                participants: {
-                    ...turn.participants,
-                    [player.id]: {
-                        playerId: player.id,
-                        role: hasStoryteller
-                            ? PlayerRole.gremlin
-                            : PlayerRole.storyteller,
-                        score: 0,
-                    },
-                },
-            };
-            return {
-                ...game,
-                turns: [...game.turns.slice(0, lastIndex), updatedTurn],
-            };
-        },
         setDisplayedCards: (
             game: TurnState<GameTurnStatus, PlayerTurn>,
             state: { playerId: string; cardIndexes: number[] }

@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { GameCard } from '../../../../components/GameCard';
-import { InputNumber } from 'primereact/inputnumber';
 import { Button } from 'primereact/button';
 import { useUnit } from 'effector-react';
 import { $participant, gameEvents } from '../../../../state/game';
