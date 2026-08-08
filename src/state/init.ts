@@ -76,29 +76,14 @@ sample({
     target: newTurnFx,
 });
 
+// When a joiner is added to the session, redirect them to the game page.
+// The auto-join itself is handled generically by the chorus turn layer.
 sample({
-    clock: $game,
-    source: $participant,
-    filter: (participant, game) => {
-        return (
-            game !== null &&
-            participant !== null &&
-            !game.participants[participant.id]
-        );
-    },
-    fn: (participant, game) => ({ participant, gameId: game!.id }),
-    target: createEffect(
-        ({
-            participant,
-            gameId,
-        }: {
-            participant: Player | null;
-            gameId: string;
-        }) => {
-            if (participant) {
-                gameEvents.joinParticipant(participant);
-            }
+    clock: gameEvents.joinParticipant,
+    target: createEffect(() => {
+        const gameId = $game.getState()?.id;
+        if (gameId) {
             location.href = `${document.location.origin}/syos#/game/${gameId}`;
         }
-    ),
+    }),
 });

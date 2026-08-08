@@ -1,4 +1,4 @@
-import { createStore, EventCallable, Store } from 'effector';
+import { createStore, EventCallable, sample, Store } from 'effector';
 import { useUnit } from 'effector-react';
 import React from 'react';
 import { ChorusTurnContext, ChorusTurnHooks } from './context';
@@ -43,6 +43,11 @@ export interface TurnSessionConfig<
      * `useLocalParticipantTurn` hook.
      */
     participantStorageKey?: string;
+    /**
+     * When true, the local participant is automatically added to the session
+     * if they aren't already present. Defaults to true.
+     */
+    autoJoinParticipant?: boolean;
 }
 
 export interface TurnSessionApi<
@@ -231,6 +236,23 @@ export function createTurnSessionFactory(
                 ...(config.api ?? {}),
             },
         });
+
+        // -- Auto-join (opt-in): when the local participant isn't in the
+        // session yet, add them. This is a generic turn-session concern for
+        // apps that want the local participant to join automatically.
+        config.autoJoinParticipant = config.autoJoinParticipant ?? true;
+        if (config.autoJoinParticipant) {
+            sample({
+                clock: session.$state,
+                source: participantStore.$participant,
+                filter: (participant, state) =>
+                    state !== null &&
+                    participant !== null &&
+                    !state.participants[participant.id],
+                fn: (participant) => participant,
+                target: session.events.joinParticipant,
+            });
+        }
 
         // -- Turn-aware workflow: getStatus/setStatus target the current turn's status
         const turnWorkflows: TurnSessionApi<
