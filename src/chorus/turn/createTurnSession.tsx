@@ -260,6 +260,7 @@ export function createTurnSessionFactory(
             session.workflows({
                 getStatus,
                 setStatus,
+                context: workflowConfig.context,
                 transitions: workflowConfig.transitions,
             });
         };

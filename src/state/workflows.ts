@@ -22,24 +22,22 @@ const deriveContext = (game: Game | null) => {
 };
 
 workflows({
+    context: deriveContext,
     transitions: [
         {
             // storyteller selected all necessary cards, moving to next stage
             from: 'stPicksCards',
-            context: deriveContext,
             filter: ({ playerTurn }) => playerTurn?.selectedCards?.length === 3,
             next: 'stWriteStory',
         },
         {
             // storyteller wrote story, moving to next stage
             from: 'stWriteStory',
-            context: deriveContext,
             filter: ({ playerTurn }) => !!playerTurn?.story,
             next: 'pEstimate',
         },
         {
             from: 'pEstimate',
-            context: deriveContext,
             filter: ({ turn }) =>
                 Object.keys(turn?.participants ?? {}).every(
                     (pk) =>
@@ -51,7 +49,6 @@ workflows({
         },
         {
             from: 'pPicksCards',
-            context: deriveContext,
             filter: ({ turn }) =>
                 Object.keys(turn?.participants ?? {}).every(
                     (pk) =>
@@ -123,7 +120,6 @@ workflows({
         },
         {
             from: 'turnEnded',
-            context: deriveContext,
             filter: ({ game }) => game.turns.length >= 10,
             logic: () => {
                 gameEvents.endSession();

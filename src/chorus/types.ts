@@ -80,6 +80,11 @@ export interface WorkflowConfig<State extends StateWithId> {
      * Defaults to an idempotent reducer writing (state as any).status.
      */
     setStatus?: (state: State, status: string) => State | void;
+    /**
+     * Derive the context object passed to filter/logic for transitions
+     * that don't define their own `context`. Defaults to (state) => ({ state }).
+     */
+    context?: (state: State) => any;
     /** The workflow transitions to register. */
     transitions: WorkflowTransition<State>[];
 }

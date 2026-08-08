@@ -17,15 +17,18 @@ export function createWorkflowEngine<State extends StateWithId>({
     $state,
     getStatus,
     setStatus,
+    context,
     transitions,
 }: {
     $state: StoreWritable<State>;
     getStatus: (state: State) => string | undefined;
     setStatus: EventCallable<string>;
+    context?: (state: State) => any;
     transitions: WorkflowTransition<State>[];
 }): void {
     transitions.forEach((w) => {
-        const deriveContext = w.context ?? ((state: State) => ({ state }));
+        const deriveContext =
+            w.context ?? context ?? ((state: State) => ({ state }));
 
         sample({
             source: $state,

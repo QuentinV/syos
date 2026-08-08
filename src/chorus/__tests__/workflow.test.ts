@@ -115,6 +115,77 @@ describe('Chorus workflow — createWorkflowEngine', () => {
         });
     });
 
+    it('should use config-level context when transition has none', async () => {
+        const { $state, setStatus, getStatus, updateState } = createSession();
+        let receivedContext: any = null;
+
+        createWorkflowEngine({
+            $state,
+            getStatus,
+            setStatus,
+            context: (state) => ({
+                state,
+                isEven: (state?.count ?? 0) % 2 === 0,
+            }),
+            transitions: [
+                {
+                    from: 'idle',
+                    filter: ({ isEven }) => isEven,
+                    logic: (ctx) => {
+                        receivedContext = ctx;
+                    },
+                    next: 'even',
+                },
+            ],
+        });
+
+        updateState({ id: 'counter', count: 2, status: 'idle' });
+        await vi.waitFor(() => {
+            expect($state.getState()?.status).toBe('even');
+        });
+        expect(receivedContext.isEven).toBe(true);
+        expect(receivedContext.state.count).toBe(2);
+    });
+
+    it('should let transition context override config-level context', async () => {
+        const { $state, setStatus, getStatus, updateState } = createSession();
+        let receivedContext: any = null;
+
+        createWorkflowEngine({
+            $state,
+            getStatus,
+            setStatus,
+            context: (state) => ({
+                state,
+                isEven: (state?.count ?? 0) % 2 === 0,
+                source: 'config',
+            }),
+            transitions: [
+                {
+                    from: 'idle',
+                    context: (state) => ({
+                        state,
+                        isEven: (state?.count ?? 0) % 2 === 0,
+                        source: 'transition',
+                    }),
+                    filter: ({ source }) => source === 'transition',
+                    logic: (ctx) => {
+                        receivedContext = ctx;
+                    },
+                    next: 'odd',
+                },
+            ],
+        });
+
+        updateState({ id: 'counter', count: 2, status: 'idle' });
+        await vi.waitFor(() => {
+            expect($state.getState()?.status).toBe('odd');
+        });
+        expect(receivedContext.source).toBe('transition');
+        expect(receivedContext.isEven).toBe(true);
+        expect(receivedContext.state.count).toBe(2);
+    });
+
     it('should support custom context derivation', async () => {
         const { $state, setStatus, getStatus, updateState } = createSession();
         let receivedContext: any = null;
