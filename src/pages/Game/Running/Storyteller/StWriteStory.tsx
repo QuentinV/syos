@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { useActiveParticipant, useTurn } from '../../../../state/game';
+import {
+    $participant,
+    gameEvents,
+    useActiveParticipant,
+    useTurn,
+} from '../../../../state/game';
 import { usePreviousStory } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
 import { Countdown } from '../../../../chorus';
 import { useUnit } from 'effector-react';
-import { $participant } from '../../../../state/player';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Button } from 'primereact/button';
 import { PlayersStatus } from '../PlayersStatus';
-import { gameEvents } from '../../../../state/game';
 
 export const StWriteStory: React.FC = () => {
     const player = useUnit($participant);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { usePlayersTurn, useValidCards } from '../../../state/gameHooks';
 import { useUnit } from 'effector-react';
-import { $participant } from '../../../state/player';
+import { $participant } from '../../../state/game';
 import { Avatar } from 'primereact/avatar';
 import { GameCards } from '../../../components/GameCards';
 

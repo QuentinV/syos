@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useActiveParticipant } from '../../../state/game';
+import {
+    $participant,
+    gameEvents,
+    useActiveParticipant,
+} from '../../../state/game';
 import { useStorytellerTurn } from '../../../state/gameHooks';
 import { GameCards } from '../../../components/GameCards';
-import { gameEvents } from '../../../state/game';
 import { useUnit } from 'effector-react';
-import { $participant } from '../../../state/player';
 import { Countdown } from '../../../chorus';
 import { Button } from 'primereact/button';
 

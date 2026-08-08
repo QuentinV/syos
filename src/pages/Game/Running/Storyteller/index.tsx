@@ -1,9 +1,12 @@
 import React, { useEffect } from 'react';
 import { useUnit } from 'effector-react';
-import { gameEvents } from '../../../../state/game';
 import cardsMapping from '../../../../cards_mapping.json';
-import { $participant } from '../../../../state/player';
-import { useActiveParticipant, useTurn } from '../../../../state/game';
+import {
+    $participant,
+    gameEvents,
+    useActiveParticipant,
+    useTurn,
+} from '../../../../state/game';
 import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
 import { getRandomCards } from '../../../../utils/getRandomCards';

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { gameEvents, useGame } from '../../../state/game';
-import { $participant } from '../../../state/player';
+import { $participant, gameEvents, useGame } from '../../../state/game';
 import { SessionLobby } from '../../../chorus';
 
 export const Lobby: React.FC = () => {

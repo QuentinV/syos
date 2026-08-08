@@ -3,7 +3,7 @@ import { usePlayersTurn } from '../../state/gameHooks';
 import './styles.css';
 import { PlayerRole } from '../../state/types';
 import { useUnit } from 'effector-react';
-import { $participant } from '../../state/player';
+import { $participant } from '../../state/game';
 
 interface PlayersBoardProps {
     markStoryteller?: boolean;

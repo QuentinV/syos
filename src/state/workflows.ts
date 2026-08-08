@@ -1,4 +1,4 @@
-import { gameEvents, workflows } from './game';
+import { $participant, gameEvents, workflows } from './game';
 import {
     Game,
     GameParticipantsTurn,
@@ -6,7 +6,6 @@ import {
     PlayerRole,
     PlayerTurn,
 } from './types';
-import { $participant } from './player';
 
 // Derive the workflow context from game state + local participant
 const deriveContext = (game: Game | null) => {

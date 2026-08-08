@@ -1,8 +1,7 @@
 import { useUnit } from 'effector-react';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
-import { $participant } from '../../state/player';
-import { joinFx } from '../../state/game';
+import { $participant, joinFx } from '../../state/game';
 import { JoinSession } from '../../chorus';
 
 export const JoinPage: React.FC = () => {

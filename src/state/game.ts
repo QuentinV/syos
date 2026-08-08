@@ -5,7 +5,6 @@ import {
     TurnState,
 } from '../chorus';
 import { GameTurnStatus, PlayerRole, PlayerTurn } from './types';
-import { participantStore } from './player';
 
 const chorus = createChorus({
     debug: true,
@@ -30,10 +29,11 @@ export const {
     useTurnParticipants,
     useTurnParticipantByPredicate,
     useActiveParticipant,
+    participantStore,
 } = chorus.createTurnSession<GameTurnStatus, PlayerTurn>({
     name: 'games',
     defaultValue: null,
-    participantStore,
+    participantStorageKey: 'player',
     checksum: computeTurnSessionChecksum,
     getJoinUrl: (sessionId, peerId) =>
         `${document.location.origin}/syos#/game/${sessionId}/join/${peerId}`,
@@ -155,3 +155,5 @@ export const {
         },
     },
 });
+
+export const { $participant, setParticipantName } = participantStore!;

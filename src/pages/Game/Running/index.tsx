@@ -1,7 +1,10 @@
 import React from 'react';
 import { useUnit } from 'effector-react';
-import { useActiveParticipant, useGame } from '../../../state/game';
-import { $participant } from '../../../state/player';
+import {
+    $participant,
+    useActiveParticipant,
+    useGame,
+} from '../../../state/game';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
 import { PlayersBoard } from '../../../components/PlayersBoard';

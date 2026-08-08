@@ -17,7 +17,7 @@ import {
     useTurnParticipantByPredicate,
 } from './hooks';
 import { Participant, Turn, TurnSessionState } from './types';
-import { ParticipantStore } from './participant';
+import { createParticipantStore, ParticipantStore } from './participant';
 
 export type TurnState<TStatus extends string, TTurnData> = TurnSessionState<
     TStatus,
@@ -35,8 +35,13 @@ export interface TurnSessionConfig<
     defaultValue: TurnState<TStatus, TTurnData>;
     /** App-specific P2P-synced reducers (merged with the generic turn reducers). */
     api?: Api;
-    /** The local participant store, enabling the `useActiveParticipant` hook. */
-    participantStore?: ParticipantStore;
+    /**
+     * Storage key for the local participant store. When provided, a
+     * participant store is created internally and exposed on the session
+     * API as `$participant` / `setParticipantName`, enabling the
+     * `useActiveParticipant` hook.
+     */
+    participantStorageKey?: string;
 }
 
 export interface TurnSessionApi<
@@ -82,6 +87,11 @@ export interface TurnSessionApi<
             'getStatus' | 'setStatus'
         >
     ) => void;
+    /**
+     * The local participant store, created internally when
+     * `participantStorageKey` is provided in the config.
+     */
+    participantStore?: ParticipantStore;
 }
 
 /**
@@ -105,6 +115,11 @@ export function createTurnSessionFactory(
         config: TurnSessionConfig<TStatus, TTurnData, Api>
     ): TurnSessionApi<TStatus, TTurnData, Api> {
         type State = TurnState<TStatus, TTurnData>;
+
+        // -- Local participant store (created internally when a storage key is provided)
+        const participantStore = config.participantStorageKey
+            ? createParticipantStore(config.participantStorageKey)
+            : undefined;
 
         // -- Generic turn reducers (merged with the app-specific api)
         const genericApi: Reducers<State> = {
@@ -185,7 +200,7 @@ export function createTurnSessionFactory(
         // `useChorusSession()` exposes them fully typed, and are also
         // returned directly on the session API for convenience.
         // Empty participant store fallback so useActiveParticipant works even
-        // without config.participantStore (returns undefined turn).
+        // without config.participantStorageKey (returns undefined turn).
         const emptyParticipantStore = createStore<Participant | null>(null);
 
         const turnHooks: ChorusTurnHooks<TStatus, TTurnData> = {
@@ -200,8 +215,7 @@ export function createTurnSessionFactory(
             ) => useTurnParticipantByPredicate<TTurnData>(predicate),
             useActiveParticipant: () => {
                 const $participant =
-                    config.participantStore?.$participant ??
-                    emptyParticipantStore;
+                    participantStore?.$participant ?? emptyParticipantStore;
                 const participant = useUnit($participant);
                 return useParticipantTurn<TTurnData>(participant?.id ?? '');
             },
@@ -255,6 +269,7 @@ export function createTurnSessionFactory(
                 Api
             >['events'],
             workflows: turnWorkflows,
+            ...(participantStore ? { participantStore } : {}),
         };
     };
 }

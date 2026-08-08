@@ -1,7 +1,6 @@
 import { createEffect, sample, attach } from 'effector';
 import './workflows';
-import { $game, gameEvents, joinFx } from './game';
-import { $participant } from './player';
+import { $game, $participant, gameEvents, joinFx } from './game';
 import { v4 as uuid } from 'uuid';
 import {
     Game,

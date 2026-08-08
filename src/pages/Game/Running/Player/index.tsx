@@ -1,11 +1,14 @@
 import { useUnit } from 'effector-react';
 import React, { useEffect } from 'react';
 import cardsMapping from '../../../../cards_mapping.json';
-import { useActiveParticipant, useTurn } from '../../../../state/game';
+import {
+    $participant,
+    gameEvents,
+    useActiveParticipant,
+    useTurn,
+} from '../../../../state/game';
 import { useStorytellerTurn } from '../../../../state/gameHooks';
-import { $participant } from '../../../../state/player';
 import { getRandomCards } from '../../../../utils/getRandomCards';
-import { gameEvents } from '../../../../state/game';
 import { PEstimate } from './PEstimate';
 import { TurnEnded } from '../TurnEnded';
 import { PicksCards } from '../PicksCards';

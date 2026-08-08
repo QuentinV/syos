@@ -2,10 +2,9 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { GamePage, GamePageProps } from '.';
 import { fork } from 'effector';
-import { $game, $gameId, $peerId } from '../../state/game';
+import { $game, $gameId, $participant, $peerId } from '../../state/game';
 import { Provider } from 'effector-react';
 import { GameStatus, GameTurnStatus, PlayerRole } from '../../state/types';
-import { $participant } from '../../state/player';
 
 interface GamePageWrapperProps extends GamePageProps {
     id: string;
