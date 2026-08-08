@@ -1,6 +1,6 @@
 import { DataConnection, Peer } from 'peerjs';
 import { Effect, EventCallable, StoreWritable } from 'effector';
-import type { ChorusSession } from './core/session';
+import type { ChorusSession } from './session';
 
 export type { ChorusSession };
 

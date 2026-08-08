@@ -43,6 +43,16 @@ pnpm add chorus
 yarn add react react-dom effector effector-react
 ```
 
+### Styles
+
+Chorus components ship with their own styles. Import the stylesheet once in your app entry point:
+
+```tsx
+import 'chorus/style.css';
+```
+
+> **Note:** The stylesheet is required for the components (`QRCode`, `Countdown`, `DebugPanel`, `SessionLobby`, `JoinSession`) to render correctly.
+
 ---
 
 ## Quick Start
@@ -74,7 +84,7 @@ const session = chorus.createSession<CounterState>({
 session.init('counter-1');
 
 // 4. Fire events — automatically broadcast to all connected peers
-session.events['increment'](5);
+session.events.increment(5);
 
 // 5. Read state imperatively
 const state = session.$state.getState();
@@ -168,7 +178,7 @@ const ShareLink = () => {
     const url = getJoinUrl(sessionId, peerId);
 
     return (
-        <a href={url} onClick={() => events['increment'](1)}>
+        <a href={url} onClick={() => events.increment(1)}>
             {url}
         </a>
     );
@@ -475,19 +485,19 @@ const session = chorus.createTurnSession<ScrumStatus, ScrumPlayerTurn>({
 });
 
 // Join participants
-session.events['joinParticipant']({ id: 'dev-1', name: 'Alice', ready: false });
+session.events.joinParticipant({ id: 'dev-1', name: 'Alice', ready: false });
 
 // Start the session
-session.events['startSession']();
+session.events.startSession();
 
 // Add a planning round
-session.events['addTurn']({
+session.events.addTurn({
     status: 'discuss',
     participants: { 'dev-1': { playerId: 'dev-1' } },
 });
 
 // Vote
-session.events['vote']({ playerId: 'dev-1', vote: 5 });
+session.events.vote({ playerId: 'dev-1', vote: 5 });
 ```
 
 ---

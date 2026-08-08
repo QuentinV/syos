@@ -2,7 +2,17 @@
     "name": "chorus",
     "version": "1.0.0",
     "description": "Decentralized P2P state synchronization library built on effector + PeerJS",
+    "author": "Quentin Vanhauteghem",
     "license": "MIT",
+    "engines": {
+        "node": ">=18"
+    },
+    "sideEffects": [
+        "**/*.css"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
     "repository": {
         "type": "git",
         "url": "https://github.com/QuentinV/syos.git"
@@ -33,8 +43,10 @@
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js"
-        }
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./style.css": "./dist/style.css"
     },
     "files": [
         "dist"
@@ -42,7 +54,8 @@
     "scripts": {
         "build": "tsc -p tsconfig.json && vite build",
         "test": "vitest run",
-        "test:watch": "vitest"
+        "test:watch": "vitest",
+        "prepublishOnly": "npm run test && npm run build"
     },
     "peerDependencies": {
         "react": "^19.0.0",
