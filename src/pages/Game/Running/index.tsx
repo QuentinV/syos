@@ -2,7 +2,7 @@ import React from 'react';
 import { Storyteller } from './Storyteller';
 import { Player } from './Player';
 import { PlayersBoard } from '../../../components/PlayersBoard';
-import { useLocalParticipantTurn, useSessionState } from '../../../chorus';
+import { useLocalParticipantTurn, useSessionState } from '@quentinv/chorus';
 
 export const Running: React.FC = () => {
     const game = useSessionState();

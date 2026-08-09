@@ -6,7 +6,7 @@ import { PicksCards } from '../PicksCards';
 import { StWriteStory } from './StWriteStory';
 import { getRandomCards } from '../../../../utils/getRandomCards';
 import { TurnEnded } from '../TurnEnded';
-import { useLocalParticipantTurn, useTurn } from '../../../../chorus';
+import { useLocalParticipantTurn, useTurn } from '@quentinv/chorus';
 
 export const Storyteller: React.FC = () => {
     const participant = useUnit($participant);

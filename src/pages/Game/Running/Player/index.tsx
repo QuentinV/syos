@@ -7,7 +7,7 @@ import { getRandomCards } from '../../../../utils/getRandomCards';
 import { PEstimate } from './PEstimate';
 import { TurnEnded } from '../TurnEnded';
 import { PicksCards } from '../PicksCards';
-import { useLocalParticipantTurn, useTurn } from '../../../../chorus';
+import { useLocalParticipantTurn, useTurn } from '@quentinv/chorus';
 
 export const Player: React.FC = () => {
     const participant = useUnit($participant);

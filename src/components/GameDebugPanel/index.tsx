@@ -1,5 +1,5 @@
 import React from 'react';
-import { DebugPanel, useSessionState } from '../../chorus';
+import { DebugPanel, useSessionState } from '@quentinv/chorus';
 import { Game } from '../../state/types';
 
 export const GameDebugPanel: React.FC = () => {

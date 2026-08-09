@@ -3,7 +3,7 @@ import { $participant, gameEvents } from '../../../state/game';
 import { useStorytellerTurn } from '../../../state/gameHooks';
 import { GameCards } from '../../../components/GameCards';
 import { useUnit } from 'effector-react';
-import { Countdown, useLocalParticipantTurn } from '../../../chorus';
+import { Countdown, useLocalParticipantTurn } from '@quentinv/chorus';
 import { Button } from 'primereact/button';
 
 export const PicksCards: React.FC = () => {

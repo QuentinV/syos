@@ -3,7 +3,7 @@ import { PlayersBoard } from '../../../components/PlayersBoard';
 import { GameTurn, PlayerRole } from '../../../state/types';
 import { Button } from 'primereact/button';
 import { newGameFx } from '../../../state/init';
-import { useSessionState } from '../../../chorus';
+import { useSessionState } from '@quentinv/chorus';
 
 export const End: React.FC = () => {
     const game = useSessionState();

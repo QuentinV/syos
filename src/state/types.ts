@@ -1,4 +1,9 @@
-import { Participant, SessionStatus, Turn, TurnSessionState } from '../chorus';
+import {
+    Participant,
+    SessionStatus,
+    Turn,
+    TurnSessionState,
+} from '@quentinv/chorus';
 
 export type { Participant as Player };
 

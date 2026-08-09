@@ -656,6 +656,15 @@
   resolved "https://registry.yarnpkg.com/@pkgr/core/-/core-0.3.6.tgz#3569708bd4be4d8870ba32bf1c456dac81600d97"
   integrity sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==
 
+"@quentinv/chorus@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@quentinv/chorus/-/chorus-1.0.0.tgz#7f89172efb5a0a9624fa1bdd498a0da296ca3b08"
+  integrity sha512-xa+b4SxV8Huyn2+qNGK/Y1z+w/H65WsjtFhYH5QYd19EoGIdHPN1GSUmKhWGynsqnLl1Dvn4l2oePtL7F/t6fw==
+  dependencies:
+    peerjs "^1.5.4"
+    qrcode.react "^4.2.0"
+    uuid "^11.1.0"
+
 "@rollup/pluginutils@^5.0.2":
   version "5.4.0"
   resolved "https://registry.yarnpkg.com/@rollup/pluginutils/-/pluginutils-5.4.0.tgz#ac23a29ced0247060a210815fca39c17de4d2f26"

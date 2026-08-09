@@ -3,7 +3,7 @@ import { GameCard } from '../../../../components/GameCard';
 import { Button } from 'primereact/button';
 import { useUnit } from 'effector-react';
 import { $participant, gameEvents } from '../../../../state/game';
-import { useLocalParticipantTurn } from '../../../../chorus';
+import { useLocalParticipantTurn } from '@quentinv/chorus';
 
 const estimateCards = [-1, 1, 2, 3, 5, 8, 10, 13, 21, 34];
 

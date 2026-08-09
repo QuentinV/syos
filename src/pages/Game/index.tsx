@@ -5,7 +5,7 @@ import { initGame, GameProvider } from '../../state/game';
 import { Lobby } from './Lobby';
 import { End } from './End';
 import { Running } from './Running';
-import { SessionPage, useSessionState } from '../../chorus';
+import { SessionPage, useSessionState } from '@quentinv/chorus';
 
 export interface GamePageProps {
     id?: string;

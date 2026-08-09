@@ -5,7 +5,7 @@ import {
     usePreviousTurn,
     useTurnParticipantByPredicate,
     useTurnParticipants,
-} from '../chorus';
+} from '@quentinv/chorus';
 
 export const useStorytellerTurn = (): PlayerTurn | undefined =>
     useTurnParticipantByPredicate((p) => p.role === PlayerRole.storyteller);

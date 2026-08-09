@@ -1,4 +1,4 @@
-import { createChorus, logDebugMessage, TurnState } from '../chorus';
+import { createChorus, logDebugMessage, TurnState } from '@quentinv/chorus';
 import { GameTurnStatus, PlayerRole, PlayerTurn } from './types';
 
 const chorus = createChorus({

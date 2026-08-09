@@ -3,7 +3,7 @@ import { useUnit } from 'effector-react';
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router';
 import { $participant, joinFx } from '../../state/game';
-import { JoinSession } from '../../chorus';
+import { JoinSession } from '@quentinv/chorus';
 
 export const JoinPage: React.FC = () => {
     const { gameId, peerId } = useParams();

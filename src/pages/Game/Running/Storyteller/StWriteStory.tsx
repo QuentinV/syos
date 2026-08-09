@@ -2,11 +2,7 @@ import React, { useState } from 'react';
 import { $participant, gameEvents } from '../../../../state/game';
 import { usePreviousStory } from '../../../../state/gameHooks';
 import { GameCards } from '../../../../components/GameCards';
-import {
-    Countdown,
-    useLocalParticipantTurn,
-    useTurn,
-} from '../../../../chorus';
+import { Countdown, useLocalParticipantTurn, useTurn } from '@quentinv/chorus';
 import { useUnit } from 'effector-react';
 import { FloatLabel } from 'primereact/floatlabel';
 import { InputTextarea } from 'primereact/inputtextarea';
